@@ -1,0 +1,336 @@
+:root {
+    --gradient-purple: #a34fc3;
+    --gradient-green: #76d376;
+    --black: #000000;
+    --white: #ffffff;
+    --splash-gradient: linear-gradient(to bottom, #a34fc3 0%, #76d376 100%);
+    --bg-purple: #b352cc; /* Color aproximado de la imagen */
+    --card-purple: #a646c0; /* Un tono ligeramente diferente para la tarjeta */
+    --input-bg-lila: #f0e1f5; /* Tono lila muy claro para los campos */
+    --text-placeholder: #7a7a7a;
+    --input-bg: rgba(255, 255, 255, 0.2);
+    --input-placeholder: #555;      /* Fondo principal */
+    --action-green: #1d9b3e;      /* Botón aceptar */   
+    --primary-green: #28a745;
+    --dark-green: #1e7e34;
+    --light-green: #82e0aa;
+    --bg-green: #21a43d;
+    --text-dark: #333;
+    --bg-light: #f4f4f4;
+    --brand-green: #1b9e49;
+    --action-green: #28a745;
+    --action-red: #dc3545;
+    --white: #ffffff;
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Bloque Principal */
+.welcome-screen {
+    display: flex;
+    flex-direction: column; /* Móvil primero */
+    min-height: 100vh;
+}
+
+/* Lado del Banner (Gradiente) */
+.welcome-screen__banner {
+    flex: 1;
+    background: linear-gradient(to bottom, var(--gradient-purple), var(--gradient-green));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.welcome-screen__logo-container {
+    text-align: center;
+}
+
+.welcome-screen__logo {
+    max-width: 150px;
+    height: auto;
+}
+
+
+/* Lado del Contenido (Blanco) */
+.welcome-screen__content {
+    flex: 1;
+    background-color: var(--white);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.welcome-screen__title {
+    font-size: 1.8rem;
+    margin-bottom: 2.5rem;
+    font-weight: 500;
+}
+
+/* Navegación y Botones */
+.welcome-screen__list {
+    list-style: none;
+    width: 100%;
+    max-width: 300px;
+}
+
+.welcome-screen__item {
+    margin-bottom: 1.2rem;
+}
+
+.button {
+    display: block;
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.button--primary {
+    background-color: var(--black);
+    color: var(--white);
+}
+
+.button--primary:hover {
+    background-color: var(--text-dark);
+    transform: scale(1.02);
+}
+
+.welcome-screen__footer {
+    margin-top: 2rem;
+}
+
+.welcome-screen__link {
+    color: var(--black);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.welcome-screen__link:hover {
+    text-decoration: underline;
+}
+
+/* Media Query para Escritorio */
+@media (min-width: 768px) {
+    .welcome-screen {
+        flex-direction: row; /* Cambio a dos columnas */
+    }
+
+    .welcome-screen__banner, 
+    .welcome-screen__content {
+        height: 100vh;
+    }
+
+    .welcome-screen__logo {
+        max-width: 300px;
+    }
+}
+
+/*Vista administrador*/
+/* --- ESTILOS PARA EL NUEVO PANEL ADMINISTRADOR --- */
+
+:root {
+    --primary-green: #1b9e49;
+    --dark-green: #137333;
+    --bg-light: #f9f9f9;
+    --white: #ffffff;
+}
+
+.admin-header {
+    padding: 20px;
+    text-align: center;
+}
+
+.admin-header__title {
+    color: var(--dark-green); 
+    font-size: 2rem;
+    font-weight: 600;
+    margin-top: 20px;
+}
+
+.admin-panel {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    width: 100%;
+}
+
+.admin-panel__container {
+    background-color: var(--primary-green);
+    width: 100%;
+    max-width: 900px;
+    padding: 40px 20px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.profile-card {
+    margin: 30px;
+    position: relative;
+}
+
+.profile-card__image-container {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 4px solid var(--white);
+    overflow: hidden;
+}
+
+.profile-card__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    width: 100%;
+    max-width: 700px;
+}
+
+.dashboard-grid__item {
+    background-color: var(--white);
+    color: var(--primary-green);
+    text-decoration: none;
+    text-align: center;
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+
+
+@media (min-width: 600px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+
+/* --- ESTILOS MÓDULO ASIGNAR ROL --- */
+
+.role-manager {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.role-manager__header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.role-manager__back-link {
+    color: var(--brand-green);
+    font-size: 1.5rem;
+    text-decoration: none;
+}
+
+.role-manager__title {
+    color: var(--brand-green);
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.role-manager__content {
+    background-color: var(--brand-green);
+    padding: 40px;
+    border-radius: 10px;
+}
+
+.request-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.request-item {
+    background-color: var(--white);
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.request-item__user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.request-item__avatar {
+    font-size: 2.5rem;
+    color: #333;
+}
+
+.request-item__name {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    color: #222;
+}
+
+.request-item__type {
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.request-item__actions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.btn {
+    flex: 1;
+    border: none;
+    padding: 12px;
+    color: var(--white);
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.2s;
+}
+
+.btn--accept { background-color: var(--action-green); }
+.btn--reject { background-color: var(--action-red); }
+
+.btn:hover { opacity: 0.9; }
+
+/* Responsive para PC */
+@media (min-width: 768px) {
+    .request-item {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    .request-item__actions {
+        width: auto;
+    }
+    .btn {
+        min-width: 130px;
+    }
+}
