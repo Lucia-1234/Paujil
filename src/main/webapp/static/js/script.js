@@ -1,3 +1,65 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('formRegistro');
+    const feedback = document.getElementById('mensaje-feedback');
+
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            // Limpiamos mensajes previos
+            feedback.style.display = 'none';
+            feedback.className = 'feedback-message';
+            
+            const pass1 = document.getElementById('txtContrasena').value;
+            const pass2 = document.getElementById('txtConfirmarContrasena').value;
+            const telefono = document.getElementById('txtTelefono').value;
+
+            // 1. Validación de contraseñas
+            if (pass1 !== pass2) {
+                event.preventDefault();
+                mostrarError("Las contraseñas no coinciden.");
+                return;
+            }
+
+            // 2. Validación de teléfono (solo 10 dígitos)
+            if (!/^\d{10}$/.test(telefono)) {
+                event.preventDefault();
+                mostrarError("El teléfono debe tener exactamente 10 dígitos.");
+                return;
+            }
+        });
+    }
+
+    /**
+     * Función auxiliar para mostrar mensajes de error
+     */
+    function mostrarError(mensaje) {
+        feedback.textContent = mensaje;
+        feedback.style.display = 'block';
+        feedback.classList.add('error-box');
+        // Scroll suave al inicio para que el usuario vea el error
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+});
+
+
+function gestionarUsuario(idUsuario, accion) {
+    // Usamos fetch para llamar a tu Servlet de gestión (ejemplo: ServletGestionarUsuario)
+    fetch(`${window.location.origin}/TuProyecto/ServletGestionarUsuario?id=${idUsuario}&accion=${accion}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Si la operación fue exitosa, removemos el elemento del DOM con una animación
+                const userElement = document.getElementById(`user-${idUsuario}`);
+                userElement.style.transition = "opacity 0.5s";
+                userElement.style.opacity = "0";
+                setTimeout(() => userElement.remove(), 500);
+            } else {
+                alert("Error al procesar la solicitud.");
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+
 /**
  * Gestiona la aprobación o denegación de usuarios de forma asíncrona.
  * @param {number} idUsuario - El ID del usuario a gestionar.
