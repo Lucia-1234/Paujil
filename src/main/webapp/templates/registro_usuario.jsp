@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/CSS/Styles.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/Styles.css">
     <title>Registro - Finca El Paujil</title>
 </head>
 <body class="register-page">
