@@ -2,87 +2,70 @@ package com.paujil.controlador;
 
 import com.paujil.dao.CultivoDao;
 import com.paujil.modelo.cultivo;
-import java.io.IOException;
-import java.math.BigDecimal;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.sql.Date;
 
-@WebServlet("/ServletCultivo")
+@WebServlet("/ServletCultivo") // Ajustado a /ServletCultivo como usas en el JSP
 public class ServletCultivo extends HttpServlet {
 
-    // Maneja inserciones (Agregar) y actualizaciones (Editar)
-    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+        throws ServletException, IOException {
+    
+        // 1. Recibir parámetros comunes
+        String idStr = request.getParameter("id"); // Este llega del campo oculto en el modal
+        String nombre = request.getParameter("nombreCultivo");
+        String tipo = request.getParameter("tipoCultivo");
+        Date fSiembra = Date.valueOf(request.getParameter("fechaSiembra"));
+
+        String fCosechaStr = request.getParameter("fechaCosecha");
+        Date fCosecha = (fCosechaStr != null && !fCosechaStr.isEmpty()) ? Date.valueOf(fCosechaStr) : null;
+
+        // String bioprep = request.getParameter("nombreBiopreparado"); // Lo usaremos cuando implementemos la tabla relacional
+
+        CultivoDao dao = new CultivoDao();
+        boolean operacionExitosa = false;
+
+        // 2. Determinar si es Edición o Registro Nuevo
+        if (idStr != null && !idStr.isEmpty()) {
+            // ES UNA EDICIÓN (UPDATE)
+            int id = Integer.parseInt(idStr);
+            // Nota: Asegúrate de tener este método en tu DAO actualizado
+            operacionExitosa = dao.actualizarCultivo(id, nombre, tipo, fSiembra, fCosecha);
+        } else {
+            // ES UN REGISTRO NUEVO (INSERT)
+            cultivo c = new cultivo(nombre, tipo, fSiembra, fCosecha);
+            operacionExitosa = dao.registrarCultivo(c);
+        }
+
+        // 3. Respuesta al usuario
+        if (operacionExitosa) {
+            response.sendRedirect("lista_cultivos.jsp?status=success");
+        } else {
+            response.sendRedirect("lista_cultivos.jsp?status=error");
+        }
+    }
+    // Manejo de eliminaciones (GET)
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
         String accion = request.getParameter("accion");
-        CultivoDao dao = new CultivoDao();
-        String URL_VISTA = request.getContextPath() + "/cultivos.jsp";
-
-        if ("registrar".equals(accion)) {
-            String nombre = request.getParameter("txtNombreCultivo");
-            String tipo = request.getParameter("txtTipoCultivo");
-            java.sql.Date siembra = java.sql.Date.valueOf(request.getParameter("txtFechaSiembra"));
+        
+        if ("eliminar".equals(accion)) {
+            int id = Integer.parseInt(request.getParameter("id"));
+            CultivoDao dao = new CultivoDao();
             
-            String cosechaStr = request.getParameter("txtFechaCosecha");
-            java.sql.Date cosecha = (cosechaStr != null && !cosechaStr.isEmpty()) ? java.sql.Date.valueOf(cosechaStr) : null;
-            BigDecimal area = new BigDecimal(request.getParameter("txtArea"));
-
-            // Variables de tablas relacionales
-            int idLote = Integer.parseInt(request.getParameter("cmbLote"));
-            int idUsuario = Integer.parseInt(request.getParameter("cmbUsuario"));
-            int idInsumo = Integer.parseInt(request.getParameter("cmbInsumo"));
-
-            cultivo nuevo = new cultivo(nombre, tipo, siembra, cosecha, area);
-            int idGenerado = dao.registrarCultivoBase(nuevo);
-
-            if (idGenerado > 0) {
-                dao.asignarLote(idGenerado, idLote);
-                dao.asignarTrabajador(idGenerado, idUsuario);
-                dao.asignarInsumo(idGenerado, idInsumo);
-                response.sendRedirect(URL_VISTA + "?exito=registrado");
-            } else {
-                response.sendRedirect(URL_VISTA + "?error=db");
-            }
-
-        } else if ("editar".equals(accion)) {
-            int idCultivo = Integer.parseInt(request.getParameter("txtIdCultivo"));
-            String nombre = request.getParameter("txtNombreCultivo");
-            String tipo = request.getParameter("txtTipoCultivo");
-            java.sql.Date siembra = java.sql.Date.valueOf(request.getParameter("txtFechaSiembra"));
+            // Asumiendo que tienes un método eliminarCultivo en tu Dao
+            boolean eliminado = dao.eliminarCultivo(id);
             
-            String cosechaStr = request.getParameter("txtFechaCosecha");
-            java.sql.Date cosecha = (cosechaStr != null && !cosechaStr.isEmpty()) ? java.sql.Date.valueOf(cosechaStr) : null;
-            BigDecimal area = new BigDecimal(request.getParameter("txtArea"));
-
-            cultivo editado = new cultivo(nombre, tipo, siembra, cosecha, area);
-            editado.setIdCultivo(idCultivo);
-
-            if (dao.actualizar(editado)) {
-                response.sendRedirect(URL_VISTA + "?exito=actualizado");
+            if (eliminado) {
+                response.sendRedirect("cultivos.jsp?eliminado=true");
             } else {
-                response.sendRedirect(URL_VISTA + "?error=db");
-            }
-        }
-    }
-
-    // Maneja las eliminaciones rápidas que viajan por el enlace href
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        String accion = request.getParameter("accion");
-        String idStr = request.getParameter("id");
-        CultivoDao dao = new CultivoDao();
-        String URL_VISTA = request.getContextPath() + "/cultivos.jsp";
-
-        if ("eliminar".equals(accion) && idStr != null) {
-            if (dao.eliminar(Integer.parseInt(idStr))) {
-                response.sendRedirect(URL_VISTA + "?exito=eliminado");
-            } else {
-                response.sendRedirect(URL_VISTA + "?error=db");
+                response.sendRedirect("cultivos.jsp?error=true");
             }
         }
     }
