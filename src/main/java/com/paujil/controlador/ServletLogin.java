@@ -53,8 +53,12 @@ public class ServletLogin extends HttpServlet {
                     // 2. VERIFICACIÓN DE SEGURIDAD CON BCRYPT
                     if (Seguridad.verificar(contrasenaInput, hashEnBD)) {
                         
-                        // Inicio de sesión exitoso
+                        HttpSession oldSession = request.getSession(false);
+                        if (oldSession != null) {
+                            oldSession.invalidate();
+                        }
                         HttpSession session = request.getSession(true);
+                        
                         session.setAttribute("idUsuario", rs.getInt("id_usuario"));
                         session.setAttribute("nombreUsuario", rs.getString("nombre_usuario"));
                         session.setAttribute("rolUsuario", rs.getString("nombre_rol"));
