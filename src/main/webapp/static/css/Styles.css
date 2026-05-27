@@ -1,336 +1,364 @@
+/* ==========================================================================
+   1. VARIABLES GLOBALES (Configuración centralizada)
+   ========================================================================== */
 :root {
-    --gradient-purple: #a34fc3;
-    --gradient-green: #76d376;
+    --gradient-purple: #a646c0;
+    --gradient-green: #76c065;
+    --brand-green: #1b9e49;
+    --dark-green: #137333;
     --black: #000000;
     --white: #ffffff;
-    --splash-gradient: linear-gradient(to bottom, #a34fc3 0%, #76d376 100%);
-    --bg-purple: #b352cc; /* Color aproximado de la imagen */
-    --card-purple: #a646c0; /* Un tono ligeramente diferente para la tarjeta */
-    --input-bg-lila: #f0e1f5; /* Tono lila muy claro para los campos */
-    --text-placeholder: #7a7a7a;
-    --input-bg: rgba(255, 255, 255, 0.2);
-    --input-placeholder: #555;      /* Fondo principal */
-    --action-green: #1d9b3e;      /* Botón aceptar */   
-    --primary-green: #28a745;
-    --dark-green: #1e7e34;
-    --light-green: #82e0aa;
-    --bg-green: #21a43d;
-    --text-dark: #333;
     --bg-light: #f4f4f4;
-    --brand-green: #1b9e49;
     --action-green: #28a745;
     --action-red: #dc3545;
-    --white: #ffffff;
+    --text-dark: #333;
 }
+
+/* ==========================================================================
+   2. RESET Y ESTILOS BASE
+   ========================================================================== */
 * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: Arial, sans-serif;
 }
 
-/* Bloque Principal */
-.welcome-screen {
+body {
     display: flex;
-    flex-direction: column; /* Móvil primero */
-    min-height: 100vh;
-}
-
-/* Lado del Banner (Gradiente) */
-.welcome-screen__banner {
-    flex: 1;
-    background: linear-gradient(to bottom, var(--gradient-purple), var(--gradient-green));
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem;
-}
-
-.welcome-screen__logo-container {
-    text-align: center;
-}
-
-.welcome-screen__logo {
-    max-width: 150px;
-    height: auto;
-}
-
-
-/* Lado del Contenido (Blanco) */
-.welcome-screen__content {
-    flex: 1;
-    background-color: var(--white);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 3rem 2rem;
-    text-align: center;
-}
-
-.welcome-screen__title {
-    font-size: 1.8rem;
-    margin-bottom: 2.5rem;
-    font-weight: 500;
-}
-
-/* Navegación y Botones */
-.welcome-screen__list {
-    list-style: none;
-    width: 100%;
-    max-width: 300px;
-}
-
-.welcome-screen__item {
-    margin-bottom: 1.2rem;
-}
-
-.button {
-    display: block;
-    padding: 0.8rem 2rem;
-    border-radius: 50px;
-    text-decoration: none;
-    transition: transform 0.2s, background-color 0.2s;
-}
-
-.button--primary {
-    background-color: var(--black);
-    color: var(--white);
-}
-
-.button--primary:hover {
-    background-color: var(--text-dark);
-    transform: scale(1.02);
-}
-
-.welcome-screen__footer {
-    margin-top: 2rem;
-}
-
-.welcome-screen__link {
-    color: var(--black);
-    text-decoration: none;
-    font-size: 0.9rem;
-}
-
-.welcome-screen__link:hover {
-    text-decoration: underline;
-}
-
-/* Media Query para Escritorio */
-@media (min-width: 768px) {
-    .welcome-screen {
-        flex-direction: row; /* Cambio a dos columnas */
-    }
-
-    .welcome-screen__banner, 
-    .welcome-screen__content {
-        height: 100vh;
-    }
-
-    .welcome-screen__logo {
-        max-width: 300px;
-    }
-}
-
-/*Vista administrador*/
-/* --- ESTILOS PARA EL NUEVO PANEL ADMINISTRADOR --- */
-
-:root {
-    --primary-green: #1b9e49;
-    --dark-green: #137333;
-    --bg-light: #f9f9f9;
-    --white: #ffffff;
-}
-
-.admin-header {
-    padding: 20px;
-    text-align: center;
-}
-
-.admin-header__title {
-    color: var(--dark-green); 
-    font-size: 2rem;
-    font-weight: 600;
-    margin-top: 20px;
-}
-
-.admin-panel {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    width: 100%;
-}
-
-.admin-panel__container {
-    background-color: var(--primary-green);
-    width: 100%;
-    max-width: 900px;
-    padding: 40px 20px;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.profile-card {
-    margin: 30px;
-    position: relative;
-}
-
-.profile-card__image-container {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    border: 4px solid var(--white);
+    height: 100vh;
     overflow: hidden;
 }
 
-.profile-card__img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+/* ==========================================================================
+   3. PANTALLA DE BIENVENIDA
+   ========================================================================== */
+.welcome-brand {
+    flex: 1;
+    background: linear-gradient(135deg, var(--gradient-purple) 0%, var(--gradient-green) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: var(--white);
+    padding: 20px;
 }
 
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: 1fr;
+.welcome-brand__logo {
+    max-width: 180px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.welcome-actions {
+    flex: 1.2;
+    background-color: var(--white);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.welcome-actions__title {
+    font-size: 2rem;
+    color: var(--black);
+    margin-bottom: 40px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.welcome-actions__menu {
+    display: flex;
+    flex-direction: column;
     gap: 20px;
     width: 100%;
-    max-width: 700px;
+    max-width: 320px;
 }
 
-.dashboard-grid__item {
-    background-color: var(--white);
-    color: var(--primary-green);
+.btn-role {
+    display: block;
+    width: 100%;
+    background-color: var(--black);
+    color: var(--white);
     text-decoration: none;
     text-align: center;
-    padding: 15px;
-    border-radius: 8px;
-    font-weight: bold;
-    transition: transform 0.2s, background-color 0.2s;
-}
-
-
-
-@media (min-width: 600px) {
-    .dashboard-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-
-
-/* --- ESTILOS MÓDULO ASIGNAR ROL --- */
-
-.role-manager {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.role-manager__header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.role-manager__back-link {
-    color: var(--brand-green);
-    font-size: 1.5rem;
-    text-decoration: none;
-}
-
-.role-manager__title {
-    color: var(--brand-green);
-    font-size: 2rem;
-    font-weight: 600;
-}
-
-.role-manager__content {
-    background-color: var(--brand-green);
-    padding: 40px;
-    border-radius: 10px;
-}
-
-.request-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.request-item {
-    background-color: var(--white);
-    padding: 20px;
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    align-items: center;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    border-radius: 50px;
+    font-weight: 500;
+    transition: background-color 0.3s ease, transform 0.2s ease;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-.request-item__user-info {
+.btn-role:hover {
+    background-color: #222222;
+    transform: translateY(-1px);
+}
+
+.welcome-actions__link {
+    margin-top: 50px;
+    color: var(--text-dark);
+    text-decoration: none;
+    font-size: 1rem;
+    transition: color 0.2s;
+}
+
+.welcome-actions__link:hover {
+    text-decoration: underline;
+    color: var(--gradient-purple);
+}
+
+/* ==========================================================================
+   7. MÓDULO REGISTRO USUARIO
+   ========================================================================== */
+.register-page {
+    background-color: var(--gradient-purple);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.register-header {
     display: flex;
     align-items: center;
-    gap: 20px;
-    width: 100%;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    color: var(--white);
 }
 
-.request-item__avatar {
+.register-header__title {
     font-size: 2.5rem;
-    color: #333;
+    font-weight: 300;
+    letter-spacing: 1px;
 }
 
-.request-item__name {
-    font-size: 1.1rem;
-    margin-bottom: 5px;
-    color: #222;
+.register-header__logo {
+    height: 60px;
+    width: auto;
 }
 
-.request-item__type {
-    color: #555;
-    font-size: 0.9rem;
-}
-
-.request-item__actions {
-    display: flex;
-    gap: 10px;
+.register-card {
+    background-color: #9239a8; /* Ajuste para mantener contraste morado */
     width: 100%;
+    max-width: 500px;
+    padding: 40px 35px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
-.btn {
-    flex: 1;
+.register-card__group {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.register-card__icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #333;
+    font-size: 1.1rem;
+    z-index: 2;
+}
+
+.register-card__input, .register-card__select {
+    width: 100%;
+    padding: 14px 15px 14px 45px;
     border: none;
-    padding: 12px;
+    background-color: #f3eff5;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    border-radius: 8px;
+    outline: none;
+    transition: background-color 0.3s;
+    appearance: none;
+}
+
+.register-card__group--select::after {
+    content: '\f0d7';
+    font-family: 'Font Awesome 6 Free'; /* Actualizado a versión 6 */
+    font-weight: 900;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dark);
+    pointer-events: none;
+}
+
+.register-card__input:focus, .register-card__select:focus {
+    background-color: var(--white);
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.register-card__button {
+    display: block;
+    width: 50%;
+    margin: 25px auto 0 auto;
+    padding: 14px;
+    background-color: var(--black);
     color: var(--white);
     font-size: 1rem;
     font-weight: bold;
+    border: none;
+    border-radius: 50px;
     cursor: pointer;
-    border-radius: 5px;
-    transition: background 0.2s;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
+.register-card__button:hover {
+    background-color: #1a1a1a;
+    transform: translateY(-1px);
+}
+
+.input-error { 
+    border: 2px solid var(--action-red) !important; 
+    background-color: #fff8f8 !important; 
+}
+
+.feedback-message { 
+    padding: 15px; 
+    border-radius: 5px; 
+    margin-bottom: 20px; 
+    font-size: 0.9rem; 
+}
+
+.error-box { 
+    background-color: #f8d7da; 
+    color: #721c24; 
+    border: 1px solid #f5c6cb; 
+}
+
+/* ==========================================================================
+   8. MÓDULO LOGIN
+   ========================================================================== */
+.login-page {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--bg-light);
+}
+
+.login-container {
+    flex: 1.5;
+    background: linear-gradient(180deg, var(--gradient-green) 0%, var(--gradient-purple) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    position: relative;
+}
+
+.login-container__back {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.login-container__back:hover { color: var(--white); }
+
+.login-form { width: 100%; max-width: 360px; text-align: center; }
+.login-form__title { color: var(--white); font-size: 2.2rem; font-weight: 300; margin-bottom: 25px; letter-spacing: 1px; }
+
+.login-form__avatar-container { margin-bottom: 30px; }
+.login-form__avatar { 
+    font-size: 6rem; color: rgba(255, 255, 255, 0.5); 
+    background: rgba(255, 255, 255, 0.15); 
+    padding: 20px; border-radius: 50%; 
+    width: 130px; height: 130px; 
+    display: inline-flex; align-items: center; justify-content: center; 
+}
+
+.login-form__group { position: relative; margin-bottom: 20px; }
+.login-form__icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: rgba(255, 255, 255, 0.6); font-size: 1.1rem; }
+
+.login-form__input { 
+    width: 100%; padding: 14px 14px 14px 45px; border: none; 
+    background: rgba(255, 255, 255, 0.25); color: var(--white); 
+    font-size: 1rem; border-radius: 6px; outline: none; transition: background 0.3s ease; 
+}
+
+.login-form__input::placeholder { color: rgba(255, 255, 255, 0.7); }
+.login-form__input:focus { background: rgba(255, 255, 255, 0.35); box-shadow: 0 0 4px rgba(255, 255, 255, 0.4); }
+
+.login-form__button { 
+    width: 50%; padding: 12px; background-color: var(--white); 
+    color: var(--text-dark); border: none; border-radius: 6px; 
+    font-size: 1rem; font-weight: bold; cursor: pointer; 
+    margin-top: 15px; transition: background-color 0.3s ease, transform 0.2s ease; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+}
+
+.login-form__button:hover { background-color: #e6e6e6; transform: translateY(-1px); }
+
+.error-message { 
+    background-color: rgba(217, 83, 79, 0.9); 
+    color: var(--white); padding: 10px; border-radius: 6px; 
+    margin-bottom: 20px; font-size: 0.9rem; 
+}
+
+/* ==========================================================================
+   CLASES DE ERROR
+   ========================================================================== */
+
+.input-error { border: 2px solid var(--action-red) !important; background-color: #fff8f8 !important; }
+.feedback-message { padding: 15px; border-radius: 5px; margin-bottom: 20px; font-size: 0.9rem; }
+.error-box { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+/* ==========================================================================
+   4. PANEL ADMINISTRADOR
+   ========================================================================== */
+.admin-header { padding: 20px; text-align: center; }
+.admin-header__title { color: var(--dark-green); font-size: 2rem; font-weight: 600; margin-top: 20px; }
+
+.admin-panel { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; width: 100%; }
+.admin-panel__container { background-color: var(--brand-green); width: 100%; max-width: 900px; padding: 40px 20px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+
+.profile-card__image-container { width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--white); overflow: hidden; margin: 30px; }
+.profile-card__img { width: 100%; height: 100%; object-fit: cover; }
+
+.dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 700px; }
+.dashboard-grid__item { background-color: var(--white); color: var(--brand-green); text-decoration: none; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; transition: transform 0.2s; }
+
+/* ==========================================================================
+   5. MÓDULO ASIGNAR ROL
+   ========================================================================== */
+.role-manager { max-width: 900px; margin: 0 auto; padding: 20px; }
+.role-manager__header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+.role-manager__back-link { color: var(--brand-green); font-size: 1.5rem; text-decoration: none; }
+.role-manager__title { color: var(--brand-green); font-size: 2rem; font-weight: 600; }
+.role-manager__content { background-color: var(--brand-green); padding: 40px; border-radius: 10px; }
+.request-list { list-style: none; display: flex; flex-direction: column; gap: 20px; }
+.request-item { background-color: var(--white); padding: 20px; border-radius: 10px; display: flex; flex-direction: column; gap: 15px; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+.btn { flex: 1; border: none; padding: 12px; color: var(--white); font-size: 1rem; font-weight: bold; cursor: pointer; border-radius: 5px; transition: background 0.2s; }
 .btn--accept { background-color: var(--action-green); }
-.btn--reject { background-color: var(--action-red); }
+.btn--deny { background-color: var(--action-red); }
 
-.btn:hover { opacity: 0.9; }
+/* ==========================================================================
+   6. RESPONSIVE DESIGN
+   ========================================================================== */
+@media (max-width: 768px) {
+    body { flex-direction: column; }
+    .welcome-brand { flex: 0 0 30%; }
+    .welcome-actions { flex: 1; padding: 20px; }
+    .request-item { flex-direction: column; }
+}
 
-/* Responsive para PC */
 @media (min-width: 768px) {
-    .request-item {
-        flex-direction: row;
-        justify-content: space-between;
-    }
-    .request-item__actions {
-        width: auto;
-    }
-    .btn {
-        min-width: 130px;
-    }
+    .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+    .request-item { flex-direction: row; justify-content: space-between; }
+    .btn { min-width: 130px; }
 }
