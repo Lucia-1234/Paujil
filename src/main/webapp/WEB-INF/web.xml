@@ -4,6 +4,22 @@
         <servlet-name>GestionarRoles</servlet-name>
         <servlet-class>com.paujil.controlador.GestionarRoles</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>Filter</servlet-name>
+        <servlet-class>Servlet.Filter</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>Filters</servlet-name>
+        <servlet-class>com.paujil.controlador.Filters</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Filter</servlet-name>
+        <url-pattern>/Filter</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>Filters</servlet-name>
+        <url-pattern>/Filters</url-pattern>
+    </servlet-mapping>
     <session-config>
         <session-timeout>30</session-timeout>
     </session-config>
