@@ -117,5 +117,60 @@ public class UsuarioDao {
                 System.err.println("Error al eliminar usuario: " + e.getMessage());
             }
         }
+        
+        public boolean registrarUsuarioCompleto(String nombre, String correo, String telefono, 
+                                                java.sql.Date fechaNac, String dir, 
+                                                String passHash, int idRol) {
+            Connection con = null;
+            try {
+                con = clase_Conexion.MetodoConectar();
+                con.setAutoCommit(false); // Iniciamos transacción
+
+                // 1. Insertar Usuario
+                String sqlUser = "INSERT INTO usuarios (nombre_usuario, fecha_nacimiento, direccion_usuario, contrasena_usuario, estado_usuario) VALUES (?, ?, ?, ?, ?)";
+                PreparedStatement ps = con.prepareStatement(sqlUser, Statement.RETURN_GENERATED_KEYS);
+                ps.setString(1, nombre);
+                ps.setDate(2, fechaNac);
+                ps.setString(3, dir);
+                ps.setString(4, passHash); // Ya viene cifrado desde el Servlet
+                ps.setString(5, "Pendiente");
+                ps.executeUpdate();
+
+                int idGenerado = 0;
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) idGenerado = rs.getInt(1);
+                }
+
+                // 2. Insertar Correo
+                String sqlCorreo = "INSERT INTO correos (id_usuario, direccion_correo) VALUES (?, ?)";
+                PreparedStatement psC = con.prepareStatement(sqlCorreo);
+                psC.setInt(1, idGenerado);
+                psC.setString(2, correo);
+                psC.executeUpdate();
+
+                // 3. Insertar Teléfono
+                String sqlTelefono = "INSERT INTO telefonos (id_usuario, numero_telefono) VALUES (?, ?)";
+                PreparedStatement psT = con.prepareStatement(sqlTelefono);
+                psT.setInt(1, idGenerado);
+                psT.setString(2, telefono);
+                psT.executeUpdate();
+
+                // 4. Insertar Rol
+                String sqlRol = "INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (?, ?)";
+                PreparedStatement psR = con.prepareStatement(sqlRol);
+                psR.setInt(1, idGenerado);
+                psR.setInt(2, idRol);
+                psR.executeUpdate();
+
+                con.commit(); // Se guarda todo si nada falló
+                return true;
+            } catch (Exception e) {
+                if (con != null) try { con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+                e.printStackTrace();
+                return false;
+            } finally {
+                if (con != null) try { con.close(); } catch (Exception e) {}
+            }
+        }
     
 }
