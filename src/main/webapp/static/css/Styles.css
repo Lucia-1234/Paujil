@@ -347,6 +347,206 @@ body {
 .btn--accept { background-color: var(--action-green); }
 .btn--deny { background-color: var(--action-red); }
 
+
+/* ==========================================================================
+   5. MÓDULO ASIGNAR TRABAJOS
+   ========================================================================== */
+
+.job-assignment {
+    background-color: var(--brand-green); /* Verde principal */
+    padding: 2rem;
+    border-radius: 1rem;
+    max-width: 800px;
+    margin: 2rem auto;
+}
+
+.job-form {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 0.5rem;
+    color: var(--text-dark);
+}
+
+.job-form input, 
+.job-form textarea, 
+.job-form select {
+    border: 1px solid var(--brand-green);
+    background-color: var(--bg-light);
+    padding: 0.8rem;
+    border-radius: 4px;
+}
+
+/* Botones con tus colores de acción */
+.btn-save {
+    background-color: var(--action-green); /* Usando --action-green */
+    color: var(--white);
+    border: none;
+    padding: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background-color: var(--action-red); /* Usando --action-red */
+    color: var(--white);
+    padding: 1rem;
+}
+
+/* ==========================================================================
+   CULTIVOS
+   ========================================================================== */
+
+/* Header */
+.header__back-btn {
+    background: none;
+    border: none; 
+    color: var(--brand-green);
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+} 
+
+/* Contenedor Principal */
+.container {
+    background-color: var(--bg-light);
+    padding: 40px 20px; 
+    border-radius: 8px;
+    max-width: 1000px;
+    margin: 0 auto;
+} 
+
+/* Lista de Cultivos */
+.crop-list {
+    display: flex;
+    flex-direction: column; 
+    gap: 20px;
+} 
+
+/* Tarjeta (Block) */
+.crop-card {
+    background-color: var(--white);
+    border-radius: 15px; 
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border-left: 5px solid var(--brand-green);
+} 
+
+/* Elementos de la Tarjeta */
+.crop-card__image-container {
+    flex: 0 0 200px;
+} 
+
+.crop-card__img {
+    width: 100%;
+    height: 150px; 
+    object-fit: cover;
+    border-radius: 12px;
+} 
+
+.crop-card__content {
+    flex: 1;
+} 
+
+.crop-card__title {
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+    color: var(--dark-green);
+} 
+
+.crop-card__description {
+    font-size: 0.9rem;
+    color: var(--text-dark); 
+    margin-bottom: 10px;
+    line-height: 1.4;
+} 
+
+.crop-card__info p {
+    font-size: 0.9rem;
+    margin-bottom: 5px; 
+} 
+
+/* Botones */
+.crop-card__actions {
+    display: flex;
+    gap: 10px; 
+    margin-top: 15px;
+} 
+
+.btn {
+    display: inline-flex;
+    align-items: center; 
+    justify-content: center;
+    gap: 8px; 
+    padding: 8px 16px;
+    border: none; 
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: var(--white);
+} 
+
+.btn--new {
+    background-color: var(--action-green); 
+    border-radius: 25px; 
+    padding: 10px 20px;
+} 
+
+.btn--add { background-color: var(--gradient-green); } 
+.btn--edit { background-color: var(--brand-green); } 
+.btn--delete { background-color: var(--action-red); } 
+
+.btn:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px); 
+}
+
+
+.registro-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    margin-top: 20px;
+}
+
+.registro-table th, .registro-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+.registro-table th {
+    background-color: var(--bg-light);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.hidden { display: none; }
+.job-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 20px; }
+.job-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; box-shadow: 2px 2px 10px #eee; }
+.job-card h2 { margin-top: 0; color: #2c3e50; }
 /* ==========================================================================
    6. RESPONSIVE DESIGN
    ========================================================================== */
@@ -361,4 +561,17 @@ body {
     .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
     .request-item { flex-direction: row; justify-content: space-between; }
     .btn { min-width: 130px; }
+}
+
+@media (max-width: 768px) {
+    .crop-card {
+        flex-direction: column;
+        align-items: center; 
+        text-align: center;
+    }
+    .crop-card__actions {
+        flex-direction: column;
+        width: 100%; 
+    }
+    .btn { width: 100%; } 
 }

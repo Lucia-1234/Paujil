@@ -112,3 +112,97 @@ function gestionarUsuario(idUsuario, accion) {
         alert("No se pudo conectar con el servidor.");
     });
 }
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. Manejo de Confirmación para eliminar cultivos
+    const container = document.querySelector('.crop-list');
+    
+    if (container) {
+        container.addEventListener('click', (e) => {
+            // Verificar si el clic fue en un botón de eliminar
+            const btnDelete = e.target.closest('.btn--delete');
+            
+            if (btnDelete) {
+                if (!confirm('¿Está seguro de que desea eliminar este cultivo? Esta acción no se puede deshacer.')) {
+                    e.preventDefault(); // Detiene la navegación del enlace <a>
+                }
+            }
+        });
+    }
+
+    // 2. Manejo de "Agregar Registro" (Botón .btn--add)
+    // Usamos delegación para capturar el ID del cultivo asignado en data-id
+    container.addEventListener('click', (e) => {
+        const btnAdd = e.target.closest('.btn--add');
+        
+        if (btnAdd) {
+            const idCultivo = btnAdd.getAttribute('data-id');
+            // Aquí rediriges a tu módulo de registro de labores
+            window.location.href = `agregar_labor.jsp?idCultivo=${idCultivo}`;
+        }
+    });
+
+    // 3. Efecto visual suave (Opcional: puedes añadir más lógica aquí)
+    console.log("Sistema de gestión de cultivos cargado correctamente.");
+});
+
+// Abrir modal para NUEVO registro
+function abrirModalNuevo() {
+    document.getElementById('editId').value = ""; // ID vacío identifica que es nuevo
+    document.getElementById('editNombre').value = "";
+    document.getElementById('editTipo').value = "";
+    document.getElementById('editSiembra').value = "";
+    document.getElementById('editCosecha').value = "";
+    document.getElementById('modalEditar').classList.add('is-active');
+}
+
+// Abrir modal para EDITAR
+function abrirModalEditar(id, nombre, tipo, siembra, cosecha) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editNombre').value = nombre;
+    document.getElementById('editTipo').value = tipo;
+    document.getElementById('editSiembra').value = siembra;
+    document.getElementById('editCosecha').value = cosecha;
+    document.getElementById('modalEditar').classList.add('is-active');
+}
+
+
+const modalConfirm = document.getElementById('modalConfirmacion');
+
+function abrirModalEliminar(url) {
+    document.getElementById('btnConfirmarEliminar').href = url;
+    modalConfirm.style.display = 'flex';
+}
+
+function cerrarModal() {
+    modalConfirm.style.display = 'none';
+}
+
+// Modifica el evento del botón eliminar en tu js actual:
+document.querySelectorAll('.btn--delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault(); // Evita que borre directo
+        abrirModalEliminar(btn.getAttribute('href'));
+    });
+});
+
+function abrirModalEditar(id, nombre, tipo, siembra, cosecha) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editNombre').value = nombre;
+    document.getElementById('editTipo').value = tipo;
+    document.getElementById('editSiembra').value = siembra;
+    document.getElementById('editCosecha').value = cosecha;
+    document.getElementById('modalEditar').classList.add('is-active');
+}
+
+document.getElementById('btnNuevo').addEventListener('click', () => {
+    document.getElementById('modal').classList.remove('hidden');
+});
+
+function editarTrabajo(id) {
+    document.getElementById('modal').classList.remove('hidden');
+    document.getElementById('inputId').value = id;
+    // Aquí puedes añadir lógica para cargar los datos en los inputs mediante AJAX si lo deseas
+}
