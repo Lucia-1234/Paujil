@@ -1,176 +1,226 @@
 package com.paujil.dao;
 
+import com.paujil.modelo.usuario;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import com.paujil.modelo.usuario;
 import paujil.basedatos.clase_Conexion;
 
 public class UsuarioDao {
 
-    /**
-     * Verifica si un correo ya existe en la base de datos.
-     * Es llamado por el ServletRegistro antes de intentar cualquier inserción.
-     */
+    // ── Verificar duplicados ──────────────────────────────────────────────────
+
     public boolean correoExiste(String correo) {
         String sql = "SELECT id_correo FROM correos WHERE direccion_correo = ?";
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            
-            if (con == null) return false;
-            
+
             ps.setString(1, correo);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next(); // Retorna true si encuentra un registro
+                return rs.next();
             }
         } catch (SQLException e) {
-            System.err.println("Error al verificar existencia de correo: " + e.getMessage());
+            System.err.println("Error al verificar correo: " + e.getMessage());
         }
         return false;
     }
 
-    /**
-     * Verifica si un número de teléfono ya existe en la base de datos.
-     */
     public boolean telefonoExiste(String numero) {
         String sql = "SELECT id_telefono FROM telefonos WHERE numero_telefono = ?";
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            
-            if (con == null) return false;
-            
+
             ps.setString(1, numero);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
         } catch (SQLException e) {
-            System.err.println("Error al verificar existencia de teléfono: " + e.getMessage());
+            System.err.println("Error al verificar teléfono: " + e.getMessage());
         }
         return false;
     }
-    
-        public List<usuario> listarUsuariosPendientes() {
-            List<usuario> lista = new ArrayList<>();
-            Connection con = paujil.basedatos.clase_Conexion.MetodoConectar();
 
-            // AQUÍ ESTÁ EL CAMBIO: Verificamos si la conexión es null
-            if (con == null) {
-                System.out.println("ERROR CRÍTICO: La conexión a la BD es NULL.");
-                return lista; // Retornamos lista vacía en lugar de dejar que explote
+    // ── Listar usuarios pendientes de aprobación ──────────────────────────────
+    // Se usa en la vista del administrador para aprobar o denegar registros.
+    // Incluye correo y rol solicitado para que el admin tenga contexto completo.
+    public List<usuario> listarUsuariosPendientes() {
+        List<usuario> lista = new ArrayList<>();
+        String sql = "SELECT u.id_usuario, u.nombre_usuario, u.fecha_nacimiento, "
+                   + "       u.direccion_usuario, c.direccion_correo, "
+                   + "       t.numero_telefono, r.nombre_rol "
+                   + "FROM usuarios u "
+                   + "INNER JOIN correos c    ON u.id_usuario = c.id_usuario "
+                   + "INNER JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario "
+                   + "INNER JOIN roles r      ON ur.id_rol = r.id_rol "
+                   + "LEFT  JOIN telefonos t  ON u.id_usuario = t.id_usuario "
+                   + "WHERE u.estado_usuario = 'Pendiente'";
+
+        try (Connection con = clase_Conexion.MetodoConectar();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                usuario u = new usuario();
+                u.setIdUsuario(rs.getInt("id_usuario"));
+                u.setNombre(rs.getString("nombre_usuario"));
+                u.setFechaNacimiento(rs.getDate("fecha_nacimiento"));
+                u.setDireccion(rs.getString("direccion_usuario"));
+                u.setCorreo(rs.getString("direccion_correo"));
+                u.setTelefono(rs.getString("numero_telefono"));
+                u.setRol(rs.getString("nombre_rol"));   // campo de vista
+                lista.add(u);
             }
 
-            String sql = "SELECT u.id_usuario, u.nombre_usuario FROM usuarios u WHERE u.estado_usuario = 'Pendiente'";
-
-            try (PreparedStatement ps = con.prepareStatement(sql);
-                 ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    usuario u = new usuario();
-                    u.setIdUsuario(rs.getInt("id_usuario"));
-                    u.setNombre(rs.getString("nombre_usuario"));
-                    lista.add(u);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+        } catch (SQLException e) {
+            System.err.println("Error al listar usuarios pendientes: " + e.getMessage());
+            e.printStackTrace();
+        }
         return lista;
     }
 
-        public void actualizarEstado(int idUsuario, String nuevoEstado) {
-            String sql = "UPDATE usuarios SET estado_usuario = ? WHERE id_usuario = ?";
+    // ── Listar usuarios activos (para asignar trabajos, etc.) ─────────────────
+    public List<usuario> listarUsuariosActivos() {
+        List<usuario> lista = new ArrayList<>();
+        String sql = "SELECT u.id_usuario, u.nombre_usuario, c.direccion_correo, "
+                   + "       t.numero_telefono, r.nombre_rol "
+                   + "FROM usuarios u "
+                   + "INNER JOIN correos c      ON u.id_usuario = c.id_usuario "
+                   + "INNER JOIN usuario_rol ur  ON u.id_usuario = ur.id_usuario "
+                   + "INNER JOIN roles r         ON ur.id_rol = r.id_rol "
+                   + "LEFT  JOIN telefonos t     ON u.id_usuario = t.id_usuario "
+                   + "WHERE u.estado_usuario = 'Activo' "
+                   + "ORDER BY u.nombre_usuario ASC";
 
-            try (Connection con = paujil.basedatos.clase_Conexion.MetodoConectar();
-                 PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = clase_Conexion.MetodoConectar();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-                ps.setString(1, nuevoEstado);
-                ps.setInt(2, idUsuario);
-                ps.executeUpdate();
-
-            } catch (SQLException e) {
-                System.err.println("Error al actualizar estado: " + e.getMessage());
+            while (rs.next()) {
+                usuario u = new usuario();
+                u.setIdUsuario(rs.getInt("id_usuario"));
+                u.setNombre(rs.getString("nombre_usuario"));
+                u.setCorreo(rs.getString("direccion_correo"));
+                u.setTelefono(rs.getString("numero_telefono"));
+                u.setRol(rs.getString("nombre_rol"));
+                lista.add(u);
             }
+
+        } catch (SQLException e) {
+            System.err.println("Error al listar usuarios activos: " + e.getMessage());
+            e.printStackTrace();
         }
-        
-        public void eliminarUsuario(int idUsuario) {
-            // Primero borramos de la tabla correos
-            String sqlCorreo = "DELETE FROM correos WHERE id_usuario = ?";
-            // Luego borramos al usuario
-            String sqlUsuario = "DELETE FROM usuarios WHERE id_usuario = ?";
+        return lista;
+    }
 
-            try (Connection con = paujil.basedatos.clase_Conexion.MetodoConectar()) {
-                con.setAutoCommit(false); // Iniciamos transacción
+    // ── Actualizar estado del usuario ─────────────────────────────────────────
+    // Estados válidos según el esquema: 'Activo', 'Pendiente', 'Rechazado'
+    public boolean actualizarEstado(int idUsuario, String nuevoEstado) {
+        String sql = "UPDATE usuarios SET estado_usuario = ? WHERE id_usuario = ?";
+        try (Connection con = clase_Conexion.MetodoConectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
-                try (PreparedStatement psCorreo = con.prepareStatement(sqlCorreo);
-                     PreparedStatement psUsuario = con.prepareStatement(sqlUsuario)) {
+            ps.setString(1, nuevoEstado);
+            ps.setInt(2, idUsuario);
+            return ps.executeUpdate() > 0;
 
-                    psCorreo.setInt(1, idUsuario);
-                    psCorreo.executeUpdate();
-
-                    psUsuario.setInt(1, idUsuario);
-                    psUsuario.executeUpdate();
-
-                    con.commit(); // Guardamos cambios si todo salió bien
-                } catch (SQLException e) {
-                    con.rollback(); // Revertimos si algo falló
-                    throw e;
-                }
-            } catch (SQLException e) {
-                System.err.println("Error al eliminar usuario: " + e.getMessage());
-            }
+        } catch (SQLException e) {
+            System.err.println("Error al actualizar estado del usuario id="
+                    + idUsuario + ": " + e.getMessage());
+            return false;
         }
-        
-        public boolean registrarUsuarioCompleto(String nombre, String correo, String telefono, 
-                                                java.sql.Date fechaNac, String dir, 
-                                                String passHash, int idRol) {
-            Connection con = null;
-            try {
-                con = clase_Conexion.MetodoConectar();
-                con.setAutoCommit(false); // Iniciamos transacción
+    }
 
-                // 1. Insertar Usuario
-                String sqlUser = "INSERT INTO usuarios (nombre_usuario, fecha_nacimiento, direccion_usuario, contrasena_usuario, estado_usuario) VALUES (?, ?, ?, ?, ?)";
-                PreparedStatement ps = con.prepareStatement(sqlUser, Statement.RETURN_GENERATED_KEYS);
+    // ── Eliminar usuario completo ─────────────────────────────────────────────
+    // ON DELETE CASCADE en el esquema se encarga de limpiar correos, telefonos
+    // y usuario_rol automáticamente. No hace falta borrarlos manualmente.
+    public boolean eliminarUsuario(int idUsuario) {
+        String sql = "DELETE FROM usuarios WHERE id_usuario = ?";
+        try (Connection con = clase_Conexion.MetodoConectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idUsuario);
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Error al eliminar usuario id=" + idUsuario
+                    + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    // ── Registrar usuario completo (transacción de 4 tablas) ─────────────────
+    public boolean registrarUsuarioCompleto(String nombre, String correo, String telefono,
+                                            Date fechaNac, String dir,
+                                            String passHash, int idRol) {
+        Connection con = null;
+        try {
+            con = clase_Conexion.MetodoConectar();
+            con.setAutoCommit(false);
+
+            // 1. Insertar usuario — estado inicial 'Pendiente' hasta que el admin apruebe
+            int idGenerado;
+            String sqlUser = "INSERT INTO usuarios "
+                           + "(nombre_usuario, fecha_nacimiento, direccion_usuario, "
+                           + " contrasena_usuario, estado_usuario) "
+                           + "VALUES (?, ?, ?, ?, 'Pendiente')";
+
+            try (PreparedStatement ps = con.prepareStatement(
+                    sqlUser, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, nombre);
                 ps.setDate(2, fechaNac);
                 ps.setString(3, dir);
-                ps.setString(4, passHash); // Ya viene cifrado desde el Servlet
-                ps.setString(5, "Pendiente");
+                ps.setString(4, passHash);
                 ps.executeUpdate();
 
-                int idGenerado = 0;
                 try (ResultSet rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) idGenerado = rs.getInt(1);
+                    if (rs.next()) {
+                        idGenerado = rs.getInt(1);
+                    } else {
+                        con.rollback();
+                        return false;
+                    }
                 }
+            }
 
-                // 2. Insertar Correo
-                String sqlCorreo = "INSERT INTO correos (id_usuario, direccion_correo) VALUES (?, ?)";
-                PreparedStatement psC = con.prepareStatement(sqlCorreo);
-                psC.setInt(1, idGenerado);
-                psC.setString(2, correo);
-                psC.executeUpdate();
+            // 2. Insertar correo
+            try (PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO correos (id_usuario, direccion_correo) VALUES (?, ?)")) {
+                ps.setInt(1, idGenerado);
+                ps.setString(2, correo);
+                ps.executeUpdate();
+            }
 
-                // 3. Insertar Teléfono
-                String sqlTelefono = "INSERT INTO telefonos (id_usuario, numero_telefono) VALUES (?, ?)";
-                PreparedStatement psT = con.prepareStatement(sqlTelefono);
-                psT.setInt(1, idGenerado);
-                psT.setString(2, telefono);
-                psT.executeUpdate();
+            // 3. Insertar teléfono
+            try (PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO telefonos (id_usuario, numero_telefono) VALUES (?, ?)")) {
+                ps.setInt(1, idGenerado);
+                ps.setString(2, telefono);
+                ps.executeUpdate();
+            }
 
-                // 4. Insertar Rol
-                String sqlRol = "INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (?, ?)";
-                PreparedStatement psR = con.prepareStatement(sqlRol);
-                psR.setInt(1, idGenerado);
-                psR.setInt(2, idRol);
-                psR.executeUpdate();
+            // 4. Insertar rol
+            try (PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (?, ?)")) {
+                ps.setInt(1, idGenerado);
+                ps.setInt(2, idRol);
+                ps.executeUpdate();
+            }
 
-                con.commit(); // Se guarda todo si nada falló
-                return true;
-            } catch (Exception e) {
-                if (con != null) try { con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
-                e.printStackTrace();
-                return false;
-            } finally {
-                if (con != null) try { con.close(); } catch (Exception e) {}
+            con.commit();
+            return true;
+
+        } catch (SQLException e) {
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            System.err.println("Error al registrar usuario: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            if (con != null) {
+                try { con.close(); } catch (SQLException e) { e.printStackTrace(); }
             }
         }
-    
+    }
 }

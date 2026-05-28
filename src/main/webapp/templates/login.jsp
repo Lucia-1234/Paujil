@@ -34,7 +34,11 @@
 
             <form action="${pageContext.request.contextPath}/ServletLogin" method="POST">
                 
-                <input type="hidden" name="txtRol" value="${not empty param.rol ? param.rol : '1'}">
+                <select name="txtRol" class="login-form__select" required>
+                    <option value="" disabled selected>Selecciona tu rol</option>
+                    <option value="trabajador">Trabajador</option>
+                    <option value="administrador">Administrador</option>
+                </select>
 
                 <div class="login-form__group">
                     <i class="fa-solid fa-user login-form__icon"></i>
