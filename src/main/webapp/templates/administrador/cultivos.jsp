@@ -94,11 +94,14 @@
         <div class="modal-content">
             <h2>¿Seguro que deseas eliminar?</h2>
             <p>Esta acción no se puede deshacer.</p>
+
             <button type="button" class="btn" onclick="cerrarModal('modalConfirmacion')">Cancelar</button>
-            <a id="btnConfirmarEliminar" href="#" class="btn btn--delete">Confirmar Eliminación</a>
+
+            <%-- Botón real en lugar de enlace <a> --%>
+            <button type="button" id="btnConfirmarEliminar" class="btn btn--delete" 
+                    onclick="ejecutarEliminacion()">Confirmar Eliminación</button>
         </div>
     </div>
-
     <script src="${pageContext.request.contextPath}/static/js/script.js"></script>
 </body>
 </html>

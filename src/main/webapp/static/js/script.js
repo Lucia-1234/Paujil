@@ -192,33 +192,20 @@ window.abrirModalAgregar = function() {
     document.getElementById('modalEditar').style.display = 'flex';
 };
 
-window.abrirModalEliminar = function(idCultivo) {
-    // 1. Verificar qué llega aquí
-    console.log("ID recibido en JS: " + idCultivo); 
-
-    if (!idCultivo || idCultivo === 'null' || idCultivo === 'undefined') {
-        alert("Error: El ID del cultivo es nulo. Revisa el botón en el JSP.");
-        return;
+// Asegúrate de que NO esté dentro de un bloque $(document).ready ni de funciones encerradas
+window.ejecutarEliminacion = function() {
+    if (typeof idParaEliminar !== 'undefined' && idParaEliminar !== null) {
+        window.location.href = "ServletCultivo?accion=eliminar&id=" + idParaEliminar;
+    } else {
+        console.error("No hay un ID seleccionado para eliminar.");
     }
+};
 
-    // 2. Construir la URL asegurando el nombre correcto del parámetro
-    const url = "ServletCultivo?accion=eliminar&id=" + idCultivo;
-    console.log("URL construida: " + url); // Ver en consola F12
-
-    const btn = document.getElementById('btnConfirmarEliminar');
-    btn.href = url;
-    
+window.abrirModalEliminar = function(id) {
+    if (!id || id === 'null') return;
+    idParaEliminar = id;
     document.getElementById('modalConfirmacion').style.display = 'flex';
 };
 
-// Cambia el nombre en scripts.js a este:
-window.confirmarEliminar = function(id) {
-    // Genera la URL que ya tenías en tu JSP
-    const url = "${pageContext.request.contextPath}/ServletCultivo?accion=eliminar&id=" + id_cultivo;
-    
-    // Configura el botón del modal
-    document.getElementById('btnConfirmarEliminar').href = url;
-    
-    // Muestra el modal
-    document.getElementById('modalConfirmacion').style.display = 'flex';
-};
+
+
