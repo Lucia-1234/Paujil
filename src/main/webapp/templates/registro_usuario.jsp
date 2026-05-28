@@ -67,6 +67,13 @@
 
             <button type="submit" class="register-card__button">Registrarse</button>
         </form>
+        
+        <% String msg = (String) request.getAttribute("mensaje");
+        if (msg != null) { %>
+         <div class="feedback-message" style="display:block; color:red;">
+             <%= msg %>
+         </div>
+        <% } %>
     </main>
 
     <script src="${pageContext.request.contextPath}/static/js/scripts.js"></script>

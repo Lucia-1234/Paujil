@@ -1,38 +1,45 @@
-
 package com.paujil.modelo;
 
 import java.sql.Date;
 
 public class trabajo {
-    private int id;
+
+    // Columnas de la tabla 'trabajos'
+    private int    id;
     private String nombre;
     private String descripcion;
-    private Date fechaAsignacion;
-    private Date fechaFinalizacion;
+    private Date   fechaAsignacion;
+    private Date   fechaFinalizacion;
     private String observaciones;
 
-    // Constructor vacío
-    public trabajo() {
-    }
+    // Campos extra solo para vistas — se llenan con JOINs en el DAO, no se persisten
+    private String nombreUsuario;   // nombre del trabajador asignado
+    private String nombreCultivo;   // nombre del cultivo asociado
 
-    // Constructor completo para crear un nuevo trabajo
+    // ── Constructores ─────────────────────────────────────────────────────────
+
+    public trabajo() {}
+
+    // Para registrar un trabajo nuevo desde el servlet
     public trabajo(String nombre, String descripcion, Date fechaAsignacion) {
-        this.nombre = nombre;
-        this.descripcion = descripcion;
+        this.nombre          = nombre;
+        this.descripcion     = descripcion;
         this.fechaAsignacion = fechaAsignacion;
     }
 
-    // Constructor para cuando ya tienes el ID (ej. al editar)
-    public trabajo(int id, String nombre, String descripcion, Date fechaAsignacion, Date fechaFinalizacion, String observaciones) {
-        this.id = id;
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.fechaAsignacion = fechaAsignacion;
+    // Para cuando ya se tiene el ID completo (edición)
+    public trabajo(int id, String nombre, String descripcion,
+                   Date fechaAsignacion, Date fechaFinalizacion, String observaciones) {
+        this.id                = id;
+        this.nombre            = nombre;
+        this.descripcion       = descripcion;
+        this.fechaAsignacion   = fechaAsignacion;
         this.fechaFinalizacion = fechaFinalizacion;
-        this.observaciones = observaciones;
+        this.observaciones     = observaciones;
     }
 
-    // Getters y Setters
+    // ── Getters y Setters ─────────────────────────────────────────────────────
+
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
@@ -50,4 +57,11 @@ public class trabajo {
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+
+    // Campos de vista — solo lectura desde JSPs
+    public String getNombreUsuario() { return nombreUsuario; }
+    public void setNombreUsuario(String nombreUsuario) { this.nombreUsuario = nombreUsuario; }
+
+    public String getNombreCultivo() { return nombreCultivo; }
+    public void setNombreCultivo(String nombreCultivo) { this.nombreCultivo = nombreCultivo; }
 }
