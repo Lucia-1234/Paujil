@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Asignar Roles - Finca El Paujil</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/CSS/Styles.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/asignar_rol.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -52,18 +52,14 @@
                                 </div>
 
                                 <div class="request-item__actions">
-                                    <%-- Cada botón envía su propio form para evitar JS innecesario --%>
-                                    <form action="${pageContext.request.contextPath}/GestionarRoles"
-                                          method="POST" style="display:inline;">
+                                    <form action="${pageContext.request.contextPath}/GestionarRoles" method="POST">
                                         <input type="hidden" name="id_usuario" value="${u.idUsuario}">
-                                        <button type="submit" name="accion" value="aceptar"
-                                                class="btn btn--accept">Aceptar</button>
+                                        <button type="submit" name="accion" value="aceptar" class="btn btn--accept">Aceptar</button>
                                     </form>
-                                    <form action="${pageContext.request.contextPath}/GestionarRoles"
-                                          method="POST" style="display:inline;">
+
+                                    <form action="${pageContext.request.contextPath}/GestionarRoles" method="POST">
                                         <input type="hidden" name="id_usuario" value="${u.idUsuario}">
-                                        <button type="submit" name="accion" value="denegar"
-                                                class="btn btn--deny">Denegar</button>
+                                        <button type="submit" name="accion" value="denegar" class="btn btn--deny">Negar</button>
                                     </form>
                                 </div>
                             </li>

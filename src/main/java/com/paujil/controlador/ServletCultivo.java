@@ -9,64 +9,54 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Date;
+import java.util.List;
 
-@WebServlet("/ServletCultivo") // Ajustado a /ServletCultivo como usas en el JSP
+@WebServlet("/ServletCultivo")
 public class ServletCultivo extends HttpServlet {
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
-        throws ServletException, IOException {
-    
-        // 1. Recibir parámetros comunes
-        String idStr = request.getParameter("id"); // Este llega del campo oculto en el modal
-        String nombre = request.getParameter("nombreCultivo");
-        String tipo = request.getParameter("tipoCultivo");
-        Date fSiembra = Date.valueOf(request.getParameter("fechaSiembra"));
-
-        String fCosechaStr = request.getParameter("fechaCosecha");
-        Date fCosecha = (fCosechaStr != null && !fCosechaStr.isEmpty()) ? Date.valueOf(fCosechaStr) : null;
-
-        // String bioprep = request.getParameter("nombreBiopreparado"); // Lo usaremos cuando implementemos la tabla relacional
-
-        CultivoDao dao = new CultivoDao();
-        boolean operacionExitosa = false;
-
-        // 2. Determinar si es Edición o Registro Nuevo
-        if (idStr != null && !idStr.isEmpty()) {
-            // ES UNA EDICIÓN (UPDATE)
-            int id = Integer.parseInt(idStr);
-            // Nota: Asegúrate de tener este método en tu DAO actualizado
-            operacionExitosa = dao.actualizarCultivo(id, nombre, tipo, fSiembra, fCosecha);
-        } else {
-            // ES UN REGISTRO NUEVO (INSERT)
-            cultivo c = new cultivo(nombre, tipo, fSiembra, fCosecha);
-            operacionExitosa = dao.registrarCultivo(c);
-        }
-
-        // 3. Respuesta al usuario
-        if (operacionExitosa) {
-            response.sendRedirect("lista_cultivos.jsp?status=success");
-        } else {
-            response.sendRedirect("lista_cultivos.jsp?status=error");
-        }
-    }
-    // Manejo de eliminaciones (GET)
+    // --- MANEJO DE VISTA Y ELIMINACIÓN ---
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
         String accion = request.getParameter("accion");
-        
+        CultivoDao dao = new CultivoDao();
+
         if ("eliminar".equals(accion)) {
             int id = Integer.parseInt(request.getParameter("id"));
-            CultivoDao dao = new CultivoDao();
-            
-            // Asumiendo que tienes un método eliminarCultivo en tu Dao
-            boolean eliminado = dao.eliminarCultivo(id);
-            
-            if (eliminado) {
-                response.sendRedirect("cultivos.jsp?eliminado=true");
-            } else {
-                response.sendRedirect("cultivos.jsp?error=true");
-            }
+            dao.eliminarCultivo(id);
+            // Redirigimos al mismo servlet para recargar la lista
+            response.sendRedirect("ServletCultivo"); 
+            return;
         }
+
+        // Listar cultivos
+        List<cultivo> lista = dao.listarCultivos(); 
+        request.setAttribute("listaCultivos", lista);
+        request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
+               .forward(request, response);
+    }
+
+    // --- MANEJO DE REGISTRO Y EDICIÓN ---
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        String idStr = request.getParameter("id");
+        String nombre = request.getParameter("nombreCultivo");
+        String tipo = request.getParameter("tipoCultivo");
+        Date fSiembra = Date.valueOf(request.getParameter("fechaSiembra"));
+        String fCosechaStr = request.getParameter("fechaCosecha");
+        Date fCosecha = (fCosechaStr != null && !fCosechaStr.isEmpty()) ? Date.valueOf(fCosechaStr) : null;
+
+        CultivoDao dao = new CultivoDao();
+
+        if (idStr != null && !idStr.isEmpty()) {
+            dao.actualizarCultivo(Integer.parseInt(idStr), nombre, tipo, fSiembra, fCosecha);
+        } else {
+            cultivo c = new cultivo(nombre, tipo, fSiembra, fCosecha);
+            dao.registrarCultivo(c);
+        }
+
+        // REDIRIGIMOS AL SERVLET (doGet), NO AL JSP, para que recargue la lista
+        response.sendRedirect("ServletCultivo");
     }
 }

@@ -114,95 +114,111 @@ function gestionarUsuario(idUsuario, accion) {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    
-    // 1. Manejo de Confirmación para eliminar cultivos
-    const container = document.querySelector('.crop-list');
-    
-    if (container) {
-        container.addEventListener('click', (e) => {
-            // Verificar si el clic fue en un botón de eliminar
-            const btnDelete = e.target.closest('.btn--delete');
-            
-            if (btnDelete) {
-                if (!confirm('¿Está seguro de que desea eliminar este cultivo? Esta acción no se puede deshacer.')) {
-                    e.preventDefault(); // Detiene la navegación del enlace <a>
-                }
-            }
-        });
-    }
+/**
+ * scripts.js - Gestor centralizado del Panel de Administrador
+ */
 
-    // 2. Manejo de "Agregar Registro" (Botón .btn--add)
-    // Usamos delegación para capturar el ID del cultivo asignado en data-id
-    container.addEventListener('click', (e) => {
-        const btnAdd = e.target.closest('.btn--add');
-        
-        if (btnAdd) {
-            const idCultivo = btnAdd.getAttribute('data-id');
-            // Aquí rediriges a tu módulo de registro de labores
-            window.location.href = `agregar_labor.jsp?idCultivo=${idCultivo}`;
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("Sistema de gestión inicializado.");
+
+    // 1. Delegación de eventos para botones de ELIMINAR (Cultivos)
+    // Usamos delegación para que funcione incluso si la lista se actualiza dinámicamente
+    document.addEventListener('click', (e) => {
+        const btnDelete = e.target.closest('.btn--delete');
+        if (btnDelete) {
+            e.preventDefault();
+            const url = btnDelete.getAttribute('href');
+            abrirModalEliminar(url);
         }
     });
-
-    // 3. Efecto visual suave (Opcional: puedes añadir más lógica aquí)
-    console.log("Sistema de gestión de cultivos cargado correctamente.");
 });
 
-// Abrir modal para NUEVO registro
-function abrirModalNuevo() {
-    document.getElementById('editId').value = ""; // ID vacío identifica que es nuevo
+// --- MÓDULO: GESTIÓN DE USUARIOS (Asíncrona) ---
+window.gestionarUsuario = function(idUsuario, accion) {
+    const formData = new URLSearchParams();
+    formData.append('id_usuario', idUsuario);
+    formData.append('accion', accion);
+
+    fetch("GestionarRoles", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
+    })
+    .then(response => {
+        if (response.ok) {
+            const item = document.getElementById(`user-${idUsuario}`);
+            if (item) {
+                item.style.transition = "opacity 0.5s";
+                item.style.opacity = "0";
+                setTimeout(() => item.remove(), 500);
+            }
+        } else {
+            alert("Error al procesar la solicitud.");
+        }
+    })
+    .catch(error => console.error('Error de red:', error));
+};
+
+// --- MÓDULO: CONTROL DE MODALES ---
+
+// Cierre genérico
+window.cerrarModal = function(id) {
+    console.log("Cerrando modal: " + id); // Para verificar que se ejecuta
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.style.display = 'none';
+    } else {
+        console.error("No se encontró el elemento con ID: " + id);
+    }
+};
+
+// Abrir edición (Carga los datos en el modal)
+window.abrirModalEditar = function(id, nombre, tipo, siembra, cosecha) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editNombre').value = nombre;
+    document.getElementById('editTipo').value = tipo;
+    document.getElementById('editSiembra').value = siembra;
+    document.getElementById('editCosecha').value = cosecha;
+    document.getElementById('modalEditar').style.display = 'flex';
+};
+
+// Abrir registro nuevo (Limpia los datos)
+window.abrirModalAgregar = function() {
+    document.getElementById('editId').value = ""; // Vacío = Nuevo
     document.getElementById('editNombre').value = "";
     document.getElementById('editTipo').value = "";
     document.getElementById('editSiembra').value = "";
     document.getElementById('editCosecha').value = "";
-    document.getElementById('modalEditar').classList.add('is-active');
-}
+    document.getElementById('modalEditar').style.display = 'flex';
+};
 
-// Abrir modal para EDITAR
-function abrirModalEditar(id, nombre, tipo, siembra, cosecha) {
-    document.getElementById('editId').value = id;
-    document.getElementById('editNombre').value = nombre;
-    document.getElementById('editTipo').value = tipo;
-    document.getElementById('editSiembra').value = siembra;
-    document.getElementById('editCosecha').value = cosecha;
-    document.getElementById('modalEditar').classList.add('is-active');
-}
+window.abrirModalEliminar = function(idCultivo) {
+    // 1. Verificar qué llega aquí
+    console.log("ID recibido en JS: " + idCultivo); 
 
+    if (!idCultivo || idCultivo === 'null' || idCultivo === 'undefined') {
+        alert("Error: El ID del cultivo es nulo. Revisa el botón en el JSP.");
+        return;
+    }
 
-const modalConfirm = document.getElementById('modalConfirmacion');
+    // 2. Construir la URL asegurando el nombre correcto del parámetro
+    const url = "ServletCultivo?accion=eliminar&id=" + idCultivo;
+    console.log("URL construida: " + url); // Ver en consola F12
 
-function abrirModalEliminar(url) {
+    const btn = document.getElementById('btnConfirmarEliminar');
+    btn.href = url;
+    
+    document.getElementById('modalConfirmacion').style.display = 'flex';
+};
+
+// Cambia el nombre en scripts.js a este:
+window.confirmarEliminar = function(id) {
+    // Genera la URL que ya tenías en tu JSP
+    const url = "${pageContext.request.contextPath}/ServletCultivo?accion=eliminar&id=" + id_cultivo;
+    
+    // Configura el botón del modal
     document.getElementById('btnConfirmarEliminar').href = url;
-    modalConfirm.style.display = 'flex';
-}
-
-function cerrarModal() {
-    modalConfirm.style.display = 'none';
-}
-
-// Modifica el evento del botón eliminar en tu js actual:
-document.querySelectorAll('.btn--delete').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        e.preventDefault(); // Evita que borre directo
-        abrirModalEliminar(btn.getAttribute('href'));
-    });
-});
-
-function abrirModalEditar(id, nombre, tipo, siembra, cosecha) {
-    document.getElementById('editId').value = id;
-    document.getElementById('editNombre').value = nombre;
-    document.getElementById('editTipo').value = tipo;
-    document.getElementById('editSiembra').value = siembra;
-    document.getElementById('editCosecha').value = cosecha;
-    document.getElementById('modalEditar').classList.add('is-active');
-}
-
-document.getElementById('btnNuevo').addEventListener('click', () => {
-    document.getElementById('modal').classList.remove('hidden');
-});
-
-function editarTrabajo(id) {
-    document.getElementById('modal').classList.remove('hidden');
-    document.getElementById('inputId').value = id;
-    // Aquí puedes añadir lógica para cargar los datos en los inputs mediante AJAX si lo deseas
-}
+    
+    // Muestra el modal
+    document.getElementById('modalConfirmacion').style.display = 'flex';
+};

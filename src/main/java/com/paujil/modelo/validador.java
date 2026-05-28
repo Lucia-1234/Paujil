@@ -13,7 +13,7 @@ public class validador {
     // 1. Validación de contraseña
     public static boolean esContrasenaSegura(String password) {
         if (password == null) return false;
-        String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$";
+        String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!\\.\\-_*]).{5,}$";
         return password.matches(regex);
     }
 

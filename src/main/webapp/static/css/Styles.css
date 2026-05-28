@@ -320,14 +320,17 @@ body {
 /* ==========================================================================
    4. PANEL ADMINISTRADOR
    ========================================================================== */
-.admin-header { padding: 20px; text-align: center; }
+.admin-layout { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 80vh; /* Ocupa casi toda la pantalla sin tocar el body */ width: 100%;
+}
+
+.admin-header { width: 100%; text-align: center; margin-bottom: 20px }
 .admin-header__title { color: var(--dark-green); font-size: 2rem; font-weight: 600; margin-top: 20px; }
 
 .admin-panel { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; width: 100%; }
 .admin-panel__container { background-color: var(--brand-green); width: 100%; max-width: 900px; padding: 40px 20px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
 
-.profile-card__image-container { width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--white); overflow: hidden; margin: 30px; }
-.profile-card__img { width: 100%; height: 100%; object-fit: cover; }
+.profile-card__image-container { width: 200px; height: 200px; border-radius: 50%; overflow: hidden; margin: 30px; }
+.profile-card__img { width: 150%; height: 150%; object-fit: cover; }
 
 .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 700px; }
 .dashboard-grid__item { background-color: var(--white); color: var(--brand-green); text-decoration: none; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; transition: transform 0.2s; }

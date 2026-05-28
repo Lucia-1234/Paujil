@@ -11,36 +11,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrador - Finca El Paujil</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/CSS/Styles.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/Styles.css">
 </head>
 <body>
-    
-    <header class="admin-header">
-        <h1 class="admin-header__title">Administrador</h1>
-    </header>
+    <div class="admin-layout">
+        <header class="admin-header">
+            <h1 class="admin-header__title">Administrador</h1>
+        </header>
 
-    <main class="admin-panel">
-        <section class="admin-panel__container">
-            
-            <div class="profile-card">
-                <div class="profile-card__image-container">
-                    <img src="${pageContext.request.contextPath}/static/IMG/download 4.png" alt="Perfil" class="profile-card__img">
+        <main class="admin-panel">
+            <section class="admin-panel__container">
+
+                <div class="profile-card">
+                    <div class="profile-card__image-container">
+                        <img src="${pageContext.request.contextPath}/static/IMG/dos.jpeg" alt="Perfil" class="profile-card__img">
+                    </div>
                 </div>
-            </div>
 
-            <nav class="dashboard-grid">
-                <a href="${pageContext.request.contextPath}/asignar_rol.jsp" class="dashboard-grid__item">Asignar rol</a>
-                <a href="${pageContext.request.contextPath}/asignar_trabajos.jsp" class="dashboard-grid__item">Asignar trabajos</a>
-                <a href="${pageContext.request.contextPath}/administrar_usuarios.jsp" class="dashboard-grid__item">Administrar usuarios</a>
-                <a href="${pageContext.request.contextPath}/cultivos.jsp" class="dashboard-grid__item">Cultivos</a>
-                <a href="${pageContext.request.contextPath}/insumos.jsp" class="dashboard-grid__item">Insumos</a>
-                <a href="${pageContext.request.contextPath}/biopreparados.jsp" class="dashboard-grid__item">Biopreparados</a>
-                <a href="${pageContext.request.contextPath}/gestion_trabajos.jsp" class="dashboard-grid__item">Gestión de trabajos</a>
-                <a href="${pageContext.request.contextPath}/Perfil.jsp" class="dashboard-grid__item">Perfil</a>
-            </nav> 
-            
-        </section>
-    </main>
+                <nav class="dashboard-grid">
+                    <a href="${pageContext.request.contextPath}/GestionarRoles" class="dashboard-grid__item">Asignar rol</a>
+                    <a href="${pageContext.request.contextPath}/templates/administrador/asignar_trabajos.jsp" class="dashboard-grid__item">Asignar trabajos</a>
+                    <a href="${pageContext.request.contextPath}/templates/administrador/administrar_usuarios.jsp" class="dashboard-grid__item">Administrar usuarios</a>
+                    <a href="${pageContext.request.contextPath}/ServletCultivo" class="dashboard-grid__item">Cultivos</a>
+                    <a href="${pageContext.request.contextPath}/templates/administrador/biopreparados.jsp" class="dashboard-grid__item">Biopreparados</a>
+                    <a href="${pageContext.request.contextPath}/templates/administrador/listar_trabajos.jsp" class="dashboard-grid__item">Gestión de trabajos</a>
+                </nav> 
+
+            </section>
+        </main>
+    </div>
 
 </body>
 </html>

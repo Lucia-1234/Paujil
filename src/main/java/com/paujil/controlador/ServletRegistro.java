@@ -124,8 +124,18 @@ public class ServletRegistro extends HttpServlet {
 
     private void enviarError(String mensaje, HttpServletRequest request,
             HttpServletResponse response) throws ServletException, IOException {
-        request.setAttribute("mensaje", mensaje);
-        request.getRequestDispatcher("/templates/registro_usuario.jsp")
-               .forward(request, response);
+                // Guardamos el mensaje de error
+            request.setAttribute("mensaje", mensaje);
+
+            // Guardamos los valores para que el usuario no tenga que volver a escribirlos
+            request.setAttribute("nombre", request.getParameter("txtNombre"));
+            request.setAttribute("email", request.getParameter("txtEmail"));
+            request.setAttribute("telefono", request.getParameter("txtTelefono"));
+            request.setAttribute("direccion", request.getParameter("txtDireccion"));
+            request.setAttribute("fecha", request.getParameter("txtFechaNacimiento"));
+            // ... repetir para los campos que quieras preservar
+
+            request.getRequestDispatcher("/templates/registro_usuario.jsp")
+                   .forward(request, response);
     }
 }

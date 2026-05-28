@@ -12,6 +12,7 @@ public class trabajo {
     private Date   fechaFinalizacion;
     private String observaciones;
 
+
     // Campos extra solo para vistas — se llenan con JOINs en el DAO, no se persisten
     private String nombreUsuario;   // nombre del trabajador asignado
     private String nombreCultivo;   // nombre del cultivo asociado

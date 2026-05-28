@@ -81,15 +81,15 @@ public class TrabajoDao {
     // ── Listar todos los trabajos con su cultivo y usuario asignado ───────────
     public List<trabajo> listarTrabajosCompletos() {
         List<trabajo> lista = new ArrayList<>();
-        String sql = "SELECT t.id_trabajo, t.nombre_trabajo, t.descripcion_trabajo, "
-                   + "       t.fecha_asignacion, t.fecha_finalizacion, t.observaciones_trabajo, "
-                   + "       u.nombre_usuario, c.nombre_cultivo "
-                   + "FROM trabajos t "
-                   + "INNER JOIN asignar_trabajos at2 ON t.id_trabajo = at2.id_trabajo "
-                   + "INNER JOIN usuarios u           ON at2.id_usuario = u.id_usuario "
-                   + "INNER JOIN trabajos_cultivo tc  ON t.id_trabajo = tc.id_trabajo "
-                   + "INNER JOIN cultivos c           ON tc.id_cultivo = c.id_cultivo "
-                   + "ORDER BY t.fecha_asignacion DESC";
+        // Usamos la tabla 'asignaciones' para conectar todo
+        String sql = "SELECT a.id_trabajo, t.nombre_trabajo, t.descripcion_trabajo, "
+                   + "t.fecha_asignacion, t.fecha_finalizacion, t.observaciones_trabajo, "
+                   + "u.nombre_usuario, c.nombre_cultivo "
+                   + "FROM asignaciones a "
+                   + "JOIN trabajos t ON a.id_trabajo = t.id_trabajo "
+                   + "JOIN usuarios u ON a.id_usuario = u.id_usuario "
+                   + "JOIN cultivos c ON a.id_cultivo = c.id_cultivo "
+                   + "ORDER BY a.fecha_asignacion DESC";
 
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -119,15 +119,14 @@ public class TrabajoDao {
     // Útil para el panel del trabajador: solo ve sus propios trabajos.
     public List<trabajo> listarPorUsuario(int idUsuario) {
         List<trabajo> lista = new ArrayList<>();
-        String sql = "SELECT t.id_trabajo, t.nombre_trabajo, t.descripcion_trabajo, "
-                   + "       t.fecha_asignacion, t.fecha_finalizacion, t.observaciones_trabajo, "
-                   + "       c.nombre_cultivo "
-                   + "FROM trabajos t "
-                   + "INNER JOIN asignar_trabajos at2 ON t.id_trabajo = at2.id_trabajo "
-                   + "INNER JOIN trabajos_cultivo tc  ON t.id_trabajo = tc.id_trabajo "
-                   + "INNER JOIN cultivos c           ON tc.id_cultivo = c.id_cultivo "
-                   + "WHERE at2.id_usuario = ? "
-                   + "ORDER BY t.fecha_asignacion DESC";
+        String sql = "SELECT a.id_trabajo, t.nombre_trabajo, t.descripcion_trabajo, "
+                   + "t.fecha_asignacion, t.fecha_finalizacion, t.observaciones_trabajo, "
+                   + "c.nombre_cultivo "
+                   + "FROM asignaciones a "
+                   + "JOIN trabajos t ON a.id_trabajo = t.id_trabajo "
+                   + "JOIN cultivos c ON a.id_cultivo = c.id_cultivo "
+                   + "WHERE a.id_usuario = ? "
+                   + "ORDER BY a.fecha_asignacion DESC";
 
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {

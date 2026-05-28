@@ -46,13 +46,13 @@ public class UsuarioDao {
     public List<usuario> listarUsuariosPendientes() {
         List<usuario> lista = new ArrayList<>();
         String sql = "SELECT u.id_usuario, u.nombre_usuario, u.fecha_nacimiento, "
-                   + "       u.direccion_usuario, c.direccion_correo, "
-                   + "       t.numero_telefono, r.nombre_rol "
+                   + "u.direccion_usuario, c.direccion_correo, "
+                   + "t.numero_telefono, r.nombre_rol "
                    + "FROM usuarios u "
-                   + "INNER JOIN correos c    ON u.id_usuario = c.id_usuario "
+                   + "INNER JOIN correos c ON u.id_usuario = c.id_usuario "
                    + "INNER JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario "
-                   + "INNER JOIN roles r      ON ur.id_rol = r.id_rol "
-                   + "LEFT  JOIN telefonos t  ON u.id_usuario = t.id_usuario "
+                   + "INNER JOIN roles r ON ur.id_rol = r.id_rol "
+                   + "LEFT JOIN telefonos t ON u.id_usuario = t.id_usuario "
                    + "WHERE u.estado_usuario = 'Pendiente'";
 
         try (Connection con = clase_Conexion.MetodoConectar();
@@ -71,9 +71,9 @@ public class UsuarioDao {
                 lista.add(u);
             }
 
+            System.out.println("Usuarios pendientes encontrados: " + lista.size()); // <--- AÑADE ESTO
         } catch (SQLException e) {
-            System.err.println("Error al listar usuarios pendientes: " + e.getMessage());
-            e.printStackTrace();
+            e.printStackTrace(); // <--- ASEGÚRATE DE VER ESTO EN LA CONSOLA
         }
         return lista;
     }
