@@ -32,7 +32,7 @@
                 <nav class="dashboard-grid">
                     <a href="${pageContext.request.contextPath}/GestionarRoles" class="dashboard-grid__item">Asignar rol</a>
                     <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=prepararCreacion" class="dashboard-grid__item">Asignar trabajos</a>
-                    <a href="${pageContext.request.contextPath}/templates/administrador/administrar_usuarios.jsp" class="dashboard-grid__item">Administrar usuarios</a>
+                    <a href="${pageContext.request.contextPath}/ServletUsuario?accion=listar" class="dashboard-grid__item">Administrar usuarios</a>
                     <a href="${pageContext.request.contextPath}/ServletCultivo" class="dashboard-grid__item">Cultivos</a>
                     <a href="${pageContext.request.contextPath}/templates/administrador/biopreparados.jsp" class="dashboard-grid__item">Biopreparados</a>
                     <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=listar" class="dashboard-grid__item">Gestión de trabajos</a>
