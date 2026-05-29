@@ -23,16 +23,15 @@ public class clase_Conexion {
             Class.forName("com.mysql.cj.jdbc.Driver");
             
             //se define el url de conexion y las credenciales que java usara para conectarse a mysql 
-            String url = "jdbc:mysql://localhost:3306/finca_pajuil"
-                    + "";
-            String root = "root";
-            String password = "#Aprendiz2024";
+            String url      = System.getenv().getOrDefault("DB_URL",  "jdbc:mysql://localhost:3306/finca_pajuil");
+            String usuario  = System.getenv().getOrDefault("DB_USER", "root");
+            String password = System.getenv().getOrDefault("DB_PASS", "");
             
             //se abre la conexion de la base de datos que se asigna a la variable con (de tipo Connection)
             //@DriverManager.getConnection:es el método que pide al DriverManager que use el driver JDBC de MySQL para conectarse.
             con = DriverManager.getConnection(
                     url,        //contiene la direccion de la base de datos 
-                    root,       //usuario de la base de datos 
+                    usuario,       //usuario de la base de datos 
                     password    //contraseña del usuario
             );
             
