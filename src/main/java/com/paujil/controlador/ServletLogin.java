@@ -67,7 +67,7 @@ public class ServletLogin extends HttpServlet {
                         if ("administrador".equalsIgnoreCase(rs.getString("nombre_rol"))) {
                             response.sendRedirect(request.getContextPath() + "/templates/administrador/menu_administrador.jsp");
                         } else {
-                            response.sendRedirect(request.getContextPath() + "/templates/trabajador/panel_trabajador.jsp");
+                            response.sendRedirect(request.getContextPath() + "/templates/trabajador/menu_trabajador.jsp");
                         }
                     } else {
                         // Contraseña incorrecta

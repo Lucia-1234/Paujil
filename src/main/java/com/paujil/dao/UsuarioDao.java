@@ -39,9 +39,6 @@ public class UsuarioDao {
     }
 
     // ── Listar usuarios pendientes de aprobación ──────────────────────────────
-    // Se usa en la vista del administrador para aprobar o denegar registros.
-    // La subconsulta en correo y el LEFT JOIN en teléfono garantizan exactamente
-    // una fila por usuario, sin duplicados por múltiples roles o teléfonos.
     public List<usuario> listarUsuariosPendientes() {
         List<usuario> lista = new ArrayList<>();
         String sql = "SELECT u.id_usuario, u.nombre_usuario, u.fecha_nacimiento, "
@@ -80,12 +77,10 @@ public class UsuarioDao {
         return lista;
     }
 
-    // ── Listar usuarios activos (para asignar trabajos, etc.) ─────────────────
-    // Subconsultas en lugar de JOINs para evitar filas duplicadas cuando un
-    // usuario tiene múltiples roles o teléfonos registrados.
+    // ── Listar usuarios activos ───────────────────────────────────────────────
     public List<usuario> listarUsuariosActivos() {
         List<usuario> lista = new ArrayList<>();
-        String sql = "SELECT u.id_usuario, u.nombre_usuario, "
+        String sql = "SELECT u.id_usuario, u.nombre_usuario, u.estado_usuario, "
                    + "(SELECT c.direccion_correo FROM correos c "
                    + " WHERE c.id_usuario = u.id_usuario LIMIT 1) AS direccion_correo, "
                    + "(SELECT t.numero_telefono FROM telefonos t "
@@ -105,6 +100,7 @@ public class UsuarioDao {
                 usuario u = new usuario();
                 u.setIdUsuario(rs.getInt("id_usuario"));
                 u.setNombre(rs.getString("nombre_usuario"));
+                u.setEstado(rs.getString("estado_usuario"));
                 u.setCorreo(rs.getString("direccion_correo"));
                 u.setTelefono(rs.getString("numero_telefono"));
                 u.setRol(rs.getString("nombre_rol"));
@@ -113,6 +109,44 @@ public class UsuarioDao {
 
         } catch (SQLException e) {
             System.err.println("Error al listar usuarios activos: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return lista;
+    }
+
+    // ── Listar todos los usuarios (Activo + Inactivo) ─────────────────────────
+    // Se usa en la vista "Todos" del panel de administrador, con filtro cliente-side.
+    public List<usuario> listarTodosLosUsuarios() {
+        List<usuario> lista = new ArrayList<>();
+        String sql = "SELECT u.id_usuario, u.nombre_usuario, u.estado_usuario, "
+                   + "(SELECT c.direccion_correo FROM correos c "
+                   + " WHERE c.id_usuario = u.id_usuario LIMIT 1) AS direccion_correo, "
+                   + "(SELECT t.numero_telefono FROM telefonos t "
+                   + " WHERE t.id_usuario = u.id_usuario LIMIT 1) AS numero_telefono, "
+                   + "(SELECT r.nombre_rol FROM usuario_rol ur "
+                   + " INNER JOIN roles r ON ur.id_rol = r.id_rol "
+                   + " WHERE ur.id_usuario = u.id_usuario LIMIT 1) AS nombre_rol "
+                   + "FROM usuarios u "
+                   + "WHERE u.estado_usuario IN ('Activo', 'Inactivo') "
+                   + "ORDER BY u.nombre_usuario ASC";
+
+        try (Connection con = clase_Conexion.MetodoConectar();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                usuario u = new usuario();
+                u.setIdUsuario(rs.getInt("id_usuario"));
+                u.setNombre(rs.getString("nombre_usuario"));
+                u.setEstado(rs.getString("estado_usuario"));
+                u.setCorreo(rs.getString("direccion_correo"));
+                u.setTelefono(rs.getString("numero_telefono"));
+                u.setRol(rs.getString("nombre_rol"));
+                lista.add(u);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al listar todos los usuarios: " + e.getMessage());
             e.printStackTrace();
         }
         return lista;

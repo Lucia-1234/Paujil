@@ -16,7 +16,7 @@ public class ServletTrabajo extends HttpServlet {
 
     private TrabajoDao trabajoDao = new TrabajoDao();
 
-    // ── Guarda de sesión (administrador) ─────────────────────────────────────
+    // ── Guarda de sesión (administrador) ──────────────────────────────────────
     private boolean sesionAdminValida(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         HttpSession session = request.getSession(false);
@@ -29,17 +29,30 @@ public class ServletTrabajo extends HttpServlet {
         return true;
     }
 
-    // ── GET: Listar, Eliminar y Preparar creación ────────────────────────────
+    // ── Guarda de sesión (cualquier usuario autenticado) ──────────────────────
+    private boolean sesionValida(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("idUsuario") == null) {
+            response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=acceso_denegado");
+            return false;
+        }
+        return true;
+    }
+
+    // ── GET ───────────────────────────────────────────────────────────────────
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        if (!sesionAdminValida(request, response)) return;
 
         String accion = request.getParameter("accion");
         if (accion == null) accion = "listar";
 
         switch (accion) {
+
+            // ── Acciones de ADMINISTRADOR ──────────────────────────────────
             case "listar":
+                if (!sesionAdminValida(request, response)) return;
                 List<trabajo> lista = trabajoDao.listarTrabajosCompletos();
                 request.setAttribute("listaTrabajos", lista);
                 request.getRequestDispatcher("/templates/administrador/listar_trabajos.jsp")
@@ -47,6 +60,7 @@ public class ServletTrabajo extends HttpServlet {
                 break;
 
             case "eliminar":
+                if (!sesionAdminValida(request, response)) return;
                 String idStr = request.getParameter("id");
                 if (idStr == null || idStr.trim().isEmpty()) {
                     response.sendRedirect("ServletTrabajo?accion=listar&status=error");
@@ -62,6 +76,7 @@ public class ServletTrabajo extends HttpServlet {
                 break;
 
             case "prepararCreacion":
+                if (!sesionAdminValida(request, response)) return;
                 CultivoDao cDao = new CultivoDao();
                 UsuarioDao uDao = new UsuarioDao();
                 request.setAttribute("listaCultivos", cDao.listarCultivos());
@@ -70,16 +85,54 @@ public class ServletTrabajo extends HttpServlet {
                        .forward(request, response);
                 break;
 
+            // ── Acción de TRABAJADOR ───────────────────────────────────────
+            case "misTrabajos":
+                if (!sesionValida(request, response)) return;
+                HttpSession session = request.getSession(false);
+                int idUsuario = (int) session.getAttribute("idUsuario");
+                List<trabajo> misTrabajos = trabajoDao.listarTrabajosPorUsuario(idUsuario);
+                request.setAttribute("listaMisTrabajos", misTrabajos);
+                request.getRequestDispatcher("/templates/trabajador/trabajos_asignados.jsp")
+                       .forward(request, response);
+                break;
+
             default:
                 response.sendRedirect("ServletTrabajo?accion=listar");
         }
     }
 
-    // ── POST: Registrar nuevo trabajo ─────────────────────────────────────────
+    // ── POST ──────────────────────────────────────────────────────────────────
+    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        if (!sesionAdminValida(request, response)) return;
+        String accion = request.getParameter("accion");
+        if (accion == null) accion = "";
+
+        switch (accion) {
+
+            // ── Admin: registrar nuevo trabajo ─────────────────────────────
+            case "registrar":
+                if (!sesionAdminValida(request, response)) return;
+                registrarTrabajo(request, response);
+                break;
+
+            // ── Trabajador: guardar avance o marcar finalizado ─────────────
+            case "actualizarEstado":
+                if (!sesionValida(request, response)) return;
+                actualizarEstado(request, response);
+                break;
+
+            default:
+                // Compatibilidad: si no viene accion en POST se asume registrar (admin)
+                if (!sesionAdminValida(request, response)) return;
+                registrarTrabajo(request, response);
+        }
+    }
+
+    // ── Helper: registrar trabajo (admin) ─────────────────────────────────────
+    private void registrarTrabajo(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
         String nombre       = request.getParameter("nombreTrabajo");
         String desc         = request.getParameter("descripcion");
@@ -111,14 +164,37 @@ public class ServletTrabajo extends HttpServlet {
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Helper: actualizar estado (trabajador) ────────────────────────────────
+    private void actualizarEstado(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String idTrabajoStr = request.getParameter("idTrabajo");
+        String observaciones = request.getParameter("observaciones");
+        String btnAccion     = request.getParameter("btnAccion"); // "guardar" | "finalizar"
+
+        if (estaVacio(idTrabajoStr)) {
+            response.sendRedirect("ServletTrabajo?accion=misTrabajos&status=error");
+            return;
+        }
+
+        try {
+            int idTrabajo = Integer.parseInt(idTrabajoStr);
+            boolean finalizar = "finalizar".equals(btnAccion);
+            boolean ok = trabajoDao.actualizarEstadoTrabajo(idTrabajo, observaciones, finalizar);
+            String status = ok ? (finalizar ? "finalizado" : "guardado") : "error";
+            response.sendRedirect("ServletTrabajo?accion=misTrabajos&status=" + status);
+        } catch (NumberFormatException e) {
+            response.sendRedirect("ServletTrabajo?accion=misTrabajos&status=error");
+        }
+    }
+
+    // ── Helpers generales ──────────────────────────────────────────────────────
     private boolean estaVacio(String valor) {
         return valor == null || valor.trim().isEmpty();
     }
 
     private void enviarError(String mensaje, HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Recarga los selectores para que el formulario se pueda re-mostrar correctamente
         request.setAttribute("mensajeError", mensaje);
         request.setAttribute("listaCultivos", new CultivoDao().listarCultivos());
         request.setAttribute("listaUsuarios", new UsuarioDao().listarUsuariosActivos());

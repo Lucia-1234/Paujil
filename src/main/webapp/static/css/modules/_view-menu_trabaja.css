@@ -1,10 +1,10 @@
 /* ==========================================================================
-   MÓDULO DE VISTA: _view-menu.css
-   Vista: menu_administrador.jsp
+   MÓDULO DE VISTA: _view-menu_trabaja.css
+   Vista: menu_trabajador.jsp
    Panel de bienvenida con foto de perfil y grid de accesos rápidos.
    ========================================================================== */
 
-.admin-layout {
+.trabaja-layout {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -13,16 +13,16 @@
     padding: 20px;
 }
 
-.admin-header { width: 100%; text-align: center; margin-bottom: 20px; }
+.trabaja-header { width: 100%; text-align: center; margin-bottom: 20px; }
 
-.admin-header__title {
-    color: var(--color-dark-green);
+.trabaja-header__title {
+    color: var(--color-modal-purple);
     font-size: 2rem;
     font-weight: 600;
     margin-top: 20px;
 }
 
-.admin-panel {
+.trabaja-panel {
     flex: 1;
     display: flex;
     justify-content: center;
@@ -31,8 +31,8 @@
     width: 100%;
 }
 
-.admin-panel__container {
-    background-color: var(--color-brand-green);
+.trabaja-panel__container {
+    background-color: var(--color-modal-purple);
     width: 100%;
     max-width: 880px;
     padding: 40px 24px;
@@ -70,7 +70,7 @@
 
 .dashboard-grid__item {
     background-color: var(--color-white);
-    color: var(--color-brand-green);
+    color: var(--color-modal-purple);
     text-decoration: none;
     text-align: center;
     padding: 15px;

@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/base.css">
     <title>Gestión de Usuarios - Finca El Paujil</title>
     <style>
-        .tabs { display:flex; gap:var(--spacing-sm); margin-bottom:var(--spacing-lg); }
+        /* ── Pestañas principales ── */
+        .tabs { display:flex; gap:var(--spacing-sm); margin-bottom:var(--spacing-lg); flex-wrap:wrap; }
         .tab-btn {
             padding: var(--spacing-sm) var(--spacing-md);
             border: 2px solid var(--color-brand-green);
@@ -24,6 +25,47 @@
             background: var(--color-brand-green);
             color: var(--color-white);
         }
+
+        /* ── Filtros de estado (cliente-side) ── */
+        .filtros-estado {
+            display: flex;
+            gap: var(--spacing-xs);
+            margin-bottom: var(--spacing-md);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filtros-estado span {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-muted);
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .filtro-btn {
+            padding: 4px 14px;
+            border-radius: var(--radius-pill);
+            border: 1.5px solid currentColor;
+            background: transparent;
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .filtro-btn[data-filtro="todos"]    { color: #555; border-color: #aaa; }
+        .filtro-btn[data-filtro="Activo"]   { color: var(--color-dark-green); border-color: var(--color-dark-green); }
+        .filtro-btn[data-filtro="Inactivo"] { color: var(--color-action-red); border-color: var(--color-action-red); }
+
+        .filtro-btn.seleccionado[data-filtro="todos"]    { background:#555;    color:#fff; }
+        .filtro-btn.seleccionado[data-filtro="Activo"]   { background:var(--color-dark-green); color:#fff; }
+        .filtro-btn.seleccionado[data-filtro="Inactivo"] { background:var(--color-action-red);  color:#fff; }
+
+        /* Contador de resultados visibles */
+        .contador-resultados {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-muted);
+            margin-left: auto;
+        }
+
+        /* ── Badges ── */
         .badge {
             display: inline-block;
             padding: 2px 8px;
@@ -34,6 +76,8 @@
         .badge--activo    { background:#d6f0de; color:var(--color-dark-green); }
         .badge--inactivo  { background:#fde8e8; color:var(--color-action-red); }
         .badge--pendiente { background:#fff3cd; color:#856404; }
+
+        /* ── Tabla ── */
         .usuario-table th {
             background: var(--color-brand-green);
             color: var(--color-white);
@@ -42,7 +86,18 @@
         }
         .usuario-table td { padding: var(--spacing-sm) var(--spacing-md); }
         .usuario-table tr:nth-child(even) { background: var(--color-light-green-bg); }
+        .usuario-table tr.fila-oculta { display: none; }
+
         .acciones { display:flex; gap:var(--spacing-xs); flex-wrap:wrap; }
+
+        /* Fila especial cuando no hay resultados tras filtrar */
+        .fila-sin-resultados { display: none; }
+        .fila-sin-resultados td {
+            text-align: center;
+            padding: var(--spacing-lg);
+            color: var(--color-text-muted);
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -62,23 +117,40 @@
 
     <%
         String vista = (String) request.getAttribute("vista");
-        if (vista == null) vista = "activos";
+        if (vista == null) vista = "todos";
         boolean esPendientes = "pendientes".equals(vista);
     %>
 
-    <%-- Pestañas --%>
+    <%-- Pestañas principales --%>
     <div class="tabs">
         <a href="${pageContext.request.contextPath}/ServletUsuario">
-            <button class="tab-btn <%= "activos".equals(vista) ? "activo" : "" %>">
-                <i class="fa-solid fa-users"></i> Usuarios activos
+            <button class="tab-btn <%= !esPendientes ? "activo" : "" %>">
+                <i class="fa-solid fa-users"></i> Usuarios
             </button>
         </a>
         <a href="${pageContext.request.contextPath}/ServletUsuario?accion=pendientes">
-            <button class="tab-btn <%= "pendientes".equals(vista) ? "activo" : "" %>">
+            <button class="tab-btn <%= esPendientes ? "activo" : "" %>">
                 <i class="fa-solid fa-user-clock"></i> Pendientes de aprobación
             </button>
         </a>
     </div>
+
+    <%-- Filtros de estado (solo se muestran en la vista "todos") --%>
+    <% if (!esPendientes) { %>
+    <div class="filtros-estado" id="filtrosEstado">
+        <span><i class="fa-solid fa-filter"></i> Filtrar:</span>
+        <button class="filtro-btn seleccionado" data-filtro="todos">
+            Todos
+        </button>
+        <button class="filtro-btn" data-filtro="Activo">
+            <i class="fa-solid fa-circle-check"></i> Activos
+        </button>
+        <button class="filtro-btn" data-filtro="Inactivo">
+            <i class="fa-solid fa-circle-pause"></i> Inactivos
+        </button>
+        <span class="contador-resultados" id="contadorResultados"></span>
+    </div>
+    <% } %>
 
     <%-- Tabla --%>
     <%
@@ -87,11 +159,11 @@
     %>
         <p class="no-data">
             <i class="fa-solid fa-circle-info"></i>
-            No hay usuarios <%= esPendientes ? "pendientes" : "activos" %> en este momento.
+            No hay usuarios <%= esPendientes ? "pendientes" : "registrados" %> en este momento.
         </p>
     <% } else { %>
         <div style="overflow-x:auto;">
-        <table class="table usuario-table" style="width:100%; border-collapse:collapse;">
+        <table class="table usuario-table" id="tablaUsuarios" style="width:100%; border-collapse:collapse;">
             <thead>
                 <tr>
                     <th>#</th>
@@ -99,29 +171,38 @@
                     <th>Correo</th>
                     <th>Teléfono</th>
                     <th>Rol</th>
-                    <% if (!esPendientes) { %><th>Estado</th><th>F. Nacimiento</th><% } %>
+                    <% if (esPendientes) { %>
+                        <th>F. Nacimiento</th>
+                    <% } else { %>
+                        <th>Estado</th>
+                    <% } %>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
             <% int num = 1; for (usuario u : lista) {
-                   String nomEsc = u.getNombre().replace("'", "\\'");
+                   String nomEsc   = u.getNombre().replace("'", "\\'");
+                   String estadoU  = u.getEstado() != null ? u.getEstado() : "";
+                   String badgeCss = "Activo".equals(estadoU)   ? "badge--activo"
+                                   : "Inactivo".equals(estadoU) ? "badge--inactivo"
+                                   : "badge--pendiente";
             %>
-                <tr id="usuario-<%= u.getIdUsuario() %>">
+                <tr id="usuario-<%= u.getIdUsuario() %>"
+                    data-estado="<%= estadoU %>">
                     <td><%= num++ %></td>
                     <td><strong><%= u.getNombre() %></strong></td>
                     <td><%= u.getCorreo()   != null ? u.getCorreo()   : "—" %></td>
                     <td><%= u.getTelefono() != null ? u.getTelefono() : "—" %></td>
                     <td><%= u.getRol()      != null ? u.getRol()      : "—" %></td>
 
-                    <% if (!esPendientes) {
-                           String estado = u.getEstado();
-                           String badge  = "Activo".equals(estado)   ? "badge--activo"
-                                         : "Inactivo".equals(estado) ? "badge--inactivo"
-                                         : "badge--pendiente";
-                    %>
-                        <td><span class="badge <%= badge %>"><%= estado != null ? estado : "—" %></span></td>
+                    <% if (esPendientes) { %>
                         <td><%= u.getFechaNacimiento() != null ? u.getFechaNacimiento() : "—" %></td>
+                    <% } else { %>
+                        <td>
+                            <span class="badge <%= badgeCss %>">
+                                <%= !estadoU.isEmpty() ? estadoU : "—" %>
+                            </span>
+                        </td>
                     <% } %>
 
                     <td>
@@ -131,7 +212,6 @@
                                class="btn btn--edit btn--sm">
                                 <i class="fa-solid fa-user-check"></i> Aprobar
                             </a>
-                            <%-- Los data-* evitan escapar comillas dentro de onclick --%>
                             <button class="btn btn--delete btn--sm"
                                     data-id="<%= u.getIdUsuario() %>"
                                     data-nombre="<%= nomEsc %>"
@@ -139,7 +219,8 @@
                                 <i class="fa-solid fa-user-xmark"></i> Denegar
                             </button>
                         <% } else { %>
-                            <% if ("Inactivo".equals(u.getEstado())) { %>
+                            <%-- Botón Activar / Desactivar según estado actual --%>
+                            <% if ("Inactivo".equals(estadoU)) { %>
                                 <a href="${pageContext.request.contextPath}/ServletUsuario?accion=activar&id=<%= u.getIdUsuario() %>"
                                    class="btn btn--edit btn--sm">
                                     <i class="fa-solid fa-circle-check"></i> Activar
@@ -164,6 +245,13 @@
                     </td>
                 </tr>
             <% } %>
+            <%-- Fila que aparece cuando ningún usuario coincide con el filtro --%>
+            <tr class="fila-sin-resultados" id="filaSinResultados">
+                <td colspan="7">
+                    <i class="fa-solid fa-circle-info"></i>
+                    No hay usuarios con ese estado.
+                </td>
+            </tr>
             </tbody>
         </table>
         </div>
@@ -171,7 +259,7 @@
 </main>
 
 <%-- ══════════════════════════════════════════
-     MODALES — sin JavaScript inline
+     MODALES
      ══════════════════════════════════════ --%>
 
 <%-- Modal Desactivar --%>
@@ -186,7 +274,19 @@
     </div>
 </div>
 
-<%-- Modal Eliminar usuario activo --%>
+<%-- Modal Activar --%>
+<div id="modalActivar" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <h2>¿Activar usuario?</h2>
+        <p id="textoActivar"></p>
+        <div class="acciones" style="justify-content:flex-end; margin-top:12px;">
+            <button class="btn" onclick="cerrarModal('modalActivar')">Cancelar</button>
+            <button class="btn btn--edit" onclick="ejecutarAccionUsuario()">Activar</button>
+        </div>
+    </div>
+</div>
+
+<%-- Modal Eliminar usuario --%>
 <div id="modalEliminarUsuario" class="modal-overlay" style="display:none;">
     <div class="modal-content">
         <h2>¿Eliminar usuario?</h2>
@@ -211,5 +311,55 @@
 </div>
 
 <script src="${pageContext.request.contextPath}/static/js/script.js"></script>
+
+<%-- ── Lógica de filtrado cliente-side ── --%>
+<script>
+(function () {
+    const filtros    = document.querySelectorAll('.filtro-btn');
+    const tabla      = document.getElementById('tablaUsuarios');
+    const sinResults = document.getElementById('filaSinResultados');
+    const contador   = document.getElementById('contadorResultados');
+
+    if (!filtros.length || !tabla) return;
+
+    function actualizarContador(visibles, total) {
+        if (contador) {
+            contador.textContent = visibles === total
+                ? total + ' usuario' + (total !== 1 ? 's' : '')
+                : visibles + ' de ' + total + ' usuario' + (total !== 1 ? 's' : '');
+        }
+    }
+
+    function aplicarFiltro(filtro) {
+        const filas = tabla.querySelectorAll('tbody tr[data-estado]');
+        let visibles = 0;
+
+        filas.forEach(function (fila) {
+            const estado = fila.getAttribute('data-estado');
+            const mostrar = filtro === 'todos' || estado === filtro;
+            fila.classList.toggle('fila-oculta', !mostrar);
+            if (mostrar) visibles++;
+        });
+
+        // Mostrar aviso si ninguna fila pasa el filtro
+        if (sinResults) {
+            sinResults.style.display = visibles === 0 ? 'table-row' : 'none';
+        }
+
+        actualizarContador(visibles, filas.length);
+    }
+
+    // Inicializar con "todos" y mostrar contador
+    aplicarFiltro('todos');
+
+    filtros.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            filtros.forEach(function (b) { b.classList.remove('seleccionado'); });
+            btn.classList.add('seleccionado');
+            aplicarFiltro(btn.getAttribute('data-filtro'));
+        });
+    });
+})();
+</script>
 </body>
 </html>

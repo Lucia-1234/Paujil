@@ -14,14 +14,14 @@ import java.util.List;
 /**
  * Gestión de usuarios desde el panel de administrador.
  *
- *  GET  /ServletUsuario               → lista todos los usuarios activos
- *  GET  /ServletUsuario?accion=pendientes → lista usuarios pendientes de aprobación
+ *  GET  /ServletUsuario                        → lista todos (activos + inactivos)
+ *  GET  /ServletUsuario?accion=pendientes      → lista usuarios pendientes de aprobación
  *  GET  /ServletUsuario?accion=activar&id=X    → activa usuario X
  *  GET  /ServletUsuario?accion=desactivar&id=X → desactiva usuario X
  *  GET  /ServletUsuario?accion=aprobar&id=X    → aprueba usuario pendiente (pasa a Activo)
  *  GET  /ServletUsuario?accion=denegar&id=X    → deniega usuario pendiente (lo elimina)
- *  GET  /ServletUsuario?accion=eliminar&id=X   → elimina usuario activo X
- *  POST /ServletUsuario                → guarda cambios de edición de usuario
+ *  GET  /ServletUsuario?accion=eliminar&id=X   → elimina usuario X
+ *  POST /ServletUsuario                        → guarda cambios de edición de usuario
  */
 @WebServlet("/ServletUsuario")
 public class ServletUsuarios extends HttpServlet {
@@ -49,7 +49,6 @@ public class ServletUsuarios extends HttpServlet {
         String idStr  = req.getParameter("id");
         UsuarioDao dao = new UsuarioDao();
 
-        // Acciones que cambian estado y redirigen
         if (accion != null) {
             switch (accion) {
 
@@ -62,12 +61,10 @@ public class ServletUsuarios extends HttpServlet {
                     return;
 
                 case "aprobar":
-                    // Aprobar = poner en Activo un usuario Pendiente
                     cambiarEstado(dao, idStr, "Activo", res, req);
                     return;
 
                 case "denegar":
-                    // Denegar = eliminar el usuario pendiente
                     eliminar(dao, idStr, res, req);
                     return;
 
@@ -88,10 +85,11 @@ public class ServletUsuarios extends HttpServlet {
             }
         }
 
-        // Vista por defecto: usuarios activos
-        List<usuario> activos = dao.listarUsuariosActivos();
-        req.setAttribute("listaUsuarios", activos);
-        req.setAttribute("vista", "activos");
+        // Vista por defecto: todos los usuarios (activos + inactivos)
+        // El filtrado entre "activos" / "inactivos" / "todos" se hace en cliente (JS).
+        List<usuario> todos = dao.listarTodosLosUsuarios();
+        req.setAttribute("listaUsuarios", todos);
+        req.setAttribute("vista", "todos");
         req.getRequestDispatcher("/templates/administrador/gestion_usuarios.jsp")
            .forward(req, res);
     }
@@ -137,10 +135,11 @@ public class ServletUsuarios extends HttpServlet {
                 dao.actualizarEstado(Integer.parseInt(idStr), nuevoEstado);
             } catch (NumberFormatException ignored) {}
         }
-        // Volvemos a la vista desde donde se llamó (activos o pendientes)
         String vista = req.getParameter("vista");
-        String redirect = "ServletUsuario" + ("pendientes".equals(vista) ? "?accion=pendientes" : "");
-        res.sendRedirect(redirect + (redirect.contains("?") ? "&" : "?") + "status=success");
+        String redirect = "pendientes".equals(vista)
+                ? "ServletUsuario?accion=pendientes&status=success"
+                : "ServletUsuario?status=success";
+        res.sendRedirect(redirect);
     }
 
     private void eliminar(UsuarioDao dao, String idStr,
@@ -152,7 +151,9 @@ public class ServletUsuarios extends HttpServlet {
             } catch (NumberFormatException ignored) {}
         }
         String vista = req.getParameter("vista");
-        String redirect = "ServletUsuario" + ("pendientes".equals(vista) ? "?accion=pendientes" : "");
-        res.sendRedirect(redirect + (redirect.contains("?") ? "&" : "?") + "status=success");
+        String redirect = "pendientes".equals(vista)
+                ? "ServletUsuario?accion=pendientes&status=success"
+                : "ServletUsuario?status=success";
+        res.sendRedirect(redirect);
     }
 }
