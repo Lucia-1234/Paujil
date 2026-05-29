@@ -10,7 +10,7 @@ public class trabajo {
     private String descripcion;
     private Date   fechaAsignacion;
     private Date   fechaFinalizacion;
-    private String observaciones;
+    private String observaciones_trabajo;
 
 
     // Campos extra solo para vistas — se llenan con JOINs en el DAO, no se persisten
@@ -36,7 +36,7 @@ public class trabajo {
         this.descripcion       = descripcion;
         this.fechaAsignacion   = fechaAsignacion;
         this.fechaFinalizacion = fechaFinalizacion;
-        this.observaciones     = observaciones;
+        this.observaciones_trabajo     = observaciones;
     }
 
     // ── Getters y Setters ─────────────────────────────────────────────────────
@@ -56,8 +56,8 @@ public class trabajo {
     public Date getFechaFinalizacion() { return fechaFinalizacion; }
     public void setFechaFinalizacion(Date fechaFinalizacion) { this.fechaFinalizacion = fechaFinalizacion; }
 
-    public String getObservaciones() { return observaciones; }
-    public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+    public String getObservaciones() { return observaciones_trabajo; }
+    public void setObservaciones(String observaciones) { this.observaciones_trabajo = observaciones; }
 
     // Campos de vista — solo lectura desde JSPs
     public String getNombreUsuario() { return nombreUsuario; }

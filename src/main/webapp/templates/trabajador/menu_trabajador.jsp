@@ -41,7 +41,7 @@
                     <a href="${pageContext.request.contextPath}/templates/administrador/biopreparados.jsp"
                     class="dashboard-grid__item">Recetario de biopreparados</a>
 
-                    <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=listar"
+                    <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=finalizados"
                     class="dashboard-grid__item">Trabajos completados</a>
                 </nav>
 

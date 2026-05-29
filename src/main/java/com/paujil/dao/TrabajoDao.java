@@ -92,25 +92,27 @@ public class TrabajoDao {
     // ── 3. Listar trabajos asignados a un trabajador específico ─────────────
     public List<trabajo> listarTrabajosPorUsuario(int idUsuario) {
         List<trabajo> lista = new ArrayList<>();
+        // JOIN con cultivos para traer el nombre del cultivo
         String sql = "SELECT t.id_trabajo, t.nombre_trabajo, t.descripcion_trabajo, "
                    + "t.fecha_asignacion, t.fecha_finalizacion, t.observaciones_trabajo, "
                    + "c.nombre_cultivo "
-                   + "FROM asignaciones a "
-                   + "JOIN trabajos t ON a.id_trabajo = t.id_trabajo "
+                   + "FROM trabajos t "
+                   + "JOIN asignaciones a ON t.id_trabajo = a.id_trabajo "
                    + "JOIN cultivos c ON a.id_cultivo = c.id_cultivo "
                    + "WHERE a.id_usuario = ? "
                    + "ORDER BY t.fecha_asignacion DESC";
 
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection conn = clase_Conexion.MetodoConectar();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, idUsuario);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     trabajo t = new trabajo();
                     t.setId(rs.getInt("id_trabajo"));
-                    t.setNombre(rs.getString("nombre_trabajo"));
-                    t.setDescripcion(rs.getString("descripcion_trabajo"));
+                    t.setNombre(rs.getString("nombre_trabajo") != null ? rs.getString("nombre_trabajo") : "Sin nombre");
+                    t.setDescripcion(rs.getString("descripcion_trabajo") != null ? rs.getString("descripcion_trabajo") : "Sin descripción");
                     t.setFechaAsignacion(rs.getDate("fecha_asignacion"));
                     t.setFechaFinalizacion(rs.getDate("fecha_finalizacion"));
                     t.setObservaciones(rs.getString("observaciones_trabajo"));
@@ -118,12 +120,45 @@ public class TrabajoDao {
                     lista.add(t);
                 }
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return lista;
     }
+    
+        public List<trabajo> listarTrabajosFinalizadosPorUsuario(int idUsuario) {
+        List<trabajo> lista = new ArrayList<>();
+        // Filtramos donde la fecha_finalizacion NO sea NULL
+        String sql = "SELECT t.id_trabajo, t.nombre_trabajo, t.descripcion_trabajo, "
+                   + "t.fecha_asignacion, t.fecha_finalizacion, t.observaciones_trabajo, c.nombre_cultivo "
+                   + "FROM trabajos t "
+                   + "JOIN asignaciones a ON t.id_trabajo = a.id_trabajo "
+                   + "JOIN cultivos c ON a.id_cultivo = c.id_cultivo "
+                   + "WHERE a.id_usuario = ? AND t.fecha_finalizacion IS NOT NULL "
+                   + "ORDER BY t.fecha_finalizacion DESC";
 
+        try (Connection conn = clase_Conexion.MetodoConectar();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, idUsuario);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    trabajo t = new trabajo();
+                    t.setId(rs.getInt("id_trabajo"));
+                    t.setNombre(rs.getString("nombre_trabajo"));
+                    t.setFechaFinalizacion(rs.getDate("fecha_finalizacion"));
+                    t.setObservaciones(rs.getString("observaciones_trabajo"));
+                    t.setNombreCultivo(rs.getString("nombre_cultivo"));
+                    lista.add(t);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return lista;
+    }
+    
+    
     // ── 4. Guardar avance (observaciones) o marcar como finalizado ───────────
     public boolean actualizarEstadoTrabajo(int idTrabajo, String observaciones, boolean finalizar) {
         String sql = finalizar

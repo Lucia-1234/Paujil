@@ -44,6 +44,8 @@ public class ServletTrabajo extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        
+        System.out.println("DEBUG: Entrando al Servlet, accion=" + request.getParameter("accion"));
 
         String accion = request.getParameter("accion");
         if (accion == null) accion = "listar";
@@ -91,13 +93,24 @@ public class ServletTrabajo extends HttpServlet {
                 HttpSession session = request.getSession(false);
                 int idUsuario = (int) session.getAttribute("idUsuario");
                 List<trabajo> misTrabajos = trabajoDao.listarTrabajosPorUsuario(idUsuario);
-                request.setAttribute("listaMisTrabajos", misTrabajos);
-                request.getRequestDispatcher("/templates/trabajador/trabajos_asignados.jsp")
-                       .forward(request, response);
-                break;
 
-            default:
-                response.sendRedirect("ServletTrabajo?accion=listar");
+                // DEBUG: Ver si realmente hay datos antes de ir al JSP
+                System.out.println("DEBUG: Cantidad de trabajos enviados: " + (misTrabajos != null ? misTrabajos.size() : "NULL"));
+
+                request.setAttribute("listaMisTrabajos", misTrabajos);
+                request.getRequestDispatcher("/templates/trabajador/trabajos_asignados.jsp").forward(request, response);
+                break;
+                
+            case "finalizados":
+                if (!sesionValida(request, response)) return;
+                HttpSession session2 = request.getSession(false);
+                int idUserFin = (int) session2.getAttribute("idUsuario");
+                // Llamamos al método que filtra solo los terminados
+                request.setAttribute("listaFinalizados", trabajoDao.listarTrabajosFinalizadosPorUsuario(idUserFin));
+                request.getRequestDispatcher("/templates/trabajador/trabajos_finalizados.jsp").forward(request, response);
+                break; 
+                
+            
         }
     }
 
