@@ -1,0 +1,26 @@
+/* ==========================================================================
+   base.css — Punto de entrada principal
+   Importa todos los módulos del sistema de diseño en orden correcto.
+
+   CÓMO USARLO EN CADA JSP:
+     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/base.css">
+     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/views/login.css">
+     (reemplazar "login.css" por la vista correspondiente)
+   ========================================================================== */
+
+/* 1. Tokens de diseño (debe ir primero) */
+@import url("modules/_variables.css");
+
+/* 2. Reset del documento */
+@import url("modules/_reset.css");
+
+/* 3. Layout: panel verde, encabezado, tablas */
+@import url("modules/_layout.css");
+
+/* 4. Componentes reutilizables */
+@import url("modules/_buttons.css");
+@import url("modules/_cards.css");
+@import url("modules/_modals.css");
+@import url("modules/_forms.css");
+
+/* Nota: _view-index.css solo se carga desde views/index.css, no desde base.css */

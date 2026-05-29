@@ -1,0 +1,128 @@
+/* ==========================================================================
+   MÓDULO: _buttons.css
+   Todos los estilos de botones del sistema.
+
+   CLASES DISPONIBLES:
+     .btn               — base obligatoria para todos los botones
+     .btn--accept       — verde, confirmar / aceptar solicitud
+     .btn--edit         — verde, abrir modal de edición
+     .btn--add          — verde, agregar registro dentro de tarjeta
+     .btn--deny         — rojo, denegar solicitud
+     .btn--delete       — rojo, eliminar elemento
+     .btn--new          — pastilla blanca, "+ Agregar ..."  (pie de panel)
+     .btn--save-form    — verde oscuro, guardar formulario principal
+     .btn--cancel       — contorno blanco sobre fondo rojo (en confirm-modal)
+   ========================================================================== */
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: 9px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-body);
+    font-weight: 500;
+    color: var(--color-white);
+    cursor: pointer;
+    transition: filter var(--transition-fast), transform var(--transition-fast);
+    white-space: nowrap;
+}
+
+.btn:hover  { filter: brightness(.91); }
+.btn:active { transform: scale(.97); }
+
+/* ── Variantes de color ──────────────────────────────────────────────────── */
+.btn--accept,
+.btn--edit,
+.btn--add {
+    background-color: var(--color-action-green);
+}
+
+.btn--deny,
+.btn--delete {
+    background-color: var(--color-action-red);
+}
+
+/* ── Pastilla "+ Agregar ..." (esquina inferior del panel verde) ─────────── */
+.btn--new {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 8px 18px;
+    background-color: var(--color-white);
+    color: var(--color-dark-green);
+    border: none;
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter var(--transition-fast);
+}
+.btn--new:hover { filter: brightness(.94); }
+
+/* ── Guardar formulario principal (fondo blanco, texto morado) ───────────── */
+.btn--save-form {
+    display: block;
+    margin: var(--spacing-lg) auto 0;
+    padding: 11px 32px;
+    background-color: var(--color-white);
+    color: var(--color-modal-purple-dk);
+    border: none;
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter var(--transition-fast);
+}
+.btn--save-form:hover { filter: brightness(.94); }
+
+/* ── Cancelar (sobre fondo rojo en confirm-modal) ────────────────────────── */
+.btn--cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 22px;
+    background: transparent;
+    border: 2px solid var(--color-white);
+    border-radius: var(--radius-sm);
+    color: var(--color-white);
+    font-size: var(--font-size-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+.btn--cancel:hover { background: rgba(255, 255, 255, .2); }
+
+/* ── Confirmar eliminación (blanco, texto rojo, dentro de confirm-modal) ─── */
+.btn--confirm-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 22px;
+    background-color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-action-red);
+    font-size: var(--font-size-body);
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter var(--transition-fast);
+}
+.btn--confirm-delete:hover { filter: brightness(.94); }
+
+/* ── Guardar en formulario de asignar trabajos (verde sólido) ─────────────── */
+.btn--save-job {
+    background-color: var(--color-brand-green);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px 30px;
+    font-size: var(--font-size-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter var(--transition-fast);
+}
+.btn--save-job:hover { filter: brightness(.9); }

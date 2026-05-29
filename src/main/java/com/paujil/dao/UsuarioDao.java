@@ -14,7 +14,6 @@ public class UsuarioDao {
         String sql = "SELECT id_correo FROM correos WHERE direccion_correo = ?";
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
             ps.setString(1, correo);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -29,7 +28,6 @@ public class UsuarioDao {
         String sql = "SELECT id_telefono FROM telefonos WHERE numero_telefono = ?";
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
             ps.setString(1, numero);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -42,18 +40,22 @@ public class UsuarioDao {
 
     // ── Listar usuarios pendientes de aprobación ──────────────────────────────
     // Se usa en la vista del administrador para aprobar o denegar registros.
-    // Incluye correo y rol solicitado para que el admin tenga contexto completo.
+    // La subconsulta en correo y el LEFT JOIN en teléfono garantizan exactamente
+    // una fila por usuario, sin duplicados por múltiples roles o teléfonos.
     public List<usuario> listarUsuariosPendientes() {
         List<usuario> lista = new ArrayList<>();
         String sql = "SELECT u.id_usuario, u.nombre_usuario, u.fecha_nacimiento, "
-                   + "u.direccion_usuario, c.direccion_correo, "
-                   + "t.numero_telefono, r.nombre_rol "
+                   + "u.direccion_usuario, "
+                   + "(SELECT c.direccion_correo FROM correos c "
+                   + " WHERE c.id_usuario = u.id_usuario LIMIT 1) AS direccion_correo, "
+                   + "(SELECT t.numero_telefono FROM telefonos t "
+                   + " WHERE t.id_usuario = u.id_usuario LIMIT 1) AS numero_telefono, "
+                   + "(SELECT r.nombre_rol FROM usuario_rol ur "
+                   + " INNER JOIN roles r ON ur.id_rol = r.id_rol "
+                   + " WHERE ur.id_usuario = u.id_usuario LIMIT 1) AS nombre_rol "
                    + "FROM usuarios u "
-                   + "INNER JOIN correos c ON u.id_usuario = c.id_usuario "
-                   + "INNER JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario "
-                   + "INNER JOIN roles r ON ur.id_rol = r.id_rol "
-                   + "LEFT JOIN telefonos t ON u.id_usuario = t.id_usuario "
-                   + "WHERE u.estado_usuario = 'Pendiente'";
+                   + "WHERE u.estado_usuario = 'Pendiente' "
+                   + "ORDER BY u.id_usuario ASC";
 
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -67,27 +69,31 @@ public class UsuarioDao {
                 u.setDireccion(rs.getString("direccion_usuario"));
                 u.setCorreo(rs.getString("direccion_correo"));
                 u.setTelefono(rs.getString("numero_telefono"));
-                u.setRol(rs.getString("nombre_rol"));   // campo de vista
+                u.setRol(rs.getString("nombre_rol"));
                 lista.add(u);
             }
 
-            System.out.println("Usuarios pendientes encontrados: " + lista.size()); // <--- AÑADE ESTO
+            System.out.println("Usuarios pendientes encontrados: " + lista.size());
         } catch (SQLException e) {
-            e.printStackTrace(); // <--- ASEGÚRATE DE VER ESTO EN LA CONSOLA
+            e.printStackTrace();
         }
         return lista;
     }
 
     // ── Listar usuarios activos (para asignar trabajos, etc.) ─────────────────
+    // Subconsultas en lugar de JOINs para evitar filas duplicadas cuando un
+    // usuario tiene múltiples roles o teléfonos registrados.
     public List<usuario> listarUsuariosActivos() {
         List<usuario> lista = new ArrayList<>();
-        String sql = "SELECT u.id_usuario, u.nombre_usuario, c.direccion_correo, "
-                   + "       t.numero_telefono, r.nombre_rol "
+        String sql = "SELECT u.id_usuario, u.nombre_usuario, "
+                   + "(SELECT c.direccion_correo FROM correos c "
+                   + " WHERE c.id_usuario = u.id_usuario LIMIT 1) AS direccion_correo, "
+                   + "(SELECT t.numero_telefono FROM telefonos t "
+                   + " WHERE t.id_usuario = u.id_usuario LIMIT 1) AS numero_telefono, "
+                   + "(SELECT r.nombre_rol FROM usuario_rol ur "
+                   + " INNER JOIN roles r ON ur.id_rol = r.id_rol "
+                   + " WHERE ur.id_usuario = u.id_usuario LIMIT 1) AS nombre_rol "
                    + "FROM usuarios u "
-                   + "INNER JOIN correos c      ON u.id_usuario = c.id_usuario "
-                   + "INNER JOIN usuario_rol ur  ON u.id_usuario = ur.id_usuario "
-                   + "INNER JOIN roles r         ON ur.id_rol = r.id_rol "
-                   + "LEFT  JOIN telefonos t     ON u.id_usuario = t.id_usuario "
                    + "WHERE u.estado_usuario = 'Activo' "
                    + "ORDER BY u.nombre_usuario ASC";
 
@@ -113,16 +119,13 @@ public class UsuarioDao {
     }
 
     // ── Actualizar estado del usuario ─────────────────────────────────────────
-    // Estados válidos según el esquema: 'Activo', 'Pendiente', 'Rechazado'
     public boolean actualizarEstado(int idUsuario, String nuevoEstado) {
         String sql = "UPDATE usuarios SET estado_usuario = ? WHERE id_usuario = ?";
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
             ps.setString(1, nuevoEstado);
             ps.setInt(2, idUsuario);
             return ps.executeUpdate() > 0;
-
         } catch (SQLException e) {
             System.err.println("Error al actualizar estado del usuario id="
                     + idUsuario + ": " + e.getMessage());
@@ -131,16 +134,12 @@ public class UsuarioDao {
     }
 
     // ── Eliminar usuario completo ─────────────────────────────────────────────
-    // ON DELETE CASCADE en el esquema se encarga de limpiar correos, telefonos
-    // y usuario_rol automáticamente. No hace falta borrarlos manualmente.
     public boolean eliminarUsuario(int idUsuario) {
         String sql = "DELETE FROM usuarios WHERE id_usuario = ?";
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
             ps.setInt(1, idUsuario);
             return ps.executeUpdate() > 0;
-
         } catch (SQLException e) {
             System.err.println("Error al eliminar usuario id=" + idUsuario
                     + ": " + e.getMessage());
@@ -157,7 +156,6 @@ public class UsuarioDao {
             con = clase_Conexion.MetodoConectar();
             con.setAutoCommit(false);
 
-            // 1. Insertar usuario — estado inicial 'Pendiente' hasta que el admin apruebe
             int idGenerado;
             String sqlUser = "INSERT INTO usuarios "
                            + "(nombre_usuario, fecha_nacimiento, direccion_usuario, "
@@ -182,7 +180,6 @@ public class UsuarioDao {
                 }
             }
 
-            // 2. Insertar correo
             try (PreparedStatement ps = con.prepareStatement(
                     "INSERT INTO correos (id_usuario, direccion_correo) VALUES (?, ?)")) {
                 ps.setInt(1, idGenerado);
@@ -190,7 +187,6 @@ public class UsuarioDao {
                 ps.executeUpdate();
             }
 
-            // 3. Insertar teléfono
             try (PreparedStatement ps = con.prepareStatement(
                     "INSERT INTO telefonos (id_usuario, numero_telefono) VALUES (?, ?)")) {
                 ps.setInt(1, idGenerado);
@@ -198,7 +194,6 @@ public class UsuarioDao {
                 ps.executeUpdate();
             }
 
-            // 4. Insertar rol
             try (PreparedStatement ps = con.prepareStatement(
                     "INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (?, ?)")) {
                 ps.setInt(1, idGenerado);

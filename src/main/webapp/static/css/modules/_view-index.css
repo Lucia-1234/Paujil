@@ -1,0 +1,95 @@
+/* ==========================================================================
+   MÓDULO DE VISTA: _view-index.css
+   Vista: index.jsp — pantalla de bienvenida (dos paneles lado a lado).
+   Panel izquierdo: fondo degradado con logo.
+   Panel derecho: fondo blanco con título, botones de rol y link de registro.
+   ========================================================================== */
+
+/* ── Estructura de dos paneles ───────────────────────────────────────────── */
+body.index-page {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Panel izquierdo — logo sobre degradado */
+.welcome-brand {
+    flex: 1;
+    background: linear-gradient(135deg, #7b3fa0 0%, #76c065 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+}
+
+.welcome-brand__logo {
+    max-width: 180px;
+    height: auto;
+}
+
+/* Panel derecho — acciones */
+.welcome-actions {
+    flex: 1.2;
+    background-color: var(--color-white);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    gap: var(--spacing-lg);
+}
+
+.welcome-actions__title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    text-align: center;
+    line-height: 1.3;
+}
+
+/* Menú de botones de rol */
+.welcome-actions__menu {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    width: 100%;
+    max-width: 300px;
+}
+
+.btn-role {
+    display: block;
+    width: 100%;
+    background-color: var(--color-text-primary);
+    color: var(--color-white);
+    text-align: center;
+    padding: 14px 20px;
+    font-size: var(--font-size-lg);
+    border-radius: var(--radius-pill);
+    font-weight: 500;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.btn-role:hover {
+    background-color: #333;
+    transform: translateY(-1px);
+}
+
+/* Link de "Crear cuenta" */
+.welcome-actions__link {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-body);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+.welcome-actions__link:hover {
+    color: var(--color-modal-purple);
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    body.index-page { flex-direction: column; }
+    .welcome-brand  { flex: 0 0 30%; }
+    .welcome-actions { flex: 1; padding: 24px; gap: var(--spacing-md); }
+    .welcome-actions__title { font-size: 1.4rem; }
+}

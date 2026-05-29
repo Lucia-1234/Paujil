@@ -1,23 +1,18 @@
-
 package com.paujil.modelo;
 
 import java.time.LocalDate;
 import java.time.Period;
 
-/**
- *
- * @author Aprendiz
- */
 public class validador {
-    
-    // 1. Validación de contraseña
+
+    // Mínimo 8 caracteres, al menos: una mayúscula, una minúscula, un número y un símbolo.
+    // El valor 8 debe coincidir con el mensaje que muestra ServletRegistro al usuario.
     public static boolean esContrasenaSegura(String password) {
         if (password == null) return false;
-        String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!\\.\\-_*]).{5,}$";
+        String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!.\\-_*]).{8,}$";
         return password.matches(regex);
     }
 
-    // 2. Validación de edad
     public static boolean esMayorDeEdad(String fechaNacimientoStr) {
         try {
             LocalDate fechaNacimiento = LocalDate.parse(fechaNacimientoStr);
@@ -28,18 +23,15 @@ public class validador {
         }
     }
 
-    // 3. Validación de formato de teléfono
     public static boolean esTelefonoValido(String telefono) {
         return telefono != null && telefono.matches("\\d{10}");
     }
-    
-    // 4. Validación de correo (opcional pero muy útil)
+
     public static boolean esCorreoValido(String correo) {
         String regex = "^[A-Za-z0-9+_.-]+@(.+)$";
         return correo != null && correo.matches(regex);
     }
-    
-    
 }
     
 
+       

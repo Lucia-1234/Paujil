@@ -1,0 +1,144 @@
+/* ==========================================================================
+   MÓDULO DE VISTA: _view-login.css
+   Vista: login.jsp
+   Importa: base.css (que ya incluye variables, reset, layout, buttons)
+   ========================================================================== */
+
+/* ── Estructura de dos paneles ───────────────────────────────────────────── */
+.login-page {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Panel izquierdo degradado verde → morado */
+.login-container {
+    flex: 1.5;
+    background: linear-gradient(180deg, #76c065 0%, #7b3fa0 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    position: relative;
+}
+
+.login-container__back {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: rgba(255, 255, 255, .8);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color var(--transition-fast);
+}
+.login-container__back:hover { color: var(--color-white); }
+
+/* Formulario centrado */
+.login-form {
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+}
+
+.login-form__title {
+    color: var(--color-white);
+    font-size: 2.2rem;
+    font-weight: 300;
+    margin-bottom: 24px;
+    letter-spacing: .02em;
+}
+
+/* Avatar circular */
+.login-form__avatar-container { margin-bottom: 28px; }
+
+.login-form__avatar {
+    font-size: 5.5rem;
+    color: rgba(255, 255, 255, .5);
+    background: rgba(255, 255, 255, .15);
+    padding: 18px;
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Campos */
+.login-form__group {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.login-form__icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, .65);
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+.login-form__input,
+.login-form__select {
+    width: 100%;
+    padding: 13px 14px 13px 42px;
+    border: none;
+    background: rgba(255, 255, 255, .25);
+    color: var(--color-white);
+    font-size: var(--font-size-body);
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: background var(--transition-fast);
+    appearance: none;
+}
+
+.login-form__input::placeholder { color: rgba(255, 255, 255, .7); }
+
+.login-form__select  {
+    margin-bottom: 20px;
+}
+
+.login-form__input:focus,
+.login-form__select:focus {
+    background: rgba(100, 100, 100, .30);
+    box-shadow: 0 0 0 3px rgba(200, 200, 200, .3);
+}
+
+/* Botón de login */
+.login-form__button {
+    width: 52%;
+    padding: 12px;
+    background-color: var(--color-white);
+    color: var(--color-text-primary);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-body);
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 14px;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.login-form__button:hover { background-color: #e6e6e6; transform: translateY(-1px); }
+
+/* Error */
+.error-message {
+    background-color: rgba(220, 53, 69, .88);
+    color: var(--color-white);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-sm);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .login-page { flex-direction: column; }
+    .login-container { flex: 1; padding: 24px; }
+    .login-form__button { width: 70%; }
+}

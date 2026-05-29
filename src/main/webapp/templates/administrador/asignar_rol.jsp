@@ -5,7 +5,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Asignar Roles - Finca El Paujil</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/asignar_rol.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/base.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/views/asignar_rol.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>

@@ -1,0 +1,43 @@
+/* ==========================================================================
+   MÓDULO: _reset.css
+   Reset mínimo y estilos base del documento.
+   ========================================================================== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-base);
+    font-size: var(--font-size-body);
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-page);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+button, input, textarea, select {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+button { cursor: pointer; }
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+ul, ol { list-style: none; }

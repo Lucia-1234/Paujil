@@ -1,0 +1,27 @@
+/* ==========================================================================
+   MÓDULO DE VISTA: _view-biopreparados.css
+   Vista: biopreparados.jsp (próxima a implementar)
+   Extiende _cards.css (.bio-card) y _modals.css.
+   ========================================================================== */
+
+/* 1. El modal debe tener una altura máxima */
+#modalBio .modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh; /* El modal no puede ser más alto que la pantalla */
+    height: auto;
+}
+
+/* 2. El formulario debe permitir el scroll interno */
+#modalBio form {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* ESTO ES LO QUE ACTIVA EL SCROLL */
+    flex-grow: 1;     /* Ocupa el espacio disponible */
+    padding: 10px;
+}
+
+/* 3. El contenedor de ingredientes */
+#contenedorIngredientes {
+    flex-shrink: 0;   /* Evita que se aplaste */
+}

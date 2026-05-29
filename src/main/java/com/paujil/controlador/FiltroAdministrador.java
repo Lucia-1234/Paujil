@@ -11,8 +11,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
-// Protegemos tanto la carpeta física de JSP como el Servlet de acciones
-@WebFilter({"/templates/administrador/*", "/GestionarRoles"})
+// Protegemos tanto la carpeta física de JSP como los Servlets de acciones de administrador
+@WebFilter({"/templates/administrador/*", "/GestionarRoles", "/ServletCultivo", "/ServletTrabajo"})
 public class FiltroAdministrador implements Filter {
 
     @Override

@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bienvenido - Finca El Paujil</title>
-    
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/Styles.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/base.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/views/index.css">
 </head>
 <body>
 

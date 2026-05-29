@@ -5,17 +5,17 @@ import java.sql.Date;
 public class usuario {
 
     // Columnas de la tabla 'usuarios'
-    private int    id;
-    private String nombre;
-    private Date   fechaNacimiento;
-    private String direccion;
-    private String password;
-    private String estado;
+    public int    id;
+    public String nombre;
+    public Date   fechaNacimiento;
+    public String direccion;
+    public String password;
+    public String estado;
 
     // Campos de tablas relacionadas — se llenan con JOINs en el DAO, no se persisten
-    private String correo;
-    private String telefono;
-    private String rol;           // nombre_rol desde la tabla 'roles'
+    public String correo;
+    public String telefono;
+    public String rol;           // nombre_rol desde la tabla 'roles'
 
     // ── Constructores ─────────────────────────────────────────────────────────
 

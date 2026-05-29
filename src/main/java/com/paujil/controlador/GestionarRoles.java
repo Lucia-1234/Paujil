@@ -9,24 +9,37 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/GestionarRoles")
 public class GestionarRoles extends HttpServlet {
 
+    // ── Guarda de sesión (administrador) ─────────────────────────────────────
+    private boolean sesionAdminValida(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null
+                || session.getAttribute("idUsuario") == null
+                || !"administrador".equalsIgnoreCase((String) session.getAttribute("rolUsuario"))) {
+            response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=acceso_denegado");
+            return false;
+        }
+        return true;
+    }
+
     // ── GET: cargar la lista de usuarios pendientes ───────────────────────────
-    // El JSP no debería hacer lógica de BD directamente.
-    // El servlet carga los datos y los pasa como atributo al JSP.
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
+        if (!sesionAdminValida(request, response)) return;
 
         UsuarioDao dao = new UsuarioDao();
         List<usuario> pendientes = dao.listarUsuariosPendientes();
 
         request.setAttribute("usuariosPendientes", pendientes);
-        request.getRequestDispatcher(
-                "/templates/administrador/asignar_rol.jsp")
-                .forward(request, response);
+        request.getRequestDispatcher("/templates/administrador/asignar_rol.jsp")
+               .forward(request, response);
     }
 
     // ── POST: aprobar o denegar un usuario pendiente ──────────────────────────
@@ -34,10 +47,11 @@ public class GestionarRoles extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String accion   = request.getParameter("accion");
-        String idStr    = request.getParameter("id_usuario");
+        if (!sesionAdminValida(request, response)) return;
 
-        // 1. Validar parámetros
+        String accion = request.getParameter("accion");
+        String idStr  = request.getParameter("id_usuario");
+
         if (idStr == null || idStr.trim().isEmpty()
                 || accion == null || accion.trim().isEmpty()) {
             response.sendRedirect(request.getContextPath()
@@ -54,20 +68,17 @@ public class GestionarRoles extends HttpServlet {
             return;
         }
 
-        // 2. Ejecutar acción
         UsuarioDao dao = new UsuarioDao();
         boolean ok;
 
         switch (accion.trim().toLowerCase()) {
             case "aceptar":
-                // Cambia el estado a 'Activo' — el usuario ya puede iniciar sesión
                 ok = dao.actualizarEstado(idUsuario, "Activo");
                 response.sendRedirect(request.getContextPath()
                         + "/GestionarRoles?status=" + (ok ? "aceptado" : "error"));
                 break;
 
             case "denegar":
-                // Elimina el registro completo — CASCADE limpia correos, teléfonos y rol
                 ok = dao.eliminarUsuario(idUsuario);
                 response.sendRedirect(request.getContextPath()
                         + "/GestionarRoles?status=" + (ok ? "denegado" : "error"));

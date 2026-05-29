@@ -1,0 +1,25 @@
+/* ==========================================================================
+   MÓDULO DE VISTA: _view-trabajos.css
+   Vistas: listar_trabajos.jsp  y  asignar_trabajos.jsp
+   Extiende _cards.css (job-card) y _forms.css (job-form).
+   ========================================================================== */
+
+/* No hay overrides adicionales para job-card; todo está en _cards.css.
+   Este archivo reserva espacio para ajustes futuros de la vista de trabajos:
+   filtros por estado, paginación, badge de estado coloreado, etc. */
+
+/* Badge de estado del trabajo */
+.job-status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.job-status--pending    { background-color: #fff3cd; color: #856404; }
+.job-status--running    { background-color: #cff4fc; color: #055160; }
+.job-status--done       { background-color: #d1e7dd; color: #0a3622; }
+.job-status--postponed  { background-color: #f8d7da; color: #842029; }

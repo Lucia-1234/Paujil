@@ -11,7 +11,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrador - Finca El Paujil</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/Styles.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/base.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/views/menu.css">
 </head>
 <body>
     <div class="admin-layout">
@@ -30,11 +31,11 @@
 
                 <nav class="dashboard-grid">
                     <a href="${pageContext.request.contextPath}/GestionarRoles" class="dashboard-grid__item">Asignar rol</a>
-                    <a href="${pageContext.request.contextPath}/templates/administrador/asignar_trabajos.jsp" class="dashboard-grid__item">Asignar trabajos</a>
+                    <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=prepararCreacion" class="dashboard-grid__item">Asignar trabajos</a>
                     <a href="${pageContext.request.contextPath}/templates/administrador/administrar_usuarios.jsp" class="dashboard-grid__item">Administrar usuarios</a>
                     <a href="${pageContext.request.contextPath}/ServletCultivo" class="dashboard-grid__item">Cultivos</a>
                     <a href="${pageContext.request.contextPath}/templates/administrador/biopreparados.jsp" class="dashboard-grid__item">Biopreparados</a>
-                    <a href="${pageContext.request.contextPath}/templates/administrador/listar_trabajos.jsp" class="dashboard-grid__item">Gestión de trabajos</a>
+                    <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=listar" class="dashboard-grid__item">Gestión de trabajos</a>
                 </nav> 
 
             </section>

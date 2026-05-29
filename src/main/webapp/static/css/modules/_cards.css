@@ -1,0 +1,225 @@
+/* ==========================================================================
+   MÓDULO: _cards.css
+   Estilos de todas las tarjetas del sistema.
+
+   TARJETAS DISPONIBLES:
+     .crop-card      — tarjeta de cultivo (cultivos.jsp, asignar_trabajos.jsp)
+     .job-card       — tarjeta de trabajo (listar_trabajos.jsp)
+     .bio-card       — tarjeta de biopreparado (biopreparados — futuro)
+   ========================================================================== */
+
+/* ──────────────────────────────────────────────────────────────────────────
+   TARJETA DE CULTIVO (.crop-card)
+   Fondo blanco, borde redondeado, dentro del panel verde.
+   ────────────────────────────────────────────────────────────────────────── */
+.crop-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.crop-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius-card);
+    padding: 26px 28px;
+}
+
+.crop-card__image-container {
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    max-height: 180px;
+}
+
+.crop-card__img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.crop-card__content { width: 100%; }
+
+.crop-card__title {
+    font-size: var(--font-size-title);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    text-align: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.crop-card__description {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+    margin-bottom: var(--spacing-sm);
+}
+
+.crop-card__dates,
+.crop-card__info p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+}
+
+.crop-card__dates strong,
+.crop-card__info strong {
+    font-weight: 600;
+}
+
+.crop-card__actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+/* Pie de la lista: zona del botón "+ Agregar cultivo" */
+.crop-list__footer {
+    margin-top: var(--spacing-md);
+    display: flex;
+    justify-content: flex-start;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   TARJETA DE TRABAJO (.job-card)
+   Fondo blanco, grilla de metadatos, botones a la derecha.
+   ────────────────────────────────────────────────────────────────────────── */
+.job-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.job-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius-card);
+    padding: 26px 28px;
+}
+
+.job-card__title {
+    font-size: var(--font-size-title);
+    font-weight: 700;
+    text-align: center;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.job-card__desc {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+    margin-bottom: var(--spacing-md);
+}
+
+.job-card__desc strong {
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+/* Grilla de metadatos: Cultivo | Fecha inicio | Estado  */
+.job-card__info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.job-card__meta {
+    background-color: var(--color-bg-input);
+    border-radius: 4px;
+    padding: 6px var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+.job-card__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   TARJETA DE BIOPREPARADO (.bio-card) — preparada para uso futuro
+   ────────────────────────────────────────────────────────────────────────── */
+.bio-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.bio-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius-card);
+    padding: 26px 28px;
+}
+
+.bio-card__number {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+}
+
+.bio-card__title {
+    font-size: var(--font-size-title);
+    font-weight: 700;
+    text-align: center;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.bio-card__description {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+    margin-bottom: var(--spacing-md);
+}
+
+/* Tabla de ingredientes dentro de la tarjeta */
+.bio-card__ingredients {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.bio-card__ingredients th {
+    background-color: var(--color-bg-input);
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    border: 1px solid var(--color-border-light);
+}
+
+.bio-card__ingredients td {
+    padding: 7px 12px;
+    border: 1px solid var(--color-border-light);
+    color: var(--color-text-secondary);
+}
+
+.bio-card__prep-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+}
+
+.bio-card__prep-text {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-md);
+}
+
+.bio-card__actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+/* Responsive compartido */
+@media (max-width: 600px) {
+    .job-card__info { grid-template-columns: 1fr 1fr; }
+    .crop-card__actions,
+    .job-card__actions,
+    .bio-card__actions { flex-wrap: wrap; }
+}

@@ -1,0 +1,154 @@
+/* ==========================================================================
+   MÓDULO: _layout.css
+   Estructuras de layout reutilizables: panel principal verde, encabezado
+   de página (back-link + título), contenedor centralizado, tabla de registro.
+
+   CLASES:
+     .page-wrapper      — wrapper exterior de cada vista
+     .panel             — panel verde principal (fondo de tarjetas)
+     .list-header       — encabezado: back-link + título de la vista
+     .no-data           — mensaje vacío dentro de un panel
+     .registro-table    — tabla de bitácora / registros
+     .user-table        — tabla de administrar usuarios
+   ========================================================================== */
+
+/* ── Wrapper de página ───────────────────────────────────────────────────── */
+.page-wrapper {
+    width: 90%;
+    max-width: 920px;
+    margin: 30px auto;
+}
+
+/* ── Panel verde (contenedor de tarjetas) ────────────────────────────────── */
+.panel,
+.container,
+.role-manager__content {
+    background-color: var(--color-brand-green);
+    border-radius: var(--radius-card);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* ── Encabezado de página (flecha + título) ──────────────────────────────── */
+.list-header,
+.role-manager__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.list-header__back,
+.role-manager__back-link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-dark-green);
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: none;
+    transition: opacity var(--transition-fast);
+}
+.list-header__back:hover,
+.role-manager__back-link:hover { opacity: .65; }
+
+.list-header__title,
+.role-manager__title {
+    font-size: var(--font-size-page);
+    font-weight: 400;
+    color: var(--color-dark-green);
+    margin: 0;
+    letter-spacing: .01em;
+}
+
+/* ── Estado vacío ────────────────────────────────────────────────────────── */
+.no-data {
+    background-color: var(--color-white);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-body);
+}
+
+/* ── Tabla de bitácora / registro ────────────────────────────────────────── */
+.registro-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--color-white);
+    font-size: var(--font-size-sm);
+}
+
+.registro-table th {
+    background-color: var(--color-bg-input);
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: center;
+    border: 1px solid var(--color-border-light);
+    color: var(--color-text-primary);
+}
+
+.registro-table td {
+    padding: 9px 12px;
+    text-align: center;
+    border: 1px solid var(--color-border-light);
+    color: var(--color-text-secondary);
+}
+
+.registro-table tr:last-child td { border-bottom: none; }
+
+.registro-table tfoot td {
+    background-color: #f9f9f9;
+    font-weight: 500;
+}
+
+/* ── Tabla de administrar usuarios ───────────────────────────────────────── */
+.user-table-wrapper {
+    background-color: var(--color-white);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.user-table th {
+    font-weight: 600;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.user-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--color-border-light);
+    color: var(--color-text-primary);
+    vertical-align: middle;
+}
+
+.user-table tr:last-child td { border-bottom: none; }
+
+.user-table__actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    align-items: center;
+}
+
+/* ── Utilidades ──────────────────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* Responsive */
+@media (max-width: 600px) {
+    .page-wrapper { width: 96%; margin: 16px auto; }
+    .panel, .container { padding: 16px 12px; }
+}

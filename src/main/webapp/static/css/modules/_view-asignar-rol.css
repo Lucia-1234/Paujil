@@ -1,0 +1,90 @@
+/* ==========================================================================
+   MÓDULO DE VISTA: _view-asignar-rol.css
+   Vista: asignar_rol.jsp
+   Lista de solicitudes pendientes de usuarios (trabajador / visitante).
+   ========================================================================== */
+
+/* Wrapper de la vista */
+.role-manager {
+    width: 90%;
+    max-width: 860px;
+    margin: 32px auto;
+}
+
+/* ── Lista de solicitudes ─────────────────────────────────────────────────── */
+.request-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ── Ítem / tarjeta de solicitud ─────────────────────────────────────────── */
+.request-item {
+    background-color: var(--color-white);
+    border-radius: var(--radius-card);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    gap: var(--spacing-md);
+}
+
+/* Info del usuario */
+.request-item__user-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.request-item__avatar {
+    font-size: 2rem;
+    color: var(--color-text-primary);
+    flex-shrink: 0;
+    width: 44px;
+    text-align: center;
+}
+
+.request-item__details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.request-item__name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.request-item__meta,
+.request-item__type {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+/* Botones aceptar / denegar */
+.request-item__actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.request-item__actions form { margin: 0; }
+
+/* Responsive */
+@media (max-width: 560px) {
+    .request-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .request-item__actions { width: 100%; }
+    .request-item__actions .btn { flex: 1; }
+}

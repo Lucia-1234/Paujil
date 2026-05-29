@@ -1,4 +1,3 @@
-
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
@@ -8,7 +7,7 @@
     </head>
     <body>
         <main class="container">
-            <h2>Mora - Lote 01</h2> <form action="${pageContext.request.contextPath}/ServletLabor" method="POST">
+            <h2>Mora - Lote 01</h2> <form action="${pageContext.request.contextPath}/ServletTrabajo" method="POST">
                 <input type="hidden" name="idCultivo" value="${param.idCultivo}">
 
                 <table class="registro-table">

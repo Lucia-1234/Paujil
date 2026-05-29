@@ -1,0 +1,49 @@
+/* ==========================================================================
+   MÓDULO: _variables.css
+   Variables globales del sistema de diseño Finca El Paujil.
+   Importar primero en base.css. No genera CSS por sí solo.
+   ========================================================================== */
+
+:root {
+    /* ── Paleta de color ─────────────────────────────────────────────────── */
+    --color-brand-green    : #1b9e49;   /* Fondo de paneles principales      */
+    --color-dark-green     : #137333;   /* Títulos, back-links               */
+    --color-light-green-bg : #d6f0de;   /* Fondo de inputs en formularios    */
+    --color-action-green   : #28a745;   /* Botón guardar / aceptar / editar  */
+    --color-action-red     : #dc3545;   /* Botón eliminar / denegar          */
+    --color-modal-purple   : #7b3fa0;   /* Fondo de modales de formulario    */
+    --color-modal-purple-dk: #6a2f8e;   /* Texto o acento sobre modal morado */
+    --color-white          : #ffffff;
+    --color-bg-page        : #ffffff;
+    --color-bg-input       : #f0f0f0;   /* Fondo de inputs neutros           */
+    --color-text-primary   : #1a1a1a;
+    --color-text-secondary : #555555;
+    --color-text-muted     : #888888;
+    --color-border-light   : #d4d4d4;
+
+    /* ── Tipografía ──────────────────────────────────────────────────────── */
+    --font-base            : 'Segoe UI', Arial, sans-serif;
+    --font-size-xs         : 12px;
+    --font-size-sm         : 13px;
+    --font-size-body       : 15px;
+    --font-size-lg         : 1.1rem;
+    --font-size-title      : 1.25rem;
+    --font-size-page       : 1.6rem;
+
+    /* ── Espaciado ───────────────────────────────────────────────────────── */
+    --spacing-xs  : 6px;
+    --spacing-sm  : 10px;
+    --spacing-md  : 16px;
+    --spacing-lg  : 24px;
+    --spacing-xl  : 32px;
+
+    /* ── Radios de borde ─────────────────────────────────────────────────── */
+    --radius-sm   : 6px;
+    --radius-md   : 10px;
+    --radius-card : 14px;
+    --radius-pill : 20px;
+
+    /* ── Transiciones ────────────────────────────────────────────────────── */
+    --transition-fast : .15s ease;
+    --transition-base : .2s ease;
+}

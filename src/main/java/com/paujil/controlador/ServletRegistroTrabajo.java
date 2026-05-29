@@ -17,9 +17,7 @@ public class ServletRegistroTrabajo extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // ── 1. Obtener id del usuario desde la sesión ─────────────────────────
-        // CORRECCIÓN PRINCIPAL: el responsable NO viene del formulario (cualquiera
-        // podría manipularlo). Se toma de la sesión que creó el login.
+        // ── 1. Verificar sesión ───────────────────────────────────────────────
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("idUsuario") == null) {
             response.sendRedirect(request.getContextPath()
@@ -28,16 +26,15 @@ public class ServletRegistroTrabajo extends HttpServlet {
         }
         int idUsuario = (int) session.getAttribute("idUsuario");
 
-        // ── 2. Recolección de parámetros del formulario ───────────────────────
-        String idCultivoStr        = request.getParameter("idCultivo");
-        String descripcion         = request.getParameter("descripcionTrabajo");
-        String fechaInicioStr      = request.getParameter("fechaInicio");
-        String fechaFinalizoStr    = request.getParameter("fechaFinalizo");
-        String observaciones       = request.getParameter("observaciones");
+        // ── 2. Recolección de parámetros ──────────────────────────────────────
+        String idCultivoStr     = request.getParameter("idCultivo");
+        String descripcion      = request.getParameter("descripcionTrabajo");
+        String fechaInicioStr   = request.getParameter("fechaInicio");
+        String fechaFinalizoStr = request.getParameter("fechaFinalizo");
+        String observaciones    = request.getParameter("observaciones");
 
         // ── 3. Validaciones ───────────────────────────────────────────────────
 
-        // 3a. Campos obligatorios
         if (estaVacio(idCultivoStr) || estaVacio(descripcion)
                 || estaVacio(fechaInicioStr) || estaVacio(fechaFinalizoStr)) {
             reenviarConError("Todos los campos obligatorios deben completarse.",
@@ -45,7 +42,6 @@ public class ServletRegistroTrabajo extends HttpServlet {
             return;
         }
 
-        // 3b. idCultivo debe ser numérico
         int idCultivo;
         try {
             idCultivo = Integer.parseInt(idCultivoStr);
@@ -54,7 +50,6 @@ public class ServletRegistroTrabajo extends HttpServlet {
             return;
         }
 
-        // 3c. Fechas con formato válido (esperado: yyyy-MM-dd)
         Date fechaInicio;
         Date fechaFinalizo;
         try {
@@ -66,29 +61,27 @@ public class ServletRegistroTrabajo extends HttpServlet {
             return;
         }
 
-        // 3d. Fecha de inicio no puede ser posterior a fecha de finalización
         if (fechaInicio.after(fechaFinalizo)) {
             reenviarConError("La fecha de inicio no puede ser posterior a la fecha de finalización.",
                     idCultivoStr, request, response);
             return;
         }
 
-        // ── 4. Construir el objeto con el modelo actualizado ──────────────────
+        // ── 4. Persistir ──────────────────────────────────────────────────────
         registros reg = new registros(
                 idCultivo,
                 descripcion.trim(),
-                idUsuario,       // FK desde sesión — nunca del formulario
+                idUsuario,
                 fechaInicio,
                 fechaFinalizo,
                 (observaciones != null && !observaciones.trim().isEmpty())
                         ? observaciones.trim() : null
         );
 
-        // ── 5. Persistir ──────────────────────────────────────────────────────
         RegistroTrabajoDao dao = new RegistroTrabajoDao();
         boolean exito = dao.registrarLabor(reg);
 
-        // ── 6. Redirección ────────────────────────────────────────────────────
+        // ── 5. Redirección ────────────────────────────────────────────────────
         if (exito) {
             response.sendRedirect(request.getContextPath()
                     + "/templates/trabajador/cultivos.jsp?status=success&idCultivo=" + idCultivo);
@@ -104,16 +97,15 @@ public class ServletRegistroTrabajo extends HttpServlet {
         return valor == null || valor.trim().isEmpty();
     }
 
-    /**
-     * Reenvía al formulario de registro de labor conservando el idCultivo
-     * en la URL para que el JSP pueda pre-seleccionar el cultivo correcto.
-     */
+    // Usa request.setAttribute para pasar idCultivo al JSP.
+    // RequestDispatcher.forward() ignora los parámetros en la query string de la ruta,
+    // por lo que el idCultivo debe viajar como atributo del request, no como ?param=valor.
     private void reenviarConError(String mensaje, String idCultivo,
             HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("mensajeError", mensaje);
-        request.getRequestDispatcher(
-                "/templates/trabajador/agregar_trabajos.jsp?idCultivo=" + idCultivo)
-                .forward(request, response);
+        request.setAttribute("idCultivo", idCultivo);
+        request.getRequestDispatcher("/templates/trabajador/agregar_trabajos.jsp")
+               .forward(request, response);
     }
 }

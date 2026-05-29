@@ -1,0 +1,171 @@
+/* ==========================================================================
+   MÓDULO: _modals.css
+   Todos los modales del sistema: formulario (morado), confirmar (rojo),
+   éxito (verde).
+
+   USO:
+     Siempre envolver el modal con .modal-overlay.
+     El contenido va en .modal-content (morado), .confirm-modal (rojo)
+     o .success-modal (verde).
+   ========================================================================== */
+
+/* ── Capa de fondo oscuro ────────────────────────────────────────────────── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MODAL DE FORMULARIO (morado)
+   Usado en: editar cultivo, agregar cultivo, editar biopreparado,
+             editar usuario, editar trabajo.
+   ────────────────────────────────────────────────────────────────────────── */
+.modal-content {
+    background-color: var(--color-modal-purple);
+    border-radius: var(--radius-card);
+    padding: 30px 28px;
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+    color: var(--color-white);
+}
+
+/* Botón × para cerrar */
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: rgba(255, 255, 255, .25);
+    border: none;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    color: var(--color-white);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast);
+}
+.modal-close:hover { background: rgba(255, 255, 255, .42); }
+
+/* Etiquetas de campo dentro del modal */
+.modal-content label,
+.modal-label {
+    display: block;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--color-white);
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+}
+
+/* Primer label sin margen superior */
+.modal-content label:first-of-type,
+.modal-label:first-of-type { margin-top: 0; }
+
+/* Inputs, textareas y selects dentro del modal */
+.modal-content input[type="text"],
+.modal-content input[type="date"],
+.modal-content input[type="number"],
+.modal-content input[type="email"],
+.modal-content textarea,
+.modal-content select {
+    width: 100%;
+    background-color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    font-size: var(--font-size-body);
+    color: var(--color-text-primary);
+    outline: none;
+    transition: box-shadow var(--transition-fast);
+}
+
+.modal-content input:focus,
+.modal-content textarea:focus,
+.modal-content select:focus {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, .35);
+}
+
+.modal-content textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+/* Select con flecha personalizada */
+.modal-content select { appearance: none; cursor: pointer; }
+
+/* Botón guardar centrado (usa .btn--save-form de _buttons.css) */
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MODAL DE CONFIRMACIÓN — eliminar (rojo)
+   Usado en: eliminar cultivo, eliminar trabajo, eliminar biopreparado.
+   ────────────────────────────────────────────────────────────────────────── */
+.confirm-modal {
+    background-color: var(--color-action-red);
+    border-radius: var(--radius-card);
+    padding: 32px 28px;
+    text-align: center;
+    color: var(--color-white);
+    max-width: 340px;
+    width: 100%;
+}
+
+.confirm-modal__icon {
+    font-size: 2.4rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.confirm-modal__text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: var(--spacing-lg);
+}
+
+.confirm-modal__actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: center;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MODAL DE ÉXITO — operación completada (verde)
+   Mismo tamaño que confirm, con check.
+   ────────────────────────────────────────────────────────────────────────── */
+.success-modal {
+    background-color: var(--color-action-green);
+    border-radius: var(--radius-card);
+    padding: 36px 28px;
+    text-align: center;
+    color: var(--color-white);
+    max-width: 300px;
+    width: 100%;
+}
+
+.success-modal__icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.success-modal__text {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+    .modal-content { max-width: 94vw; padding: 20px 16px; }
+    .confirm-modal { max-width: 94vw; }
+    .success-modal { max-width: 94vw; }
+}
