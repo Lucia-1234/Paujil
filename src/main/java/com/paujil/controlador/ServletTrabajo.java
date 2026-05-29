@@ -43,9 +43,6 @@ public class ServletTrabajo extends HttpServlet {
     // ── GET ───────────────────────────────────────────────────────────────────
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        
-        System.out.println("DEBUG: Entrando al Servlet, accion=" + request.getParameter("accion"));
 
         String accion = request.getParameter("accion");
         if (accion == null) accion = "listar";
@@ -93,9 +90,6 @@ public class ServletTrabajo extends HttpServlet {
                 HttpSession session = request.getSession(false);
                 int idUsuario = (int) session.getAttribute("idUsuario");
                 List<trabajo> misTrabajos = trabajoDao.listarTrabajosPorUsuario(idUsuario);
-
-                // DEBUG: Ver si realmente hay datos antes de ir al JSP
-                System.out.println("DEBUG: Cantidad de trabajos enviados: " + (misTrabajos != null ? misTrabajos.size() : "NULL"));
 
                 request.setAttribute("listaMisTrabajos", misTrabajos);
                 request.getRequestDispatcher("/templates/trabajador/trabajos_asignados.jsp").forward(request, response);
