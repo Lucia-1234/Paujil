@@ -8,40 +8,41 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.paujil.utils.ServletUtils.estaVacio;
+import static com.paujil.utils.ServletUtils.verificarSesionAdmin;
+import static com.paujil.utils.ServletUtils.verificarSesionUsuario;
+
 @WebServlet("/ServletBiopreparado")
 public class ServletBiopreparado extends HttpServlet {
 
-    // ── Guarda de sesión (solo administrador) ─────────────────────────────────
-    private boolean sesionAdminValida(HttpServletRequest req, HttpServletResponse res)
-            throws IOException {
-        HttpSession session = req.getSession(false);
-        if (session == null
-                || session.getAttribute("idUsuario") == null
-                || !"administrador".equalsIgnoreCase((String) session.getAttribute("rolUsuario"))) {
-            res.sendRedirect(req.getContextPath() + "/templates/login.jsp?error=acceso_denegado");
-            return false;
-        }
-        return true;
-    }
-
-    // ── GET: listar o eliminar ────────────────────────────────────────────────
+    // ── GET ───────────────────────────────────────────────────────────────────
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
-        if (!sesionAdminValida(req, res)) return;
 
         String accion = req.getParameter("accion");
         BiopreparadoDao dao = new BiopreparadoDao();
 
+        // ── Vista TRABAJADOR: solo lectura ─────────────────────────────────
+        if ("verTrabajador".equals(accion)) {
+            if (!verificarSesionUsuario(req, res)) return;
+            req.setAttribute("listaBiopreparados", dao.listarBiopreparados());
+            req.getRequestDispatcher("/templates/trabajador/biopreparados_trabajador.jsp")
+               .forward(req, res);
+            return;
+        }
+
+        // ── Todo lo demás: solo ADMINISTRADOR ─────────────────────────────
+        if (!verificarSesionAdmin(req, res)) return;
+
         if ("eliminar".equals(accion)) {
             String idStr = req.getParameter("id");
-            if (idStr != null && !idStr.isBlank()) {
+            if (!estaVacio(idStr)) {
                 try {
                     dao.eliminarBiopreparado(Integer.parseInt(idStr));
                 } catch (NumberFormatException ignored) {}
@@ -50,18 +51,18 @@ public class ServletBiopreparado extends HttpServlet {
             return;
         }
 
-        // Vista principal: listar
-        List<biopreparado> lista = dao.listarBiopreparados();
-        req.setAttribute("listaBiopreparados", lista);
+        // Listar para admin
+        req.setAttribute("listaBiopreparados", dao.listarBiopreparados());
         req.getRequestDispatcher("/templates/administrador/biopreparados.jsp")
            .forward(req, res);
     }
 
-    // ── POST: registrar o actualizar ──────────────────────────────────────────
+    // ── POST: solo ADMINISTRADOR ──────────────────────────────────────────────
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
-        if (!sesionAdminValida(req, res)) return;
+
+        if (!verificarSesionAdmin(req, res)) return;
 
         req.setCharacterEncoding("UTF-8");
 
@@ -73,9 +74,8 @@ public class ServletBiopreparado extends HttpServlet {
         String fVencStr     = req.getParameter("fechaVencimiento");
         String preparacion  = req.getParameter("preparacionBio");
 
-        // Validación básica de campos obligatorios
         if (estaVacio(nombre) || estaVacio(fCreacionStr) || estaVacio(fVencStr)) {
-            redirigirConError(req, res, "Nombre y fechas son obligatorios.");
+            redirigirConError(res, "Nombre y fechas son obligatorios.");
             return;
         }
 
@@ -86,27 +86,28 @@ public class ServletBiopreparado extends HttpServlet {
             fVencimiento = Date.valueOf(fVencStr);
             if (!estaVacio(precioStr)) precio = Double.parseDouble(precioStr);
         } catch (IllegalArgumentException e) {
-            redirigirConError(req, res, "Formato de fecha o precio inválido.");
+            redirigirConError(res, "Formato de fecha o precio inválido.");
             return;
         }
 
         if (fVencimiento.before(fCreacion)) {
-            redirigirConError(req, res, "La fecha de vencimiento debe ser posterior a la de creación.");
+            redirigirConError(res, "La fecha de vencimiento debe ser posterior a la de creación.");
             return;
         }
 
-        // Construir biopreparado
-        biopreparado b = new biopreparado(nombre.trim(),
-                descripcion != null ? descripcion.trim() : "",
-                precio, fCreacion, fVencimiento,
-                preparacion != null ? preparacion.trim() : "");
+        biopreparado b = new biopreparado(
+                nombre.trim(),
+                descripcion  != null ? descripcion.trim()  : "",
+                precio,
+                fCreacion,
+                fVencimiento,
+                preparacion  != null ? preparacion.trim()  : "");
 
-        // Construir lista de ingredientes desde parámetros múltiples
         List<ingredienteBio> ingredientes = parsearIngredientes(req);
-
         BiopreparadoDao dao = new BiopreparadoDao();
         boolean ok;
-        if (idStr != null && !idStr.isBlank()) {
+
+        if (!estaVacio(idStr)) {
             ok = dao.actualizarBiopreparado(Integer.parseInt(idStr), b, ingredientes);
         } else {
             ok = dao.registrarBiopreparado(b, ingredientes);
@@ -116,11 +117,6 @@ public class ServletBiopreparado extends HttpServlet {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /**
-     * Lee los arrays de parámetros nombresIng[], cantidadesIng[], unidadesIng[]
-     * enviados por el formulario y los convierte en ingredienteBio.
-     */
     private List<ingredienteBio> parsearIngredientes(HttpServletRequest req) {
         List<ingredienteBio> lista = new ArrayList<>();
         String[] nombres    = req.getParameterValues("nombresIng[]");
@@ -143,12 +139,7 @@ public class ServletBiopreparado extends HttpServlet {
         return lista;
     }
 
-    private boolean estaVacio(String s) {
-        return s == null || s.isBlank();
-    }
-
-    private void redirigirConError(HttpServletRequest req, HttpServletResponse res,
-                                   String msg) throws IOException {
+    private void redirigirConError(HttpServletResponse res, String msg) throws IOException {
         res.sendRedirect("ServletBiopreparado?status=error&msg=" +
                 java.net.URLEncoder.encode(msg, "UTF-8"));
     }

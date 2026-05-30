@@ -12,62 +12,56 @@ import java.io.IOException;
 import java.sql.Date;
 import java.util.List;
 
+import static com.paujil.utils.ServletUtils.estaVacio;
+import static com.paujil.utils.ServletUtils.verificarSesionAdmin;
+import static com.paujil.utils.ServletUtils.verificarSesionUsuario;
+
 @WebServlet("/ServletCultivo")
 public class ServletCultivo extends HttpServlet {
 
-    // ── Guarda de sesión compartida por doGet y doPost ────────────────────────
-    // Segunda línea de defensa: el FiltroAdministrador ya bloquea peticiones
-    // sin sesión, pero esta guarda protege en caso de que el filtro no cubra
-    // alguna ruta futura o sea desactivado por error.
-    private boolean sesionAdminValida(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        HttpSession session = request.getSession(false);
-        if (session == null
-                || session.getAttribute("idUsuario") == null
-                || !"administrador".equalsIgnoreCase((String) session.getAttribute("rolUsuario"))) {
-            response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=acceso_denegado");
-            return false;
-        }
-        return true;
-    }
-
-    // --- MANEJO DE VISTA Y ELIMINACIÓN ---
+    // ── GET ───────────────────────────────────────────────────────────────────
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        if (!sesionAdminValida(request, response)) return;
 
         String accion = request.getParameter("accion");
         CultivoDao dao = new CultivoDao();
 
+        // ── Vista del TRABAJADOR: solo lectura ─────────────────────────────
+        if ("verTrabajador".equals(accion)) {
+            if (!verificarSesionUsuario(request, response)) return;
+            request.setAttribute("listaCultivos", dao.listarCultivos());
+            request.getRequestDispatcher("/templates/trabajador/cultivos_trabajador.jsp")
+                   .forward(request, response);
+            return;
+        }
+
+        // ── Todo lo demás es solo para ADMINISTRADOR ───────────────────────
+        if (!verificarSesionAdmin(request, response)) return;
+
         if ("eliminar".equals(accion)) {
             String idStr = request.getParameter("id");
-            if (idStr == null || idStr.trim().isEmpty()) {
-                response.sendRedirect("ServletCultivo");
-                return;
-            }
-            try {
-                int id = Integer.parseInt(idStr);
-                dao.eliminarCultivo(id);
-            } catch (NumberFormatException e) {
-                // id no numérico — ignorar y redirigir al listado
+            if (!estaVacio(idStr)) {
+                try {
+                    dao.eliminarCultivo(Integer.parseInt(idStr));
+                } catch (NumberFormatException ignored) {}
             }
             response.sendRedirect("ServletCultivo");
             return;
         }
 
-        // Listar cultivos
-        List<cultivo> lista = dao.listarCultivos();
-        request.setAttribute("listaCultivos", lista);
+        // Listar para admin
+        request.setAttribute("listaCultivos", dao.listarCultivos());
         request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
                .forward(request, response);
     }
 
-    // --- MANEJO DE REGISTRO Y EDICIÓN ---
+    // ── POST: solo ADMINISTRADOR ──────────────────────────────────────────────
+    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        if (!sesionAdminValida(request, response)) return;
+        if (!verificarSesionAdmin(request, response)) return;
 
         String idStr       = request.getParameter("id");
         String nombre      = request.getParameter("nombreCultivo");
@@ -75,15 +69,9 @@ public class ServletCultivo extends HttpServlet {
         String fSiembraStr = request.getParameter("fechaSiembra");
         String fCosechaStr = request.getParameter("fechaCosecha");
 
-        // Validar campos obligatorios antes de parsear fechas
-        if (nombre == null || nombre.trim().isEmpty()
-                || tipo == null || tipo.trim().isEmpty()
-                || fSiembraStr == null || fSiembraStr.trim().isEmpty()) {
-            request.setAttribute("mensajeError", "Nombre, tipo y fecha de siembra son obligatorios.");
-            List<cultivo> lista = new CultivoDao().listarCultivos();
-            request.setAttribute("listaCultivos", lista);
-            request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
-                   .forward(request, response);
+        if (estaVacio(nombre) || estaVacio(tipo) || estaVacio(fSiembraStr)) {
+            reenviarAdminConError("Nombre, tipo y fecha de siembra son obligatorios.",
+                                  request, response);
             return;
         }
 
@@ -91,26 +79,32 @@ public class ServletCultivo extends HttpServlet {
         Date fCosecha;
         try {
             fSiembra = Date.valueOf(fSiembraStr);
-            fCosecha = (fCosechaStr != null && !fCosechaStr.isEmpty()) ? Date.valueOf(fCosechaStr) : null;
+            fCosecha = estaVacio(fCosechaStr) ? null : Date.valueOf(fCosechaStr);
         } catch (IllegalArgumentException e) {
-            request.setAttribute("mensajeError", "Formato de fecha inválido. Use el selector de fechas.");
-            List<cultivo> lista = new CultivoDao().listarCultivos();
-            request.setAttribute("listaCultivos", lista);
-            request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
-                   .forward(request, response);
+            reenviarAdminConError("Formato de fecha inválido. Use el selector de fechas.",
+                                  request, response);
             return;
         }
 
         CultivoDao dao = new CultivoDao();
-
-        if (idStr != null && !idStr.isEmpty()) {
-            dao.actualizarCultivo(Integer.parseInt(idStr), nombre.trim(), tipo.trim(), fSiembra, fCosecha);
+        if (!estaVacio(idStr)) {
+            dao.actualizarCultivo(Integer.parseInt(idStr), nombre.trim(),
+                                  tipo.trim(), fSiembra, fCosecha);
         } else {
-            cultivo c = new cultivo(nombre.trim(), tipo.trim(), fSiembra, fCosecha);
-            dao.registrarCultivo(c);
+            dao.registrarCultivo(new cultivo(nombre.trim(), tipo.trim(), fSiembra, fCosecha));
         }
 
-        // Redirigimos al Servlet (doGet), no al JSP, para que recargue la lista
         response.sendRedirect("ServletCultivo");
+    }
+
+    // ── Helper ────────────────────────────────────────────────────────────────
+    private void reenviarAdminConError(String mensaje,
+                                       HttpServletRequest request,
+                                       HttpServletResponse response)
+            throws ServletException, IOException {
+        request.setAttribute("mensajeError", mensaje);
+        request.setAttribute("listaCultivos", new CultivoDao().listarCultivos());
+        request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
+               .forward(request, response);
     }
 }

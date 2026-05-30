@@ -126,3 +126,11 @@
     transition: filter var(--transition-fast);
 }
 .btn--save-job:hover { filter: brightness(.9); }
+
+.btn--danger {
+    background-color: #c0392b;
+    color: #fff;
+}
+.btn--danger:hover {
+    background-color: #a93226;
+}

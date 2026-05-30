@@ -4,6 +4,7 @@
         response.sendRedirect(request.getContextPath() + "/templates/login.jsp");
         return;
     }
+    String nombreUsuario = (String) session.getAttribute("nombreUsuario");
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -18,33 +19,31 @@
     <div class="trabaja-layout">
         <header class="trabaja-header">
             <h1 class="trabaja-header__title">Trabajador</h1>
+            <a href="${pageContext.request.contextPath}/ServletLogout"
+               class="btn btn--danger"
+               onclick="return confirm('¿Cerrar sesión?')">Cerrar sesión</a>
         </header>
-
         <main class="trabaja-panel">
             <section class="trabaja-panel__container">
-
                 <div class="profile-card">
                     <div class="profile-card__image-container">
                         <img src="${pageContext.request.contextPath}/static/IMG/trabajador.png"
-                            alt="Perfil" class="profile-card__img">
+                             alt="Perfil" class="profile-card__img">
                     </div>
+                    <% if (nombreUsuario != null) { %>
+                        <p class="profile-card__name"><%= nombreUsuario %></p>
+                    <% } %>
                 </div>
-
                 <nav class="dashboard-grid">
-                    <%-- CORREGIDO: apunta a accion=misTrabajos para filtrar por el usuario en sesión --%>
                     <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=misTrabajos"
-                    class="dashboard-grid__item">Trabajos asignados</a>
-
-                    <a href="${pageContext.request.contextPath}/ServletCultivo"
-                    class="dashboard-grid__item">Cultivos</a>
-
-                    <a href="${pageContext.request.contextPath}/templates/administrador/biopreparados.jsp"
-                    class="dashboard-grid__item">Recetario de biopreparados</a>
-
+                       class="dashboard-grid__item">Trabajos asignados</a>
+                    <a href="${pageContext.request.contextPath}/ServletCultivo?accion=verTrabajador"
+                       class="dashboard-grid__item">Cultivos</a>
+                    <a href="${pageContext.request.contextPath}/ServletBiopreparado?accion=verTrabajador"
+                       class="dashboard-grid__item">Recetario de biopreparados</a>
                     <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=finalizados"
-                    class="dashboard-grid__item">Trabajos completados</a>
+                       class="dashboard-grid__item">Trabajos completados</a>
                 </nav>
-
             </section>
         </main>
     </div>

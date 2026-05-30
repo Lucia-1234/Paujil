@@ -1,6 +1,7 @@
 package com.paujil.controlador;
 
 import com.paujil.dao.UsuarioDao;
+import com.paujil.modelo.Rol;
 import com.paujil.modelo.validador;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -62,13 +63,12 @@ public class ServletRegistro extends HttpServlet {
         // 2e. Convertir nombre de rol a id_rol numérico
         //     Debe coincidir con los datos reales de la tabla 'roles' en BD.
         //     Si cambias los roles, actualiza este mapeo.
-        int idRol;
-        switch (rolStr) {
-            case "trabajador":     idRol = 1; break;
-            case "administrador":  idRol = 2; break;
-            default:
-                enviarError("Rol no válido.", request, response);
-                return;
+        Rol rol;
+        try {
+            rol = Rol.desde(rolStr);
+        } catch (IllegalArgumentException e) {
+            enviarError("Rol no válido.", request, response);
+            return;
         }
 
         // 2f. Fecha de nacimiento con formato válido
@@ -103,7 +103,7 @@ public class ServletRegistro extends HttpServlet {
                 fechaSql,
                 direccion,
                 passHash,
-                idRol
+                rol.getIdBd()
         );
 
         // ── 6. Respuesta ──────────────────────────────────────────────────────

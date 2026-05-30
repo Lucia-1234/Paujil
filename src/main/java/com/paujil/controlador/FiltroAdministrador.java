@@ -14,7 +14,7 @@ import java.io.IOException;
 // Se eliminó /ServletTrabajo de aquí porque ese servlet maneja
 // tanto acciones de admin como de trabajador, y ya tiene sus
 // propias guardas de sesión internas por acción.
-@WebFilter({"/templates/administrador/*", "/GestionarRoles", "/ServletCultivo"})
+@WebFilter({"/templates/administrador/*", "/GestionarRoles"})
 public class FiltroAdministrador implements Filter {
 
     @Override
