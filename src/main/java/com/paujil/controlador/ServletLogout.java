@@ -15,10 +15,13 @@ public class ServletLogout extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        // false evita crear una sesion nueva si el usuario ya no tenia una activa
         HttpSession session = request.getSession(false);
         if (session != null) {
+            // Destruye la sesion y todos sus atributos, invalidando el ID en el servidor
             session.invalidate();
         }
+        // Redirige al login tras el cierre; getContextPath() asegura la ruta correcta en cualquier contexto de despliegue
         response.sendRedirect(request.getContextPath() + "/templates/login.jsp");
     }
 }

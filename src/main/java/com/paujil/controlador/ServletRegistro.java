@@ -16,24 +16,25 @@ public class ServletRegistro extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // ── 1. Recolección y saneamiento ──────────────────────────────────────
+        // Lee todos los campos del formulario antes de iniciar cualquier validacion
         String nombre    = request.getParameter("txtNombre");
         String correo    = request.getParameter("txtEmail");
         String telefono  = request.getParameter("txtTelefono");
         String fechaNac  = request.getParameter("txtFechaNacimiento");
         String direccion = request.getParameter("txtDireccion");
-        String rolStr    = request.getParameter("txtRol");       // "trabajador" | "administrador"
+        // Valor esperado: "trabajador" o "administrador"; se normaliza antes de resolver el enum
+        String rolStr    = request.getParameter("txtRol");
         String pass      = request.getParameter("txtContrasena");
+        // Campo de confirmacion; solo se usa para validar coincidencia, no se persiste
         String passConf  = request.getParameter("txtConfirmarContrasena");
 
-        // Saneamiento básico
+        // Normaliza correo y rol a minusculas para comparaciones seguras sin importar el caso del input
         if (correo   != null) correo   = correo.trim().toLowerCase();
+        // trim() en telefono evita que espacios accidentales rompan la validacion del patron de digitos
         if (telefono != null) telefono = telefono.trim();
         if (rolStr   != null) rolStr   = rolStr.trim().toLowerCase();
 
-        // ── 2. Validaciones ───────────────────────────────────────────────────
-
-        // 2a. Campos obligatorios vacíos
+        // Validacion temprana: todos los campos son obligatorios para construir un usuario valido
         if (estaVacio(nombre) || estaVacio(correo) || estaVacio(telefono)
                 || estaVacio(fechaNac) || estaVacio(direccion)
                 || estaVacio(rolStr)   || estaVacio(pass)) {
@@ -41,74 +42,76 @@ public class ServletRegistro extends HttpServlet {
             return;
         }
 
-        // 2b. Contraseñas coinciden
+        // Verifica coincidencia antes de aplicar cualquier politica de seguridad sobre la contrasena
         if (!pass.equals(passConf)) {
-            enviarError("Las contraseñas no coinciden.", request, response);
+            enviarError("Las contrasenas no coinciden.", request, response);
             return;
         }
 
-        // 2c. Contraseña segura (delegado al validador existente)
+        // Delega la politica de complejidad al validador centralizado para mantener una sola fuente de verdad
         if (!validador.esContrasenaSegura(pass)) {
-            enviarError("La contraseña no es segura (mínimo 8 caracteres, "
-                    + "mayúsculas, minúsculas, número y símbolo).", request, response);
+            enviarError("La contrasena no es segura (minimo 8 caracteres, "
+                    + "mayusculas, minusculas, numero y simbolo).", request, response);
             return;
         }
 
-        // 2d. Teléfono: exactamente 10 dígitos
+        // Patron exacto de 10 digitos; rechaza guiones, espacios o codigos de pais
         if (!telefono.matches("\\d{10}")) {
-            enviarError("El teléfono debe tener exactamente 10 dígitos.", request, response);
+            enviarError("El telefono debe tener exactamente 10 digitos.", request, response);
             return;
         }
 
-        // 2e. Convertir nombre de rol a id_rol numérico
-        //     Debe coincidir con los datos reales de la tabla 'roles' en BD.
-        //     Si cambias los roles, actualiza este mapeo.
+        // Rol.desde() resuelve el string al enum correspondiente y lanza excepcion si el valor no existe
+        // El id numerico del enum debe coincidir con los registros reales de la tabla 'roles' en BD
         Rol rol;
         try {
             rol = Rol.desde(rolStr);
         } catch (IllegalArgumentException e) {
-            enviarError("Rol no válido.", request, response);
+            // Valor de rol no reconocido; puede indicar manipulacion del formulario
+            enviarError("Rol no valido.", request, response);
             return;
         }
 
-        // 2f. Fecha de nacimiento con formato válido
+        // Date.valueOf espera formato estricto "yyyy-MM-dd"; cualquier otra forma lanza excepcion
         java.sql.Date fechaSql;
         try {
-            fechaSql = java.sql.Date.valueOf(fechaNac); // Espera "yyyy-MM-dd"
+            fechaSql = java.sql.Date.valueOf(fechaNac);
         } catch (IllegalArgumentException e) {
-            enviarError("Formato de fecha inválido.", request, response);
+            enviarError("Formato de fecha invalido.", request, response);
             return;
         }
 
-        // ── 3. Verificar duplicados antes de insertar ─────────────────────────
         UsuarioDao dao = new UsuarioDao();
 
+        // Consulta de duplicado antes de insertar para evitar violar restricciones UNIQUE en BD
         if (dao.correoExiste(correo)) {
-            enviarError("El correo electrónico ya está registrado.", request, response);
+            enviarError("El correo electronico ya esta registrado.", request, response);
             return;
         }
+        // Verificacion separada del telefono para dar un mensaje de error especifico al usuario
         if (dao.telefonoExiste(telefono)) {
-            enviarError("El número de teléfono ya está registrado.", request, response);
+            enviarError("El numero de telefono ya esta registrado.", request, response);
             return;
         }
 
-        // ── 4. Cifrar contraseña ANTES de persistir ───────────────────────────
+        // BCrypt hashea la contrasena en texto plano; nunca se almacena el valor original
         String passHash = com.paujil.utils.Seguridad.encriptar(pass);
 
-        // ── 5. Persistir con transacción en el DAO ────────────────────────────
+        // Delega la insercion atomica (usuario + correo + telefono + rol) a una transaccion en el DAO
         boolean exito = dao.registrarUsuarioCompleto(
                 nombre,
                 correo,
                 telefono,
                 fechaSql,
                 direccion,
+                // Se envia el hash, nunca la contrasena en claro
                 passHash,
+                // getIdBd() traduce el enum al id numerico que espera la clave foranea en BD
                 rol.getIdBd()
         );
 
-        // ── 6. Respuesta ──────────────────────────────────────────────────────
         if (exito) {
-            // El usuario queda en estado 'Pendiente'; el admin lo activará.
+            // El usuario se crea en estado 'Pendiente'; requiere aprobacion del administrador para activarse
             response.sendRedirect(request.getContextPath()
                     + "/templates/login.jsp?registro=success");
         } else {
@@ -116,26 +119,25 @@ public class ServletRegistro extends HttpServlet {
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
+    // Centraliza la verificacion de vacios para no repetir la condicion null + trim en cada campo
     private boolean estaVacio(String valor) {
         return valor == null || valor.trim().isEmpty();
     }
 
+    // Usa forward para preservar el mensaje y los valores del formulario en el scope de request;
+    // un redirect los perderia y el usuario tendria que reescribir todos los campos
     private void enviarError(String mensaje, HttpServletRequest request,
             HttpServletResponse response) throws ServletException, IOException {
-                // Guardamos el mensaje de error
-            request.setAttribute("mensaje", mensaje);
-
-            // Guardamos los valores para que el usuario no tenga que volver a escribirlos
-            request.setAttribute("nombre", request.getParameter("txtNombre"));
-            request.setAttribute("email", request.getParameter("txtEmail"));
-            request.setAttribute("telefono", request.getParameter("txtTelefono"));
-            request.setAttribute("direccion", request.getParameter("txtDireccion"));
-            request.setAttribute("fecha", request.getParameter("txtFechaNacimiento"));
-            // ... repetir para los campos que quieras preservar
-
-            request.getRequestDispatcher("/templates/registro_usuario.jsp")
-                   .forward(request, response);
+        // El JSP lee este atributo para mostrar el aviso de error al usuario
+        request.setAttribute("mensaje", mensaje);
+        // Repobla el formulario con los valores previos para no obligar al usuario a reingresar todo
+        request.setAttribute("nombre",    request.getParameter("txtNombre"));
+        request.setAttribute("email",     request.getParameter("txtEmail"));
+        request.setAttribute("telefono",  request.getParameter("txtTelefono"));
+        request.setAttribute("direccion", request.getParameter("txtDireccion"));
+        // La fecha se preserva porque suele ser el campo mas tedioso de reingresar
+        request.setAttribute("fecha",     request.getParameter("txtFechaNacimiento"));
+        request.getRequestDispatcher("/templates/registro_usuario.jsp")
+               .forward(request, response);
     }
 }

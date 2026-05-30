@@ -12,7 +12,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Date;
 
-// Importaciones estaticas para reducir acoplamiento y centralizar utilidades transversales
 import static com.paujil.utils.ServletUtils.estaVacio;
 import static com.paujil.utils.ServletUtils.verificarSesionAdmin;
 import static com.paujil.utils.ServletUtils.verificarSesionUsuario;
@@ -23,18 +22,17 @@ import java.util.Map;
 @WebServlet("/ServletCultivo")
 public class ServletCultivo extends HttpServlet {
 
-    //  GET 
+    // ── GET ───────────────────────────────────────────────────────────────────
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Discriminador de rutas: determina que operacion y que vista corresponden a esta solicitud
+        // Discriminador de rutas: centraliza en un solo servlet múltiples operaciones sobre cultivos
         String accion = request.getParameter("accion");
         CultivoDao dao = new CultivoDao();
 
-        //  Vista del TRABAJADOR: solo lectura 
+        // ── Vista del TRABAJADOR: solo lectura ─────────────────────────────
         if ("verTrabajador".equals(accion)) {
-            // Acceso limitado a sesion de usuario comun, el trabajador no puede modificar cultivos
             if (!verificarSesionUsuario(request, response)) return;
             request.setAttribute("listaCultivos", dao.listarCultivos());
             request.getRequestDispatcher("/templates/trabajador/cultivos_trabajador.jsp")
@@ -42,11 +40,12 @@ public class ServletCultivo extends HttpServlet {
             return;
         }
 
-        //   ADMINISTRADOR 
-        // Cualquier accion no identificada como trabajador requiere privilegios de admin
+        // ── Todo lo demás requiere rol ADMINISTRADOR ───────────────────────
         if (!verificarSesionAdmin(request, response)) return;
-        
+
+        // ── Historial HTML: carga registros de trabajo de un cultivo específico ──
         if ("historial".equals(accion)) {
+            // Segunda verificación redundante; defensiva ante refactorizaciones futuras que muevan este bloque
             if (!verificarSesionAdmin(request, response)) return;
             String idStr = request.getParameter("id");
             if (estaVacio(idStr)) {
@@ -56,24 +55,27 @@ public class ServletCultivo extends HttpServlet {
             try {
                 int idCultivo = Integer.parseInt(idStr);
                 RegistroTrabajoDao registroDao = new RegistroTrabajoDao();
-                // Se pasa la lista de registros como atributo al JSP
                 request.setAttribute("historialCultivo", registroDao.listarPorCultivo(idCultivo));
+                // Permite que la JSP resalte o expanda el cultivo activo en la tabla
                 request.setAttribute("idCultivoActivo", idCultivo);
             } catch (NumberFormatException e) {
-                // ID inválido, se ignora — la vista mostrará el listado normal
+                // ID no numérico: se omite el historial y la vista renderiza solo el listado normal
             }
             request.setAttribute("listaCultivos", dao.listarCultivos());
             request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
                    .forward(request, response);
             return;
         }
-        
+
+        // ── Historial JSON: endpoint consumido por el frontend vía fetch/AJAX ──
         if ("historialJson".equals(accion)) {
             if (!verificarSesionAdmin(request, response)) return;
+            // Declara el tipo de respuesta antes de escribir en el stream para que el cliente parsee correctamente
             response.setContentType("application/json; charset=UTF-8");
 
             String idStr = request.getParameter("id");
             if (estaVacio(idStr)) {
+                // Array vacío como contrato: el cliente puede iterar sin comprobar null
                 response.getWriter().write("[]");
                 return;
             }
@@ -82,10 +84,11 @@ public class ServletCultivo extends HttpServlet {
                 int idCultivo = Integer.parseInt(idStr);
                 List<registros> lista = new RegistroTrabajoDao().listarPorCultivo(idCultivo);
 
-                // Construcción manual de JSON (sin librerías externas)
+                // Serialización manual para evitar dependencias externas (Jackson, Gson, etc.)
                 StringBuilder json = new StringBuilder("[");
                 for (int i = 0; i < lista.size(); i++) {
                     registros r = lista.get(i);
+                    // Coma separadora solo entre elementos, no tras el último (JSON estricto)
                     if (i > 0) json.append(",");
                     json.append("{")
                         .append("\"idTrabajoRealizado\":").append(r.getIdTrabajoRealizado()).append(",")
@@ -93,6 +96,7 @@ public class ServletCultivo extends HttpServlet {
                         .append("\"nombreUsuario\":\"").append(escaparJson(r.getNombreUsuario())).append("\",")
                         .append("\"fechaInicio\":\"").append(r.getFechaInicio()).append("\",")
                         .append("\"fechaFinalizo\":\"").append(r.getFechaFinalizo()).append("\",")
+                        // Campo nullable representado como null JSON, no como string "null"
                         .append("\"observaciones\":").append(r.getObservaciones() != null
                             ? "\"" + escaparJson(r.getObservaciones()) + "\""
                             : "null")
@@ -106,39 +110,44 @@ public class ServletCultivo extends HttpServlet {
             return;
         }
 
+        // ── Eliminar cultivo 
         if ("eliminar".equals(accion)) {
             String idStr = request.getParameter("id");
             boolean ok = false;
             if (!estaVacio(idStr)) {
                 try {
                     dao.eliminarCultivo(Integer.parseInt(idStr));
-                } catch (NumberFormatException ignored) {
-                    // ID no numerico se descarta, la redireccion siguiente refresca el listado sin eliminar
-                }
+                    // ok permanece false si eliminarCultivo no lanza excepcion pero falla silenciosamente en BD
+                } catch (NumberFormatException ignored) {}
             }
-            // Redirect-after-action evita que recargar la pagina repita la eliminacion
+            // Parametro "status" comunica el resultado a la vista siguiente sin session flash
             String status = ok ? "eliminado" : "error";
             response.sendRedirect(request.getContextPath() + "/ServletCultivo?status=" + status);
             return;
         }
-        
+
+        //  Eliminar registro de trabajo individual dentro de un cultivo 
         if ("eliminarRegistro".equals(accion)) {
             if (!verificarSesionAdmin(request, response)) return;
-            String idStr = request.getParameter("id");
+            String idStr        = request.getParameter("id");
             String idCultivoStr = request.getParameter("idCultivo");
             if (!estaVacio(idStr)) {
                 try {
                     new RegistroTrabajoDao().eliminarLabor(Integer.parseInt(idStr));
-                } catch (NumberFormatException ignored) { }
+                } catch (NumberFormatException ignored) {}
             }
+            // Preserva el contexto del cultivo activo para que la vista regrese al historial correcto
             String redirect = request.getContextPath() + "/ServletCultivo?status=registroEliminado";
             if (!estaVacio(idCultivoStr)) redirect += "&idCultivoActivo=" + idCultivoStr;
             response.sendRedirect(redirect);
             return;
         }
-        
+
+        //  Caso por defecto: listado admin con contadores de historial 
         List<cultivo> lista = dao.listarCultivos();
         RegistroTrabajoDao registroDao = new RegistroTrabajoDao();
+
+        // Mapa idCultivo  cantidad de registros; permite mostrar badges sin consultas adicionales en la JSP
         Map<Integer, Integer> contadoresHistorial = new HashMap<>();
         for (cultivo c : lista) {
             contadoresHistorial.put(
@@ -148,21 +157,21 @@ public class ServletCultivo extends HttpServlet {
         }
         request.setAttribute("listaCultivos", lista);
         request.setAttribute("contadoresHistorial", contadoresHistorial);
-
-        // Caso por defecto: mostrar listado
         request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
                .forward(request, response);
-            }
-    
-            // Helper de escape JSON (seguridad anti-XSS/injection)
-        private  String escaparJson(String s) {
-            if (s == null) return "";
-            return s.replace("\\", "\\\\")
-                    .replace("\"", "\\\"")
-                    .replace("\n", "\\n")
-                    .replace("\r", "\\r")
-                    .replace("\t", "\\t");
-        }
+    }
+
+    //  Helper: escape JSON 
+
+    // Escapa caracteres especiales para prevenir XSS e inyeccion JSON al serializar manualmente
+    private String escaparJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")   // backslash primero para no escapar los escapes siguientes
+                .replace("\"", "\\\"")   // comilla doble rompería la cadena JSON
+                .replace("\n", "\\n")    // saltos de línea invalidan JSON de una sola línea
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
 
     //  POST: solo ADMINISTRADOR 
     @Override
@@ -177,7 +186,7 @@ public class ServletCultivo extends HttpServlet {
         String fSiembraStr = request.getParameter("fechaSiembra");
         String fCosechaStr = request.getParameter("fechaCosecha");
 
-        // La cosecha es opcional (cultivo puede estar en curso), pero siembra y tipo son datos mínimos del negocio
+        // La cosecha es opcional: modela cultivos en curso sin fecha de termino definida
         if (estaVacio(nombre) || estaVacio(tipo) || estaVacio(fSiembraStr)) {
             reenviarAdminConError("Nombre, tipo y fecha de siembra son obligatorios.",
                                   request, response);
@@ -187,9 +196,8 @@ public class ServletCultivo extends HttpServlet {
         Date fSiembra;
         Date fCosecha;
         try {
-            // Date.valueOf requiere formato "yyyy-MM-dd"; el mensaje de error orienta al usuario a usar el selector
+            // Date.valueOf espera "yyyy-MM-dd"; cualquier otra forma lanza IllegalArgumentException
             fSiembra = Date.valueOf(fSiembraStr);
-            // Fecha de cosecha nula modela un cultivo activo sin fecha de termino definida
             fCosecha = estaVacio(fCosechaStr) ? null : Date.valueOf(fCosechaStr);
         } catch (IllegalArgumentException e) {
             reenviarAdminConError("Formato de fecha inválido. Use el selector de fechas.",
@@ -198,7 +206,7 @@ public class ServletCultivo extends HttpServlet {
         }
 
         CultivoDao dao = new CultivoDao();
-        // La presencia de "id" diferencia entre actualizar un cultivo existente y registrar uno nuevo
+        // Presencia de "id" distingue edicion de registro existente vs. creacion de uno nuevo
         if (!estaVacio(idStr)) {
             dao.actualizarCultivo(Integer.parseInt(idStr), nombre.trim(),
                                   tipo.trim(), fSiembra, fCosecha);
@@ -206,20 +214,18 @@ public class ServletCultivo extends HttpServlet {
             dao.registrarCultivo(new cultivo(nombre.trim(), tipo.trim(), fSiembra, fCosecha));
         }
 
-        // Redirige sin parametros de estado porque los errores de BD no se manejan aqui explicitamente
         response.sendRedirect("ServletCultivo");
     }
 
-    //  Helper 
+    //  Helper: reenvio con error 
 
-    // Usa forward en lugar de redirect para preservar el mensaje de error en el scope de request,
-    // que no sobrevive una redireccion HTTP
+    // Forward en lugar de redirect para que el mensaje de error sobreviva en el scope de request
     private void reenviarAdminConError(String mensaje,
                                        HttpServletRequest request,
                                        HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("mensajeError", mensaje);
-        // Recarga el listado para que la vista pueda renderizar la tabla junto al mensaje de error
+        // Recarga el listado para que la JSP pueda renderizar la tabla junto al mensaje de error
         request.setAttribute("listaCultivos", new CultivoDao().listarCultivos());
         request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
                .forward(request, response);
