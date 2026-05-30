@@ -96,7 +96,7 @@
         </div>
     </div>
 </div>
-
+<script>window._ctxPath = '${pageContext.request.contextPath}';</script>
 <script src="${pageContext.request.contextPath}/static/js/script.js"></script>
 </body>
 </html>

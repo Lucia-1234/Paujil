@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.Date;
 
-@WebServlet("/ServletLabor")
+@WebServlet("/ServletRegistroTrabajo")
 public class ServletRegistroTrabajo extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)

@@ -1,7 +1,9 @@
 package com.paujil.controlador;
 
 import com.paujil.dao.CultivoDao;
+import com.paujil.dao.RegistroTrabajoDao;
 import com.paujil.modelo.cultivo;
+import com.paujil.modelo.registros;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -14,6 +16,9 @@ import java.sql.Date;
 import static com.paujil.utils.ServletUtils.estaVacio;
 import static com.paujil.utils.ServletUtils.verificarSesionAdmin;
 import static com.paujil.utils.ServletUtils.verificarSesionUsuario;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @WebServlet("/ServletCultivo")
 public class ServletCultivo extends HttpServlet {
@@ -40,9 +45,70 @@ public class ServletCultivo extends HttpServlet {
         //   ADMINISTRADOR 
         // Cualquier accion no identificada como trabajador requiere privilegios de admin
         if (!verificarSesionAdmin(request, response)) return;
+        
+        if ("historial".equals(accion)) {
+            if (!verificarSesionAdmin(request, response)) return;
+            String idStr = request.getParameter("id");
+            if (estaVacio(idStr)) {
+                response.sendRedirect(request.getContextPath() + "/ServletCultivo");
+                return;
+            }
+            try {
+                int idCultivo = Integer.parseInt(idStr);
+                RegistroTrabajoDao registroDao = new RegistroTrabajoDao();
+                // Se pasa la lista de registros como atributo al JSP
+                request.setAttribute("historialCultivo", registroDao.listarPorCultivo(idCultivo));
+                request.setAttribute("idCultivoActivo", idCultivo);
+            } catch (NumberFormatException e) {
+                // ID inválido, se ignora — la vista mostrará el listado normal
+            }
+            request.setAttribute("listaCultivos", dao.listarCultivos());
+            request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
+                   .forward(request, response);
+            return;
+        }
+        
+        if ("historialJson".equals(accion)) {
+            if (!verificarSesionAdmin(request, response)) return;
+            response.setContentType("application/json; charset=UTF-8");
+
+            String idStr = request.getParameter("id");
+            if (estaVacio(idStr)) {
+                response.getWriter().write("[]");
+                return;
+            }
+
+            try {
+                int idCultivo = Integer.parseInt(idStr);
+                List<registros> lista = new RegistroTrabajoDao().listarPorCultivo(idCultivo);
+
+                // Construcción manual de JSON (sin librerías externas)
+                StringBuilder json = new StringBuilder("[");
+                for (int i = 0; i < lista.size(); i++) {
+                    registros r = lista.get(i);
+                    if (i > 0) json.append(",");
+                    json.append("{")
+                        .append("\"idTrabajoRealizado\":").append(r.getIdTrabajoRealizado()).append(",")
+                        .append("\"descripcionTrabajo\":\"").append(escaparJson(r.getDescripcionTrabajo())).append("\",")
+                        .append("\"nombreUsuario\":\"").append(escaparJson(r.getNombreUsuario())).append("\",")
+                        .append("\"fechaInicio\":\"").append(r.getFechaInicio()).append("\",")
+                        .append("\"fechaFinalizo\":\"").append(r.getFechaFinalizo()).append("\",")
+                        .append("\"observaciones\":").append(r.getObservaciones() != null
+                            ? "\"" + escaparJson(r.getObservaciones()) + "\""
+                            : "null")
+                        .append("}");
+                }
+                json.append("]");
+                response.getWriter().write(json.toString());
+            } catch (NumberFormatException e) {
+                response.getWriter().write("[]");
+            }
+            return;
+        }
 
         if ("eliminar".equals(accion)) {
             String idStr = request.getParameter("id");
+            boolean ok = false;
             if (!estaVacio(idStr)) {
                 try {
                     dao.eliminarCultivo(Integer.parseInt(idStr));
@@ -51,15 +117,52 @@ public class ServletCultivo extends HttpServlet {
                 }
             }
             // Redirect-after-action evita que recargar la pagina repita la eliminacion
-            response.sendRedirect("ServletCultivo");
+            String status = ok ? "eliminado" : "error";
+            response.sendRedirect(request.getContextPath() + "/ServletCultivo?status=" + status);
             return;
         }
+        
+        if ("eliminarRegistro".equals(accion)) {
+            if (!verificarSesionAdmin(request, response)) return;
+            String idStr = request.getParameter("id");
+            String idCultivoStr = request.getParameter("idCultivo");
+            if (!estaVacio(idStr)) {
+                try {
+                    new RegistroTrabajoDao().eliminarLabor(Integer.parseInt(idStr));
+                } catch (NumberFormatException ignored) { }
+            }
+            String redirect = request.getContextPath() + "/ServletCultivo?status=registroEliminado";
+            if (!estaVacio(idCultivoStr)) redirect += "&idCultivoActivo=" + idCultivoStr;
+            response.sendRedirect(redirect);
+            return;
+        }
+        
+        List<cultivo> lista = dao.listarCultivos();
+        RegistroTrabajoDao registroDao = new RegistroTrabajoDao();
+        Map<Integer, Integer> contadoresHistorial = new HashMap<>();
+        for (cultivo c : lista) {
+            contadoresHistorial.put(
+                c.getIdCultivo(),
+                registroDao.contarPorCultivo(c.getIdCultivo())
+            );
+        }
+        request.setAttribute("listaCultivos", lista);
+        request.setAttribute("contadoresHistorial", contadoresHistorial);
 
-        // Caso por defecto para admin: muestra el listado completo con opciones de gestion
-        request.setAttribute("listaCultivos", dao.listarCultivos());
+        // Caso por defecto: mostrar listado
         request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
                .forward(request, response);
-    }
+            }
+    
+            // Helper de escape JSON (seguridad anti-XSS/injection)
+        private  String escaparJson(String s) {
+            if (s == null) return "";
+            return s.replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r")
+                    .replace("\t", "\\t");
+        }
 
     //  POST: solo ADMINISTRADOR 
     @Override

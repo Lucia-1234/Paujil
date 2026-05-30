@@ -100,7 +100,8 @@ window.abrirModalEliminar = function (id) {
 /** Navega a la URL de eliminación de cultivo tras confirmar. */
 window.ejecutarEliminacion = function () {
     if (_idCultivoEliminar) {
-        window.location.href = 'ServletCultivo?accion=eliminar&id=' + _idCultivoEliminar;
+        var url = (window._ctxPath || '')+ '/ServletCultivo?accion=eliminar&id=' + _idCultivoEliminar;
+        window.location.href = url;
     }
 };
 
@@ -296,6 +297,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+window.abrirModalRegistro = function (idCultivo) {
+    _setVal('regIdCultivo', idCultivo);
+    abrirModal('modalRegistro');
+};
+
 function _mostrarErrorRegistro(el, mensaje) {
     el.textContent = mensaje;
     el.style.display = 'block';
@@ -361,3 +367,143 @@ function _setText(id, text) {
         });
     });
 })();
+
+
+// En script.js — nuevo módulo: HISTORIAL DE CULTIVOS
+window.toggleHistorial = function(btn, idCultivo) {
+    var fila = document.getElementById('historial-' + idCultivo);
+    var contenido = document.getElementById('history-content-' + idCultivo);
+    var estaVisible = fila.style.display !== 'none';
+
+    if (estaVisible) {
+        fila.style.display = 'none';
+        btn.classList.remove('btn--history--active');
+        return;
+    }
+
+    fila.style.display = 'table-row';
+    btn.classList.add('btn--history--active');
+
+    // Solo cargar si aún no tiene datos reales (evita peticiones repetidas)
+    if (contenido.dataset.loaded) return;
+
+    fetch(window._ctxPath + '/ServletCultivo?accion=historialJson&id=' + idCultivo, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        contenido.dataset.loaded = 'true';
+        if (!data.length) {
+            contenido.innerHTML = '<p class="no-data">Sin registros históricos.</p>';
+            return;
+        }
+        var html = '<table class="history-table"><thead>'
+            + '<tr><th>Labor</th><th>Responsable</th>'
+            + '<th>Inicio</th><th>Finalización</th><th>Observaciones</th><th></th></tr>'
+            + '</thead><tbody>';
+        data.forEach(function(r) {
+            html += '<tr id="registro-fila-' + r.idTrabajoRealizado + '">'
+                + '<td>' + _esc(r.descripcionTrabajo) + '</td>'
+                + '<td>' + _esc(r.nombreUsuario) + '</td>'
+                + '<td>' + r.fechaInicio + '</td>'
+                + '<td>' + r.fechaFinalizo + '</td>'
+                + '<td>' + (r.observaciones ? _esc(r.observaciones) : '—') + '</td>'
+                + '<td>'
+                + '<button class="btn btn--delete" style="padding:4px 10px;font-size:12px;"'
+                + ' onclick="abrirModalEliminarRegistro(' + r.idTrabajoRealizado + ',' + idCultivo + ')">'
+                + '<i class="fa-solid fa-trash"></i>'
+                + '</button>'
+                + '</td>'
+                + '</tr>';
+        });
+        html += '</tbody></table>';
+        contenido.innerHTML = html;
+    })
+    .catch(function() {
+        contenido.innerHTML = '<p class="no-data">Error al cargar historial.</p>';
+    });
+};
+
+// Escape HTML para prevenir XSS en datos dinámicos
+function _esc(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6. MÓDULO: TRABAJOS
+   ══════════════════════════════════════════════════════════════════════ */
+
+let _idTrabajoEliminar = null;
+
+window.abrirModalEliminarTrabajo = function (id) {
+    _idTrabajoEliminar = id;
+    abrirModal('modalConfirmacionTrabajo');
+};
+
+window.ejecutarEliminacionTrabajo = function () {
+    if (_idTrabajoEliminar) {
+        window.location.href = (window._ctxPath || '')
+            + '/ServletTrabajo?accion=eliminar&id=' + _idTrabajoEliminar;
+    }
+};
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7. MÓDULO: REGISTROS HISTÓRICOS
+   ══════════════════════════════════════════════════════════════════════ */
+
+let _idRegistroEliminar = null;
+let _idCultivoDelRegistro = null;
+
+window.abrirModalEliminarRegistro = function (idRegistro, idCultivo) {
+    _idRegistroEliminar = idRegistro;
+    _idCultivoDelRegistro = idCultivo;
+    abrirModal('modalConfirmacionRegistro');
+};
+
+window.ejecutarEliminacionRegistro = function () {
+    if (!_idRegistroEliminar) return;
+
+    fetch((window._ctxPath || '')
+            + '/ServletCultivo?accion=eliminarRegistro&id=' + _idRegistroEliminar
+            + '&idCultivo=' + _idCultivoDelRegistro)
+        .then(function(res) {
+            if (res.ok) {
+                // Quitar la fila de la tabla sin recargar la página
+                var fila = document.getElementById('registro-fila-' + _idRegistroEliminar);
+                if (fila) fila.remove();
+
+                // Actualizar el contador del botón historial
+                var contenido = document.getElementById('history-content-' + _idCultivoDelRegistro);
+                var filas = contenido ? contenido.querySelectorAll('tbody tr') : [];
+                if (filas.length === 0) {
+                    contenido.innerHTML = '<p class="no-data">Sin registros históricos.</p>';
+                }
+
+                // Actualizar el número entre paréntesis del botón
+                var btnHistorial = document.querySelector(
+                    '[onclick="toggleHistorial(this, \'' + _idCultivoDelRegistro + '\')"]'
+                );
+                if (btnHistorial) {
+                    var texto = btnHistorial.textContent.trim();
+                    var match = texto.match(/\((\d+)\)/);
+                    if (match) {
+                        var nuevo = Math.max(0, parseInt(match[1]) - 1);
+                        btnHistorial.innerHTML = btnHistorial.innerHTML.replace(
+                            /\(\d+\)/, '(' + nuevo + ')'
+                        );
+                    }
+                }
+            }
+            cerrarModal('modalConfirmacionRegistro');
+            _idRegistroEliminar = null;
+            _idCultivoDelRegistro = null;
+        })
+        .catch(function() {
+            cerrarModal('modalConfirmacionRegistro');
+            alert('Error al eliminar el registro.');
+        });
+};

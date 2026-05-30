@@ -9,31 +9,26 @@ import paujil.basedatos.clase_Conexion;
 public class RegistroTrabajoDao {
 
     // ── Registrar un trabajo realizado (Historial) ────────────────────────────
+    // Registrar una nueva labor
     public boolean registrarLabor(registros lab) {
-        // Asegúrate de que los nombres de columnas coincidan con tu DB actual
         String sql = "INSERT INTO trabajos_realizados "
                    + "(id_cultivo, descripcion_trabajo, id_usuario, fecha_inicio, fecha_finalizo, observaciones) "
                    + "VALUES (?, ?, ?, ?, ?, ?)";
-
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
             ps.setInt(1, lab.getIdCultivo());
             ps.setString(2, lab.getDescripcionTrabajo());
             ps.setInt(3, lab.getIdUsuario());
             ps.setDate(4, lab.getFechaInicio());
             ps.setDate(5, lab.getFechaFinalizo());
-
             if (lab.getObservaciones() != null && !lab.getObservaciones().trim().isEmpty()) {
                 ps.setString(6, lab.getObservaciones());
             } else {
                 ps.setNull(6, Types.VARCHAR);
             }
-
             return ps.executeUpdate() > 0;
-
         } catch (SQLException e) {
-            System.err.println("Error al registrar labor realizada: " + e.getMessage());
+            System.err.println("Error al registrar labor: " + e.getMessage());
             return false;
         }
     }
@@ -72,6 +67,21 @@ public class RegistroTrabajoDao {
         }
         return lista;
     }
+    
+        public int contarPorCultivo(int idCultivo) {
+        String sql = "SELECT COUNT(*) FROM trabajos_realizados WHERE id_cultivo = ?";
+        try (Connection con = clase_Conexion.MetodoConectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idCultivo);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al contar registros: " + e.getMessage());
+        }
+        return 0;
+    }
+    
 
     // ── Eliminar registro de trabajo realizado ────────────────────────────────
     public boolean eliminarLabor(int idTrabajoRealizado) {

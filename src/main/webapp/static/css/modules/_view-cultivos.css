@@ -32,3 +32,112 @@
 }
 
 .crop-card__quantity strong { font-weight: 600; }
+
+
+/* ==========================================================================
+   HISTORIAL DE CULTIVOS — panel expandible y tabla interna
+   ========================================================================== */
+
+.history-panel {
+    background: var(--color-light-green-bg);
+    border: 1px solid #b2ddc0;
+    border-radius: var(--radius-card);
+    margin: -4px 0 var(--spacing-md) 0;
+    overflow: hidden;
+    animation: slideDown var(--transition-base);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.history-content {
+    padding: var(--spacing-md);
+}
+
+/* Tabla interna */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+    font-family: var(--font-base);
+}
+
+.history-table thead tr {
+    border-bottom: 2px solid #b2ddc0;
+}
+
+.history-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--color-dark-green);
+    white-space: nowrap;
+}
+
+.history-table td {
+    padding: 8px 12px;
+    color: var(--color-text-primary);
+    vertical-align: top;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.history-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.history-table tbody tr:hover {
+    background: rgba(27, 158, 73, 0.06);
+}
+
+/* ── Botón historial ─────────────────────────────────────────────────────── */
+
+.btn--history {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-brand-green);
+    background: transparent;
+    color: var(--color-brand-green);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-base);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.btn--history:hover {
+    background: var(--color-brand-green);
+    color: var(--color-white);
+}
+
+.btn--history--active {
+    background: var(--color-brand-green);
+    color: var(--color-white);
+}
+
+.btn--history--active:hover {
+    background: var(--color-dark-green);
+    border-color: var(--color-dark-green);
+}
+
+/* ── Modal de registro histórico ─────────────────────────────────────────── */
+
+#modalRegistro label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-white);
+    margin-bottom: 4px;
+    margin-top: var(--spacing-sm);
+}
+
+#modalRegistro textarea,
+#modalRegistro input[type="date"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+}

@@ -33,6 +33,20 @@ public class CultivoDao {
         }
         return lista;
     }
+    
+    public int contarPorCultivo(int idCultivo) {
+        String sql = "SELECT COUNT(*) FROM trabajos_realizados WHERE id_cultivo = ?";
+        try (Connection con = clase_Conexion.MetodoConectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idCultivo);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1); // devuelve el número
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al contar: " + e.getMessage());
+        }
+        return 0; // si falla, devuelve 0
+    }
 
     // ── Registrar cultivo nuevo ───────────────────────────────────────────────
     public boolean registrarCultivo(cultivo c) {
