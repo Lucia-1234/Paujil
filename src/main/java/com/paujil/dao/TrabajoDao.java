@@ -8,17 +8,20 @@ import paujil.basedatos.clase_Conexion;
 
 public class TrabajoDao {
 
-    // ── 1. Registrar trabajo y asignarlo (Transacción segura) ─────────────────
+    // ── 1. Registrar trabajo y asignarlo (transaccion) ────────────────────────
     public boolean registrarTrabajoCompleto(trabajo t, int idCultivo, int idUsuario) {
+        // Dos inserciones separadas que deben ser atomicas: trabajo + asignacion
         String sqlTrabajo    = "INSERT INTO trabajos (nombre_trabajo, descripcion_trabajo, fecha_asignacion) VALUES (?, ?, ?)";
         String sqlAsignacion = "INSERT INTO asignaciones (id_trabajo, id_cultivo, id_usuario, fecha_asignacion) VALUES (?, ?, ?, ?)";
 
         Connection con = null;
         try {
             con = clase_Conexion.MetodoConectar();
+            // Desactiva autocommit para envolver ambas inserciones en una sola transaccion
             con.setAutoCommit(false);
 
             int idTrabajoGenerado;
+            // RETURN_GENERATED_KEYS recupera el ID autoincremental necesario para la asignacion
             try (PreparedStatement ps = con.prepareStatement(sqlTrabajo, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, t.getNombre());
                 ps.setString(2, t.getDescripcion());
@@ -27,30 +30,37 @@ public class TrabajoDao {
 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (!rs.next()) {
+                        // Sin ID no se puede crear la asignacion; se revierte el trabajo insertado
                         con.rollback();
                         System.err.println("registrarTrabajoCompleto: no se obtuvo el ID generado del trabajo.");
                         return false;
                     }
+                    // rs.getInt(1) lee la primera columna del ResultSet de claves generadas
                     idTrabajoGenerado = rs.getInt(1);
                 }
             }
 
+            // Usa el ID recien generado para vincular el trabajo al cultivo y al usuario asignado
             try (PreparedStatement psAsig = con.prepareStatement(sqlAsignacion)) {
                 psAsig.setInt(1, idTrabajoGenerado);
                 psAsig.setInt(2, idCultivo);
                 psAsig.setInt(3, idUsuario);
+                // Replica la fecha del trabajo en la asignacion para tener referencia temporal en ambas tablas
                 psAsig.setDate(4, t.getFechaAsignacion());
                 psAsig.executeUpdate();
             }
 
+            // Confirma trabajo y asignacion como una unidad; fallo en cualquiera revierte ambos
             con.commit();
             return true;
 
         } catch (SQLException e) {
+            // Deshace todas las operaciones de la transaccion ante cualquier error de BD
             try { if (con != null) con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
             e.printStackTrace();
             return false;
         } finally {
+            // Cierra en finally para garantizar liberacion de la conexion aunque ocurra una excepcion
             try { if (con != null) con.close(); } catch (SQLException e) { e.printStackTrace(); }
         }
     }
@@ -58,6 +68,7 @@ public class TrabajoDao {
     // ── 2. Listar todos los trabajos (vista administrador) ───────────────────
     public List<trabajo> listarTrabajosCompletos() {
         List<trabajo> lista = new ArrayList<>();
+        // JOINs enriquecen cada trabajo con nombre de usuario y cultivo en una sola consulta
         String sql = "SELECT a.id_asignacion, t.id_trabajo, t.nombre_trabajo, t.descripcion_trabajo, "
                    + "t.fecha_asignacion, t.fecha_finalizacion, t.observaciones_trabajo, "
                    + "u.nombre_usuario, c.nombre_cultivo "
@@ -65,6 +76,7 @@ public class TrabajoDao {
                    + "JOIN trabajos t ON a.id_trabajo = t.id_trabajo "
                    + "JOIN usuarios u ON a.id_usuario = u.id_usuario "
                    + "JOIN cultivos c ON a.id_cultivo = c.id_cultivo "
+                   // DESC muestra los trabajos mas recientes al inicio de la tabla
                    + "ORDER BY t.fecha_asignacion DESC";
 
         try (Connection con = clase_Conexion.MetodoConectar();
@@ -77,8 +89,10 @@ public class TrabajoDao {
                 t.setNombre(rs.getString("nombre_trabajo"));
                 t.setDescripcion(rs.getString("descripcion_trabajo"));
                 t.setFechaAsignacion(rs.getDate("fecha_asignacion"));
+                // fecha_finalizacion es null mientras el trabajo no haya sido cerrado por el trabajador
                 t.setFechaFinalizacion(rs.getDate("fecha_finalizacion"));
                 t.setObservaciones(rs.getString("observaciones_trabajo"));
+                // nombre_usuario y nombre_cultivo provienen de los JOINs, no de la tabla trabajos
                 t.setNombreUsuario(rs.getString("nombre_usuario"));
                 t.setNombreCultivo(rs.getString("nombre_cultivo"));
                 lista.add(t);
@@ -86,18 +100,19 @@ public class TrabajoDao {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        // Retorna lista vacia en caso de error para que el caller no necesite comprobar null
         return lista;
     }
 
-    // ── 3. Listar trabajos asignados a un trabajador específico ─────────────
+    // ── 3. Listar trabajos asignados a un trabajador especifico ─────────────
     public List<trabajo> listarTrabajosPorUsuario(int idUsuario) {
         List<trabajo> lista = new ArrayList<>();
-        // JOIN con cultivos para traer el nombre del cultivo
         String sql = "SELECT t.id_trabajo, t.nombre_trabajo, t.descripcion_trabajo, "
                    + "t.fecha_asignacion, t.fecha_finalizacion, t.observaciones_trabajo, "
                    + "c.nombre_cultivo "
                    + "FROM trabajos t "
                    + "JOIN asignaciones a ON t.id_trabajo = a.id_trabajo "
+                   // JOIN a cultivos necesario para mostrar el contexto agricola del trabajo en la vista
                    + "JOIN cultivos c ON a.id_cultivo = c.id_cultivo "
                    + "WHERE a.id_usuario = ? "
                    + "ORDER BY t.fecha_asignacion DESC";
@@ -111,8 +126,9 @@ public class TrabajoDao {
                 while (rs.next()) {
                     trabajo t = new trabajo();
                     t.setId(rs.getInt("id_trabajo"));
+                    // Valor por defecto evita mostrar null en la vista si el campo llega vacio de BD
                     t.setNombre(rs.getString("nombre_trabajo") != null ? rs.getString("nombre_trabajo") : "Sin nombre");
-                    t.setDescripcion(rs.getString("descripcion_trabajo") != null ? rs.getString("descripcion_trabajo") : "Sin descripción");
+                    t.setDescripcion(rs.getString("descripcion_trabajo") != null ? rs.getString("descripcion_trabajo") : "Sin descripcion");
                     t.setFechaAsignacion(rs.getDate("fecha_asignacion"));
                     t.setFechaFinalizacion(rs.getDate("fecha_finalizacion"));
                     t.setObservaciones(rs.getString("observaciones_trabajo"));
@@ -125,16 +141,18 @@ public class TrabajoDao {
         }
         return lista;
     }
-    
-        public List<trabajo> listarTrabajosFinalizadosPorUsuario(int idUsuario) {
+
+    // Retorna solo trabajos cerrados; fecha_finalizacion IS NOT NULL es el indicador de cierre definitivo
+    public List<trabajo> listarTrabajosFinalizadosPorUsuario(int idUsuario) {
         List<trabajo> lista = new ArrayList<>();
-        // Filtramos donde la fecha_finalizacion NO sea NULL
+        // IS NOT NULL filtra trabajos en curso; solo los cerrados aparecen en el historial de finalizados
         String sql = "SELECT t.id_trabajo, t.nombre_trabajo, t.descripcion_trabajo, "
                    + "t.fecha_asignacion, t.fecha_finalizacion, t.observaciones_trabajo, c.nombre_cultivo "
                    + "FROM trabajos t "
                    + "JOIN asignaciones a ON t.id_trabajo = a.id_trabajo "
                    + "JOIN cultivos c ON a.id_cultivo = c.id_cultivo "
                    + "WHERE a.id_usuario = ? AND t.fecha_finalizacion IS NOT NULL "
+                   // Ordena por fecha de finalizacion para mostrar los mas recientemente cerrados primero
                    + "ORDER BY t.fecha_finalizacion DESC";
 
         try (Connection conn = clase_Conexion.MetodoConectar();
@@ -146,6 +164,7 @@ public class TrabajoDao {
                     trabajo t = new trabajo();
                     t.setId(rs.getInt("id_trabajo"));
                     t.setNombre(rs.getString("nombre_trabajo"));
+                    // fecha_finalizacion es el campo clave de esta vista; confirma el cierre del trabajo
                     t.setFechaFinalizacion(rs.getDate("fecha_finalizacion"));
                     t.setObservaciones(rs.getString("observaciones_trabajo"));
                     t.setNombreCultivo(rs.getString("nombre_cultivo"));
@@ -157,10 +176,10 @@ public class TrabajoDao {
         }
         return lista;
     }
-    
-    
-    // ── 4. Guardar avance (observaciones) o marcar como finalizado ───────────
+
+    // ── 4. Guardar avance u observaciones, o marcar como finalizado ───────────
     public boolean actualizarEstadoTrabajo(int idTrabajo, String observaciones, boolean finalizar) {
+        // La SQL cambia segun la intencion: finalizar escribe la fecha actual, guardar solo actualiza observaciones
         String sql = finalizar
             ? "UPDATE trabajos SET observaciones_trabajo = ?, fecha_finalizacion = CURRENT_DATE WHERE id_trabajo = ?"
             : "UPDATE trabajos SET observaciones_trabajo = ? WHERE id_trabajo = ?";
@@ -168,8 +187,10 @@ public class TrabajoDao {
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
+            // Cadena vacia en lugar de null para evitar sobreescribir observaciones existentes con null
             ps.setString(1, observaciones != null ? observaciones.trim() : "");
             ps.setInt(2, idTrabajo);
+            // executeUpdate > 0 confirma que el trabajo existia y fue actualizado
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -178,12 +199,13 @@ public class TrabajoDao {
         }
     }
 
-    // ── 5. Eliminar (CASCADE se encarga de las dependencias) ──────────────────
+    // ── 5. Eliminar trabajo (CASCADE elimina asignaciones dependientes) ────────
     public boolean eliminarTrabajo(int idTrabajo) {
         String sql = "DELETE FROM trabajos WHERE id_trabajo = ?";
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, idTrabajo);
+            // executeUpdate > 0 verifica que el trabajo existia; 0 indica ID no encontrado
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
