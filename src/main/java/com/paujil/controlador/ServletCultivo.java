@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Date;
 
+// Importaciones estaticas para reducir acoplamiento y centralizar utilidades transversales
 import static com.paujil.utils.ServletUtils.estaVacio;
 import static com.paujil.utils.ServletUtils.verificarSesionAdmin;
 import static com.paujil.utils.ServletUtils.verificarSesionUsuario;
@@ -17,16 +18,18 @@ import static com.paujil.utils.ServletUtils.verificarSesionUsuario;
 @WebServlet("/ServletCultivo")
 public class ServletCultivo extends HttpServlet {
 
-    // ── GET ───────────────────────────────────────────────────────────────────
+    //  GET 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        // Discriminador de rutas: determina que operacion y que vista corresponden a esta solicitud
         String accion = request.getParameter("accion");
         CultivoDao dao = new CultivoDao();
 
-        // ── Vista del TRABAJADOR: solo lectura ─────────────────────────────
+        //  Vista del TRABAJADOR: solo lectura 
         if ("verTrabajador".equals(accion)) {
+            // Acceso limitado a sesion de usuario comun, el trabajador no puede modificar cultivos
             if (!verificarSesionUsuario(request, response)) return;
             request.setAttribute("listaCultivos", dao.listarCultivos());
             request.getRequestDispatcher("/templates/trabajador/cultivos_trabajador.jsp")
@@ -34,7 +37,8 @@ public class ServletCultivo extends HttpServlet {
             return;
         }
 
-        // ── Todo lo demás es solo para ADMINISTRADOR ───────────────────────
+        //   ADMINISTRADOR 
+        // Cualquier accion no identificada como trabajador requiere privilegios de admin
         if (!verificarSesionAdmin(request, response)) return;
 
         if ("eliminar".equals(accion)) {
@@ -42,19 +46,22 @@ public class ServletCultivo extends HttpServlet {
             if (!estaVacio(idStr)) {
                 try {
                     dao.eliminarCultivo(Integer.parseInt(idStr));
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                    // ID no numerico se descarta, la redireccion siguiente refresca el listado sin eliminar
+                }
             }
+            // Redirect-after-action evita que recargar la pagina repita la eliminacion
             response.sendRedirect("ServletCultivo");
             return;
         }
 
-        // Listar para admin
+        // Caso por defecto para admin: muestra el listado completo con opciones de gestion
         request.setAttribute("listaCultivos", dao.listarCultivos());
         request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
                .forward(request, response);
     }
 
-    // ── POST: solo ADMINISTRADOR ──────────────────────────────────────────────
+    //  POST: solo ADMINISTRADOR 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -67,6 +74,7 @@ public class ServletCultivo extends HttpServlet {
         String fSiembraStr = request.getParameter("fechaSiembra");
         String fCosechaStr = request.getParameter("fechaCosecha");
 
+        // La cosecha es opcional (cultivo puede estar en curso), pero siembra y tipo son datos mínimos del negocio
         if (estaVacio(nombre) || estaVacio(tipo) || estaVacio(fSiembraStr)) {
             reenviarAdminConError("Nombre, tipo y fecha de siembra son obligatorios.",
                                   request, response);
@@ -76,7 +84,9 @@ public class ServletCultivo extends HttpServlet {
         Date fSiembra;
         Date fCosecha;
         try {
+            // Date.valueOf requiere formato "yyyy-MM-dd"; el mensaje de error orienta al usuario a usar el selector
             fSiembra = Date.valueOf(fSiembraStr);
+            // Fecha de cosecha nula modela un cultivo activo sin fecha de termino definida
             fCosecha = estaVacio(fCosechaStr) ? null : Date.valueOf(fCosechaStr);
         } catch (IllegalArgumentException e) {
             reenviarAdminConError("Formato de fecha inválido. Use el selector de fechas.",
@@ -85,6 +95,7 @@ public class ServletCultivo extends HttpServlet {
         }
 
         CultivoDao dao = new CultivoDao();
+        // La presencia de "id" diferencia entre actualizar un cultivo existente y registrar uno nuevo
         if (!estaVacio(idStr)) {
             dao.actualizarCultivo(Integer.parseInt(idStr), nombre.trim(),
                                   tipo.trim(), fSiembra, fCosecha);
@@ -92,15 +103,20 @@ public class ServletCultivo extends HttpServlet {
             dao.registrarCultivo(new cultivo(nombre.trim(), tipo.trim(), fSiembra, fCosecha));
         }
 
+        // Redirige sin parametros de estado porque los errores de BD no se manejan aqui explicitamente
         response.sendRedirect("ServletCultivo");
     }
 
-    // ── Helper ────────────────────────────────────────────────────────────────
+    //  Helper 
+
+    // Usa forward en lugar de redirect para preservar el mensaje de error en el scope de request,
+    // que no sobrevive una redireccion HTTP
     private void reenviarAdminConError(String mensaje,
                                        HttpServletRequest request,
                                        HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("mensajeError", mensaje);
+        // Recarga el listado para que la vista pueda renderizar la tabla junto al mensaje de error
         request.setAttribute("listaCultivos", new CultivoDao().listarCultivos());
         request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
                .forward(request, response);
