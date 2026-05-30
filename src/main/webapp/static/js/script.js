@@ -319,3 +319,45 @@ function _setText(id, text) {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
 }
+
+
+
+(function () {
+    const filtros    = document.querySelectorAll('.filtro-btn');
+    const tabla      = document.getElementById('tablaUsuarios');
+    const sinResults = document.getElementById('filaSinResultados');
+    const contador   = document.getElementById('contadorResultados');
+
+    if (!filtros.length || !tabla) return;
+
+    function actualizarContador(visibles, total) {
+        if (contador) {
+            contador.textContent = visibles === total
+                ? total + ' usuario' + (total !== 1 ? 's' : '')
+                : visibles + ' de ' + total + ' usuario' + (total !== 1 ? 's' : '');
+        }
+    }
+
+    function aplicarFiltro(filtro) {
+        const filas = tabla.querySelectorAll('tbody tr[data-estado]');
+        let visibles = 0;
+        filas.forEach(function (fila) {
+            const estado = fila.getAttribute('data-estado');
+            const mostrar = filtro === 'todos' || estado === filtro;
+            fila.classList.toggle('fila-oculta', !mostrar);
+            if (mostrar) visibles++;
+        });
+        if (sinResults) sinResults.style.display = visibles === 0 ? 'table-row' : 'none';
+        actualizarContador(visibles, filas.length);
+    }
+
+    aplicarFiltro('todos');
+
+    filtros.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            filtros.forEach(function (b) { b.classList.remove('seleccionado'); });
+            btn.classList.add('seleccionado');
+            aplicarFiltro(btn.getAttribute('data-filtro'));
+        });
+    });
+})();

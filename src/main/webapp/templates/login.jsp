@@ -12,21 +12,20 @@
 <body class="login-page">
 
     <main class="login-container">
-        
+
         <a href="${pageContext.request.contextPath}/index.jsp" class="login-container__back">
             <i class="fa-solid fa-arrow-left"></i> Volver
         </a>
 
         <section class="login-form">
             <h1 class="login-form__title">¡Bienvenido!</h1>
-            
+
             <div class="login-form__avatar-container">
                 <div class="login-form__avatar">
                     <i class="fa-solid fa-user"></i>
                 </div>
             </div>
 
-            <%-- El mensaje de error ahora se maneja con la clase CSS definida en Styles.css --%>
             <% if(request.getParameter("error") != null) { %>
                 <div class="error-message">
                     <i class="fa-solid fa-circle-exclamation"></i> Usuario o contraseña incorrectos.
@@ -34,21 +33,26 @@
             <% } %>
 
             <form action="${pageContext.request.contextPath}/ServletLogin" method="POST">
-                
-                <select name="txtRol" class="login-form__select" required>
-                    <option value="" disabled selected>Selecciona tu rol</option>
-                    <option value="trabajador">Trabajador</option>
-                    <option value="administrador">Administrador</option>
-                </select>
 
                 <div class="login-form__group">
-                    <i class="fa-solid fa-user login-form__icon"></i>
-                    <input type="email" name="txtUsuario" class="login-form__input" placeholder="Usuario" required autocomplete="username">
+                    <i class="fa-solid fa-user-tag login-form__icon"></i>
+                    <select name="txtRol" class="login-form__select" required>
+                        <option value="" disabled selected>Selecciona tu rol</option>
+                        <option value="trabajador">Trabajador</option>
+                        <option value="administrador">Administrador</option>
+                    </select>
+                </div>
+
+                <div class="login-form__group">
+                    <i class="fa-solid fa-envelope login-form__icon"></i>
+                    <input type="email" name="txtUsuario" class="login-form__input"
+                           placeholder="Correo electrónico" required autocomplete="username">
                 </div>
 
                 <div class="login-form__group">
                     <i class="fa-solid fa-lock login-form__icon"></i>
-                    <input type="password" name="txtContrasena" class="login-form__input" placeholder="Contraseña" required>
+                    <input type="password" name="txtContrasena" class="login-form__input"
+                           placeholder="Contraseña" required autocomplete="current-password">
                 </div>
 
                 <button type="submit" class="login-form__button">Ingresar</button>

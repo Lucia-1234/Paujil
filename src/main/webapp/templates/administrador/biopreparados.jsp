@@ -8,12 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/base.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/views/biopreparados.css">
-    <title>Gestión de Biopreparados - Finca El Paujil</title>
+    <title>Biopreparados - Finca El Paujil</title>
 </head>
 <body>
-<main class="container">
+<main class="page-wrapper">
 
-    <%-- Mensajes de estado --%>
     <%
         String status = request.getParameter("status");
         String msg    = request.getParameter("msg");
@@ -29,111 +28,124 @@
         </div>
     <% } %>
 
-    <%-- Listado de tarjetas --%>
-    <section class="bio-list">
-        <%
-            List<biopreparado> lista = (List<biopreparado>) request.getAttribute("listaBiopreparados");
-            if (lista == null || lista.isEmpty()) {
-        %>
-            <article class="bio-card">
-                <p class="no-data">No hay biopreparados registrados.</p>
-            </article>
-        <%
-            } else {
-                int num = 1;
-                for (biopreparado b : lista) {
-                    String nomEsc  = b.getNombre().replace("'", "\\'");
-                    String descEsc = b.getDescripcion() != null
-                                     ? b.getDescripcion().replace("'", "\\'").replace("\n", "\\n") : "";
-                    String prepEsc = b.getPreparacion() != null
-                                     ? b.getPreparacion().replace("'", "\\'").replace("\n", "\\n") : "";
-        %>
-            <article class="bio-card">
-                <div class="bio-card__content">
-                    <p class="bio-card__number"><%= String.format("%02d", num++) %></p>
-                    <h2 class="bio-card__title"><%= b.getNombre() %></h2>
+    <header class="list-header">
+        <a href="${pageContext.request.contextPath}/templates/administrador/menu_administrador.jsp"
+           class="list-header__back" aria-label="Volver al menú">
+            <i class="fa-solid fa-arrow-left-long"></i>
+        </a>
+        <h1 class="list-header__title">Biopreparados</h1>
+    </header>
 
-                    <% if (b.getDescripcion() != null && !b.getDescripcion().isBlank()) { %>
-                        <p class="bio-card__description"><%= b.getDescripcion() %></p>
-                    <% } %>
+    <div class="panel">
+        <section class="bio-list">
+            <%
+                List<biopreparado> lista = (List<biopreparado>) request.getAttribute("listaBiopreparados");
+                if (lista == null || lista.isEmpty()) {
+            %>
+                <p class="no-data">
+                    <i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>
+                    No hay biopreparados registrados.
+                </p>
+            <%
+                } else {
+                    int num = 1;
+                    for (biopreparado b : lista) {
+                        String nomEsc  = b.getNombre().replace("'", "\\'");
+                        String descEsc = b.getDescripcion() != null
+                                         ? b.getDescripcion().replace("'", "\\'").replace("\n", "\\n") : "";
+                        String prepEsc = b.getPreparacion() != null
+                                         ? b.getPreparacion().replace("'", "\\'").replace("\n", "\\n") : "";
+            %>
+                <article class="bio-card">
+                    <div class="bio-card__content">
+                        <p class="bio-card__number"><%= String.format("%02d", num++) %></p>
+                        <h2 class="bio-card__title"><%= b.getNombre() %></h2>
 
-                    <p class="bio-card__meta">
-                        <span>
-                            <i class="fa-solid fa-calendar-days"></i>
-                            Creación: <%= b.getFechaCreacion() %> &nbsp;|&nbsp;
-                            Vence: <%= b.getFechaVencimiento() %>
-                        </span>
-                        <% if (b.getPrecio() > 0) { %>
-                            <span>
-                                <i class="fa-solid fa-tag"></i>
-                                Precio: $<%= String.format("%.2f", b.getPrecio()) %>
-                            </span>
+                        <% if (b.getDescripcion() != null && !b.getDescripcion().isBlank()) { %>
+                            <p class="bio-card__description"><%= b.getDescripcion() %></p>
                         <% } %>
-                    </p>
 
-                    <% if (!b.getIngredientes().isEmpty()) { %>
-                        <ul class="bio-card__ingredients">
-                            <% for (ingredienteBio ing : b.getIngredientes()) { %>
-                                <li>
-                                    <%= ing.getNombre() %>
-                                    <% if (ing.getCantidad() > 0) { %>
-                                        — <%= ing.getCantidad() %>
-                                        <%= ing.getUnidad() != null ? ing.getUnidad() : "" %>
-                                    <% } %>
-                                </li>
+                        <p class="bio-card__prep-label" style="margin-bottom:var(--spacing-sm);">
+                            <i class="fa-solid fa-calendar-days" style="color:var(--color-brand-green);margin-right:4px;"></i>
+                            Creación: <strong><%= b.getFechaCreacion() %></strong>
+                            &nbsp;·&nbsp;
+                            <i class="fa-solid fa-calendar-xmark" style="color:var(--color-action-red);margin-right:4px;"></i>
+                            Vence: <strong><%= b.getFechaVencimiento() %></strong>
+                            <% if (b.getPrecio() > 0) { %>
+                                &nbsp;·&nbsp;
+                                <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
+                                $<strong><%= String.format("%.2f", b.getPrecio()) %></strong>
                             <% } %>
-                        </ul>
-                    <% } %>
+                        </p>
 
-                    <div class="bio-card__actions">
-                        <%-- Los datos se pasan como data-* y script.js los lee --%>
-                        <button class="btn btn--edit"
-                                data-id="<%= b.getIdBiopreparado() %>"
-                                data-nombre="<%= nomEsc %>"
-                                data-descripcion="<%= descEsc %>"
-                                data-precio="<%= b.getPrecio() %>"
-                                data-creacion="<%= b.getFechaCreacion() %>"
-                                data-vencimiento="<%= b.getFechaVencimiento() %>"
-                                data-preparacion="<%= prepEsc %>"
-                                onclick="abrirModalBioEditar(
-                                    this.dataset.id,
-                                    this.dataset.nombre,
-                                    this.dataset.descripcion,
-                                    this.dataset.precio,
-                                    this.dataset.creacion,
-                                    this.dataset.vencimiento,
-                                    this.dataset.preparacion)">
-                            <i class="fa-solid fa-pen"></i> Editar
-                        </button>
-                        <button class="btn btn--delete"
-                                data-id="<%= b.getIdBiopreparado() %>"
-                                onclick="abrirModalBioEliminar(this.dataset.id)">
-                            <i class="fa-solid fa-trash"></i> Eliminar
-                        </button>
+                        <% if (!b.getIngredientes().isEmpty()) { %>
+                            <table class="bio-card__ingredients">
+                                <thead>
+                                    <tr>
+                                        <th>Ingrediente</th>
+                                        <th>Cantidad</th>
+                                        <th>Unidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% for (ingredienteBio ing : b.getIngredientes()) { %>
+                                        <tr>
+                                            <td><%= ing.getNombre() %></td>
+                                            <td><%= ing.getCantidad() > 0 ? ing.getCantidad() : "—" %></td>
+                                            <td><%= ing.getUnidad() != null ? ing.getUnidad() : "—" %></td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        <% } %>
+
+                        <div class="bio-card__actions">
+                            <button class="btn btn--edit"
+                                    data-id="<%= b.getIdBiopreparado() %>"
+                                    data-nombre="<%= nomEsc %>"
+                                    data-descripcion="<%= descEsc %>"
+                                    data-precio="<%= b.getPrecio() %>"
+                                    data-creacion="<%= b.getFechaCreacion() %>"
+                                    data-vencimiento="<%= b.getFechaVencimiento() %>"
+                                    data-preparacion="<%= prepEsc %>"
+                                    onclick="abrirModalBioEditar(
+                                        this.dataset.id,
+                                        this.dataset.nombre,
+                                        this.dataset.descripcion,
+                                        this.dataset.precio,
+                                        this.dataset.creacion,
+                                        this.dataset.vencimiento,
+                                        this.dataset.preparacion)">
+                                <i class="fa-solid fa-pen"></i> Editar
+                            </button>
+                            <button class="btn btn--delete"
+                                    data-id="<%= b.getIdBiopreparado() %>"
+                                    onclick="abrirModalBioEliminar(this.dataset.id)">
+                                <i class="fa-solid fa-trash"></i> Eliminar
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </article>
-        <%
+                </article>
+            <%
+                    }
                 }
-            }
-        %>
+            %>
 
-        <div class="crop-list__footer">
-            <button type="button" class="btn btn--new" onclick="abrirModalBioAgregar()">
-                <i class="fa-solid fa-circle-plus"></i> Agregar biopreparado
-            </button>
-        </div>
-    </section>
+            <div class="crop-list__footer">
+                <button type="button" class="btn btn--new" onclick="abrirModalBioAgregar()">
+                    <i class="fa-solid fa-circle-plus"></i> Agregar biopreparado
+                </button>
+            </div>
+        </section>
+    </div>
 </main>
 
-<%-- ══════════════════════════════════════════
-     MODALES — sin JavaScript inline
-     ══════════════════════════════════════ --%>
+<%-- ═══════════════ MODALES ═══════════════ --%>
 
-<%-- Modal Registro / Edición --%>
-<div id="modalBio" class="modal-overlay" style="display:none;">
+<%-- Modal Registro / Edición de Biopreparado --%>
+<div id="modalBio" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="modalBioTitulo">
     <div class="modal-content">
-        <button type="button" class="modal-close" onclick="cerrarModal('modalBio')">&times;</button>
+        <button type="button" class="modal-close" onclick="cerrarModal('modalBio')" aria-label="Cerrar">&times;</button>
         <h2 id="modalBioTitulo">Agregar Biopreparado</h2>
 
         <form action="${pageContext.request.contextPath}/ServletBiopreparado" method="POST">
@@ -161,11 +173,12 @@
             <label>Ingredientes</label>
             <div id="contenedorIngredientes"></div>
 
-            <button type="button" class="bio-modal__add-ingredient" onclick="agregarIngrediente()">
-                <i class="fa-solid fa-plus"></i>
+            <button type="button" style="background:none;border:none;color:var(--color-white);cursor:pointer;font-size:var(--font-size-sm);margin-top:8px;"
+                    onclick="agregarIngrediente()">
+                <i class="fa-solid fa-plus"></i> Añadir ingrediente
             </button>
 
-            <button type="submit" class="btn btn--new" style="margin-top:14px;">
+            <button type="submit" class="btn--save-form">
                 <i class="fa-solid fa-floppy-disk"></i> Guardar
             </button>
         </form>
@@ -173,14 +186,17 @@
 </div>
 
 <%-- Modal Confirmación Eliminación --%>
-<div id="modalConfirmacionBio" class="modal-overlay" style="display:none;">
-    <div class="modal-content">
-        <h2>¿Eliminar este biopreparado?</h2>
-        <p>Esta acción eliminará también todos sus ingredientes y no se puede deshacer.</p>
-        <button type="button" class="btn" onclick="cerrarModal('modalConfirmacionBio')">Cancelar</button>
-        <button type="button" class="btn btn--delete" onclick="ejecutarEliminacionBio()">
-            Confirmar eliminación
-        </button>
+<div id="modalConfirmacionBio" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
+    <div class="confirm-modal">
+        <div class="confirm-modal__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <p class="confirm-modal__text">¿Eliminar este<br>biopreparado?</p>
+        <p style="font-size:var(--font-size-sm);margin-bottom:var(--spacing-md);opacity:.85;">
+            Esta acción también eliminará sus ingredientes y no se puede deshacer.
+        </p>
+        <div class="confirm-modal__actions">
+            <button type="button" class="btn btn--cancel" onclick="cerrarModal('modalConfirmacionBio')">Cancelar</button>
+            <button type="button" class="btn--confirm-delete" onclick="ejecutarEliminacionBio()">Eliminar</button>
+        </div>
     </div>
 </div>
 

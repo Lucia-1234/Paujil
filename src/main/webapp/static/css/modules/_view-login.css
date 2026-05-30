@@ -100,9 +100,6 @@
 
 .login-form__input::placeholder { color: rgba(255, 255, 255, .7); }
 
-.login-form__select  {
-    margin-bottom: 20px;
-}
 
 .login-form__input:focus,
 .login-form__select:focus {

@@ -1,0 +1,56 @@
+/* ── Pestañas ── */
+        .tabs { display:flex; gap:var(--spacing-sm); margin-bottom:var(--spacing-lg); flex-wrap:wrap; }
+        .tab-btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--color-brand-green);
+            border-radius: var(--radius-pill);
+            background: transparent;
+            color: var(--color-brand-green);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--transition-base), color var(--transition-base);
+        }
+        .tab-btn.activo, .tab-btn:hover {
+            background: var(--color-brand-green);
+            color: var(--color-white);
+        }
+        /* ── Filtros de estado ── */
+        .filtros-estado {
+            display: flex;
+            gap: var(--spacing-xs);
+            margin-bottom: var(--spacing-md);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filtros-estado span { font-size:var(--font-size-sm); color:var(--color-text-muted); font-weight:600; margin-right:4px; }
+        .filtro-btn {
+            padding: 4px 14px;
+            border-radius: var(--radius-pill);
+            border: 1.5px solid currentColor;
+            background: transparent;
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s, color .15s;
+        }
+        .filtro-btn[data-filtro="todos"]    { color:#555; border-color:#aaa; }
+        .filtro-btn[data-filtro="Activo"]   { color:var(--color-dark-green); border-color:var(--color-dark-green); }
+        .filtro-btn[data-filtro="Inactivo"] { color:var(--color-action-red); border-color:var(--color-action-red); }
+        .filtro-btn.seleccionado[data-filtro="todos"]    { background:#555; color:#fff; }
+        .filtro-btn.seleccionado[data-filtro="Activo"]   { background:var(--color-dark-green); color:#fff; }
+        .filtro-btn.seleccionado[data-filtro="Inactivo"] { background:var(--color-action-red); color:#fff; }
+        .contador-resultados { font-size:var(--font-size-sm); color:var(--color-text-muted); margin-left:auto; }
+        /* ── Badges ── */
+        .badge { display:inline-block; padding:2px 8px; border-radius:var(--radius-pill); font-size:var(--font-size-xs); font-weight:700; }
+        .badge--activo    { background:#d6f0de; color:var(--color-dark-green); }
+        .badge--inactivo  { background:#fde8e8; color:var(--color-action-red); }
+        .badge--pendiente { background:#fff3cd; color:#856404; }
+        /* ── Overrides tabla ── */
+        .usuario-table th { background:var(--color-brand-green); color:var(--color-white); padding:var(--spacing-sm) var(--spacing-md); text-align:left; }
+        .usuario-table td { padding:var(--spacing-sm) var(--spacing-md); }
+        .usuario-table tr:nth-child(even) { background:var(--color-light-green-bg); }
+        .usuario-table tr.fila-oculta { display:none; }
+        .acciones { display:flex; gap:var(--spacing-xs); flex-wrap:wrap; }
+        .fila-sin-resultados { display:none; }
+        .fila-sin-resultados td { text-align:center; padding:var(--spacing-lg); color:var(--color-text-muted); font-style:italic; }
+        .btn--sm { padding:5px 12px; font-size:var(--font-size-sm); }

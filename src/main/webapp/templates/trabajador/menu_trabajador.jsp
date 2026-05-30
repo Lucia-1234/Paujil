@@ -30,9 +30,7 @@
                         <img src="${pageContext.request.contextPath}/static/IMG/trabajador.png"
                              alt="Perfil" class="profile-card__img">
                     </div>
-                    <% if (nombreUsuario != null) { %>
-                        <p class="profile-card__name"><%= nombreUsuario %></p>
-                    <% } %>
+                   
                 </div>
                 <nav class="dashboard-grid">
                     <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=misTrabajos"
