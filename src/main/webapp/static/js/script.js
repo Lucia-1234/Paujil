@@ -118,7 +118,6 @@ window.abrirModalBioAgregar = function () {
     _setVal('bioPrecio',           '');
     _setVal('bioFechaCreacion',    '');
     _setVal('bioFechaVencimiento', '');
-    _setVal('bioPreparacion',      '');
     _setText('modalBioTitulo', 'Agregar Biopreparado');
     _limpiarIngredientes();
     abrirModal('modalBio');
@@ -142,7 +141,6 @@ window.abrirModalBioEditar = function (id, nombre, descripcion, precio,
     _setVal('bioPrecio',           precio);
     _setVal('bioFechaCreacion',    fCreacion);
     _setVal('bioFechaVencimiento', fVencimiento);
-    _setVal('bioPreparacion',      preparacion.replace(/\\n/g, '\n'));
     _setText('modalBioTitulo', 'Editar Biopreparado');
     _limpiarIngredientes();
     abrirModal('modalBio');

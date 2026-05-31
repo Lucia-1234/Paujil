@@ -53,8 +53,6 @@
                         String nomEsc  = b.getNombre().replace("'", "\\'");
                         String descEsc = b.getDescripcion() != null
                                          ? b.getDescripcion().replace("'", "\\'").replace("\n", "\\n") : "";
-                        String prepEsc = b.getPreparacion() != null
-                                         ? b.getPreparacion().replace("'", "\\'").replace("\n", "\\n") : "";
             %>
                 <article class="bio-card">
                     <div class="bio-card__content">
@@ -107,15 +105,13 @@
                                     data-precio="<%= b.getPrecio() %>"
                                     data-creacion="<%= b.getFechaCreacion() %>"
                                     data-vencimiento="<%= b.getFechaVencimiento() %>"
-                                    data-preparacion="<%= prepEsc %>"
                                     onclick="abrirModalBioEditar(
                                         this.dataset.id,
                                         this.dataset.nombre,
                                         this.dataset.descripcion,
                                         this.dataset.precio,
                                         this.dataset.creacion,
-                                        this.dataset.vencimiento,
-                                        this.dataset.preparacion)">
+                                        this.dataset.vencimiento)">
                                 <i class="fa-solid fa-pen"></i> Editar
                             </button>
                             <button class="btn btn--delete"
@@ -166,9 +162,6 @@
             <label>Fecha de vencimiento *</label>
             <input type="date" id="bioFechaVencimiento" name="fechaVencimiento" required>
 
-            <label>Modo de preparación</label>
-            <textarea id="bioPreparacion" name="preparacionBio" rows="4"
-                      placeholder="Pasos de elaboración..."></textarea>
 
             <label>Ingredientes</label>
             <div id="contenedorIngredientes"></div>
