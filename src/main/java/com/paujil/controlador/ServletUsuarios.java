@@ -14,7 +14,7 @@ import java.util.List;
 @WebServlet("/ServletUsuario")
 public class ServletUsuarios extends HttpServlet {
 
-    // ── Guarda de sesion ──────────────────────────────────────────────────────
+    // ── Guarda de sesion 
 
     // Centraliza la verificacion de autorizacion para no repetirla en cada handler
     private boolean sesionAdminValida(HttpServletRequest req, HttpServletResponse res)
@@ -31,7 +31,7 @@ public class ServletUsuarios extends HttpServlet {
         return true;
     }
 
-    // ── GET ───────────────────────────────────────────────────────────────────
+    //  GET 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
@@ -95,7 +95,7 @@ public class ServletUsuarios extends HttpServlet {
            .forward(req, res);
     }
 
-    // ── POST: actualizar datos del usuario ────────────────────────────────────
+    // ── POST: actualizar datos del usuario 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
@@ -132,7 +132,7 @@ public class ServletUsuarios extends HttpServlet {
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Helpers 
 
     // Reutilizable para activar, desactivar y aprobar; el estado final lo decide el caller
     private void cambiarEstado(UsuarioDao dao, String idStr, String nuevoEstado,

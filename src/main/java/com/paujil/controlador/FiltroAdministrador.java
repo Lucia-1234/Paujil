@@ -5,11 +5,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-// Registra este filtro declarativamente sin necesidad de configuracion en web.xml
 import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-// Permite acceder a los atributos de sesion del usuario autenticado
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 

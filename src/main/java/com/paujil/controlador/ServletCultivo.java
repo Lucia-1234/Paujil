@@ -31,7 +31,7 @@ public class ServletCultivo extends HttpServlet {
         String accion = request.getParameter("accion");
         CultivoDao dao = new CultivoDao();
 
-        // ── Vista del TRABAJADOR: solo lectura ─────────────────────────────
+        //  Vista del TRABAJADOR: solo lectura 
         if ("verTrabajador".equals(accion)) {
             // Acceso limitado a sesion de usuario comun; el trabajador no puede modificar cultivos
             if (!verificarSesionUsuario(request, response)) return;
@@ -86,6 +86,7 @@ public class ServletCultivo extends HttpServlet {
                 List<registros> lista = new RegistroTrabajoDao().listarPorCultivo(idCultivo);
                 // Serializacion manual para evitar dependencias externas como Jackson o Gson
                 StringBuilder json = new StringBuilder("[");
+                //el bucle se seguira ejecutando mientras el valor de i sea menor que el tamaño de toda la lista
                 for (int i = 0; i < lista.size(); i++) {
                     registros r = lista.get(i);
                     // Coma separadora solo entre elementos; omitirla tras el ultimo cumple el estandar JSON
@@ -151,7 +152,9 @@ public class ServletCultivo extends HttpServlet {
         List<cultivo> lista = dao.listarCultivos();
         RegistroTrabajoDao registroDao = new RegistroTrabajoDao();
         // Mapa idCultivo -> cantidad de registros; permite mostrar badges en la tabla sin consultas en la JSP
+        // estructura de datos clave-valor
         Map<Integer, Integer> contadoresHistorial = new HashMap<>();
+        //para cada cultivo ectrae el id y lo usa como la llave para insertar el dato en el mapa 
         for (cultivo c : lista) {
             contadoresHistorial.put(
                 c.getIdCultivo(),

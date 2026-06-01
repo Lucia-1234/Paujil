@@ -17,9 +17,13 @@ public class BiopreparadoDao {
         String sql = "SELECT id_biopreparado, nombre_biopreparado, descripcion_biopreparado, "
                    + "precio_biopreparado, fecha_creacion, fecha_vencimiento, preparacion_biopreparado "
                    + "FROM biopreparados ORDER BY id_biopreparado ASC";
-
+        
+        //solicita y abre una conexion fisica con el motor en la base de datos
+        
         try (Connection con = clase_Conexion.MetodoConectar();
+                //compila y prepara la consulta sql
              PreparedStatement ps = con.prepareStatement(sql);
+                //ejecuta la consulta y almacena el puntero con las filas resultantes
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -123,6 +127,7 @@ public class BiopreparadoDao {
             con = clase_Conexion.MetodoConectar();
             con.setAutoCommit(false);
 
+                //instruccion sql para modificar los campos de un registro especifico
             String sql = "UPDATE biopreparados SET "
                        + "nombre_biopreparado = ?, descripcion_biopreparado = ?, "
                        + "precio_biopreparado = ?, fecha_creacion = ?, "
