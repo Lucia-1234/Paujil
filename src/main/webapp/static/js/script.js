@@ -2,38 +2,42 @@
    script.js — Gestor centralizado de interactividad | Finca El Paujil
    --------------------------------------------------------------------------
    MÓDULOS:
-     1. MODALES        — apertura / cierre genérico
-     2. CULTIVOS       — modal editar, agregar, eliminar
-     3. BIOPREPARADOS  — modal editar, agregar, eliminar + ingredientes dinámicos
-     4. USUARIOS       — modal desactivar, eliminar, denegar (pendientes)
-     5. REGISTRO       — validación del formulario de registro
+     1. MODALES           — apertura / cierre genérico
+     2. CULTIVOS          — modal editar, agregar, eliminar
+     3. BIOPREPARADOS     — modal editar, agregar, eliminar + ingredientes
+     4. USUARIOS          — modal desactivar, eliminar, denegar (pendientes)
+     5. HISTORIAL         — fetch JSON + render tabla de registros de labor
+     6. TRABAJOS          — modal eliminar trabajo
+     7. REGISTROS HIST.   — modal eliminar registro histórico
+     8. FILTRO USUARIOS   — tabla con filtro por estado
+
+   NOTA DE VALIDACIONES:
+     La validación de formularios fue migrada completamente al frontend en:
+       - validaciones.js          → funciones puras + helpers UI + registro
+       - validaciones-cultivos.js → cultivos y registros de labor
+     Este archivo ya no contiene ninguna lógica de validación.
+     El orden de carga en cada JSP debe ser:
+       1. validaciones.js
+       2. validaciones-cultivos.js  (solo en vistas de cultivos)
+       3. script.js
    ========================================================================== */
 
 'use strict';
 
 /* ══════════════════════════════════════════════════════════════════════════
-   1. MÓDULO: MODALES
+   1. MÓDULO: MODALES — apertura / cierre genérico
    ══════════════════════════════════════════════════════════════════════ */
 
-/**
- * Abre un modal por su ID.
- * @param {string} id - ID del elemento .modal-overlay
- */
 window.abrirModal = function (id) {
     const modal = document.getElementById(id);
     if (modal) modal.style.display = 'flex';
 };
 
-/**
- * Cierra un modal por su ID.
- * @param {string} id - ID del elemento .modal-overlay
- */
 window.cerrarModal = function (id) {
     const modal = document.getElementById(id);
     if (modal) modal.style.display = 'none';
 };
 
-/** Cierra cualquier modal al hacer clic en el fondo oscuro. */
 document.addEventListener('click', function (e) {
     if (e.target.classList.contains('modal-overlay')) {
         e.target.style.display = 'none';
@@ -41,7 +45,6 @@ document.addEventListener('click', function (e) {
     }
 });
 
-/** Cierra cualquier modal con la tecla Escape. */
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal-overlay').forEach(function (m) {
@@ -53,10 +56,14 @@ document.addEventListener('keydown', function (e) {
 
 
 /* ══════════════════════════════════════════════════════════════════════════
-   2. MÓDULO: CULTIVOS
+   2. MÓDULO: CULTIVOS — modal editar, agregar, eliminar
    ══════════════════════════════════════════════════════════════════════ */
 
-/** Abre el modal de cultivo en modo AGREGAR (limpia todos los campos). */
+/**
+ * Abre el modal de cultivo en modo AGREGAR.
+ * Limpia los campos y resetea los estados de validación antes de abrir,
+ * para que el modal no muestre residuos de un uso anterior.
+ */
 window.abrirModalAgregar = function () {
     _setVal('editId',      '');
     _setVal('editNombre',  '');
@@ -64,6 +71,13 @@ window.abrirModalAgregar = function () {
     _setVal('editSiembra', '');
     _setVal('editCosecha', '');
     _setText('modalTitulo', 'Agregar Cultivo');
+
+    // limpiarEstadosForm() definida en validaciones-cultivos.js
+    const formCultivo = document.getElementById('formCultivo');
+    if (formCultivo && typeof limpiarEstadosForm === 'function') {
+        limpiarEstadosForm(formCultivo);
+    }
+
     abrirModal('modalEditar');
 };
 
@@ -72,8 +86,8 @@ window.abrirModalAgregar = function () {
  * @param {string} id
  * @param {string} nombre
  * @param {string} tipo
- * @param {string} siembra  - formato YYYY-MM-DD
- * @param {string} cosecha  - formato YYYY-MM-DD (puede ser vacío)
+ * @param {string} siembra  - YYYY-MM-DD
+ * @param {string} cosecha  - YYYY-MM-DD (puede ser vacío)
  */
 window.abrirModalEditar = function (id, nombre, tipo, siembra, cosecha) {
     _setVal('editId',      id);
@@ -82,27 +96,43 @@ window.abrirModalEditar = function (id, nombre, tipo, siembra, cosecha) {
     _setVal('editSiembra', siembra);
     _setVal('editCosecha', cosecha);
     _setText('modalTitulo', 'Editar Cultivo');
+
+    const formCultivo = document.getElementById('formCultivo');
+    if (formCultivo && typeof limpiarEstadosForm === 'function') {
+        limpiarEstadosForm(formCultivo);
+    }
+
     abrirModal('modalEditar');
 };
 
-/** @type {string|null} URL de eliminación de cultivo pendiente de confirmar */
 let _idCultivoEliminar = null;
 
-/**
- * Abre el modal de confirmación de eliminación de cultivo.
- * @param {string} id
- */
 window.abrirModalEliminar = function (id) {
     _idCultivoEliminar = id;
     abrirModal('modalConfirmacion');
 };
 
-/** Navega a la URL de eliminación de cultivo tras confirmar. */
 window.ejecutarEliminacion = function () {
     if (_idCultivoEliminar) {
-        var url = (window._ctxPath || '')+ '/ServletCultivo?accion=eliminar&id=' + _idCultivoEliminar;
-        window.location.href = url;
+        window.location.href = (window._ctxPath || '')
+            + '/ServletCultivo?accion=eliminar&id=' + _idCultivoEliminar;
     }
+};
+
+/**
+ * Abre el modal de registro de labor asociando el cultivo activo.
+ * Resetea los estados de validación del formulario antes de abrir.
+ * @param {string} idCultivo
+ */
+window.abrirModalRegistro = function (idCultivo) {
+    _setVal('regIdCultivo', idCultivo);
+
+    const formLabor = document.getElementById('formLabor');
+    if (formLabor && typeof limpiarEstadosForm === 'function') {
+        limpiarEstadosForm(formLabor);
+    }
+
+    abrirModal('modalRegistro');
 };
 
 
@@ -110,7 +140,6 @@ window.ejecutarEliminacion = function () {
    3. MÓDULO: BIOPREPARADOS
    ══════════════════════════════════════════════════════════════════════ */
 
-/** Abre el modal de biopreparado en modo AGREGAR. */
 window.abrirModalBioAgregar = function () {
     _setVal('bioId',               '');
     _setVal('bioNombre',           '');
@@ -123,16 +152,6 @@ window.abrirModalBioAgregar = function () {
     abrirModal('modalBio');
 };
 
-/**
- * Abre el modal de biopreparado en modo EDITAR.
- * @param {string} id
- * @param {string} nombre
- * @param {string} descripcion
- * @param {string} precio
- * @param {string} fCreacion    - YYYY-MM-DD
- * @param {string} fVencimiento - YYYY-MM-DD
- * @param {string} preparacion
- */
 window.abrirModalBioEditar = function (id, nombre, descripcion, precio,
                                        fCreacion, fVencimiento, preparacion) {
     _setVal('bioId',               id);
@@ -146,49 +165,37 @@ window.abrirModalBioEditar = function (id, nombre, descripcion, precio,
     abrirModal('modalBio');
 };
 
-/** @type {string|null} ID del biopreparado pendiente de eliminar */
 let _idBioEliminar = null;
 
-/**
- * Abre el modal de confirmación de eliminación de biopreparado.
- * @param {string} id
- */
 window.abrirModalBioEliminar = function (id) {
     _idBioEliminar = id;
     abrirModal('modalConfirmacionBio');
 };
 
-/** Navega a la URL de eliminación de biopreparado tras confirmar. */
 window.ejecutarEliminacionBio = function () {
     if (_idBioEliminar) {
         window.location.href = 'ServletBiopreparado?accion=eliminar&id=' + _idBioEliminar;
     }
 };
 
-/**
- * Agrega una fila de ingrediente al contenedor dinámico dentro del modal.
- * Los inputs usan los nombres de array que lee el servlet:
- *   nombresIng[], cantidadesIng[], unidadesIng[]
- */
 window.agregarIngrediente = function (nombre = '', cantidad = '', unidad = '') {
     const contenedor = document.getElementById('contenedorIngredientes');
+    if (!contenedor) return;
     const fila = document.createElement('div');
     fila.className = 'bio-modal__ingredient-row';
     fila.innerHTML = `
-        <input type="text" name="nombresIng[]" placeholder="Ingrediente" value="${nombre}" required>
-        <input type="number" name="cantidadesIng[]" placeholder="Cant." value="${cantidad}" step="0.01" required>
-        <input type="text" name="unidadesIng[]" placeholder="Unidad" value="${unidad}" required>
-        <button type="button" class="bio-modal__remove-ingredient" 
+        <input type="text"   name="nombresIng[]"   placeholder="Ingrediente" value="${nombre}"   required>
+        <input type="number" name="cantidadesIng[]" placeholder="Cant."       value="${cantidad}" step="0.01" required>
+        <input type="text"   name="unidadesIng[]"   placeholder="Unidad"      value="${unidad}"   required>
+        <button type="button" class="bio-modal__remove-ingredient"
                 onclick="this.parentElement.remove()">
             <i class="fa-solid fa-circle-minus"></i>
         </button>
     `;
     contenedor.appendChild(fila);
-    // Auto-scroll al final del contenedor de ingredientes
     contenedor.scrollTop = contenedor.scrollHeight;
 };
 
-/** Vacía el contenedor de ingredientes del modal. */
 function _limpiarIngredientes() {
     const c = document.getElementById('contenedorIngredientes');
     if (c) c.innerHTML = '';
@@ -199,16 +206,8 @@ function _limpiarIngredientes() {
    4. MÓDULO: GESTIÓN DE USUARIOS
    ══════════════════════════════════════════════════════════════════════ */
 
-/** URL que se ejecutará al confirmar cualquier acción de usuario */
 let _urlAccionConfirmacion = null;
 
-/**
- * Abre el modal de confirmación genérico de usuario y guarda la URL destino.
- * @param {string} modalId     - ID del modal a abrir
- * @param {string} textoId     - ID del párrafo donde se escribe el texto dinámico
- * @param {string} texto       - Mensaje descriptivo de la acción
- * @param {string} url         - URL a la que navegar al confirmar
- */
 function _abrirModalUsuario(modalId, textoId, texto, url) {
     _urlAccionConfirmacion = url;
     const p = document.getElementById(textoId);
@@ -216,11 +215,6 @@ function _abrirModalUsuario(modalId, textoId, texto, url) {
     abrirModal(modalId);
 }
 
-/**
- * Abre el modal para DESACTIVAR un usuario activo.
- * @param {string} id
- * @param {string} nombre
- */
 window.abrirModalDesactivar = function (id, nombre) {
     _abrirModalUsuario(
         'modalDesactivar',
@@ -230,11 +224,6 @@ window.abrirModalDesactivar = function (id, nombre) {
     );
 };
 
-/**
- * Abre el modal para ELIMINAR un usuario activo.
- * @param {string} id
- * @param {string} nombre
- */
 window.abrirModalEliminarUsuario = function (id, nombre) {
     _abrirModalUsuario(
         'modalEliminarUsuario',
@@ -244,11 +233,6 @@ window.abrirModalEliminarUsuario = function (id, nombre) {
     );
 };
 
-/**
- * Abre el modal para DENEGAR un usuario pendiente.
- * @param {string} id
- * @param {string} nombre
- */
 window.abrirModalDenegar = function (id, nombre) {
     _abrirModalUsuario(
         'modalDenegar',
@@ -258,7 +242,6 @@ window.abrirModalDenegar = function (id, nombre) {
     );
 };
 
-/** Navega a la URL de confirmación (compartida por todos los modales de usuario). */
 window.ejecutarAccionUsuario = function () {
     if (_urlAccionConfirmacion) {
         window.location.href = _urlAccionConfirmacion;
@@ -267,64 +250,141 @@ window.ejecutarAccionUsuario = function () {
 
 
 /* ══════════════════════════════════════════════════════════════════════════
-   5. MÓDULO: FORMULARIO DE REGISTRO
+   5. MÓDULO: HISTORIAL DE CULTIVOS — fetch JSON + render tabla
    ══════════════════════════════════════════════════════════════════════ */
 
-document.addEventListener('DOMContentLoaded', function () {
-    const form     = document.getElementById('formRegistro');
-    const feedback = document.getElementById('mensaje-feedback');
-    if (!form) return;
+window.toggleHistorial = function (btn, idCultivo) {
+    const fila      = document.getElementById('historial-'       + idCultivo);
+    const contenido = document.getElementById('history-content-' + idCultivo);
+    const estaVisible = fila.style.display !== 'none';
 
-    form.addEventListener('submit', function (e) {
-        feedback.style.display = 'none';
-        feedback.className = 'feedback-message';
+    if (estaVisible) {
+        fila.style.display = 'none';
+        btn.classList.remove('btn--history--active');
+        return;
+    }
 
-        const pass1     = document.getElementById('txtContrasena').value;
-        const pass2     = document.getElementById('txtConfirmarContrasena').value;
-        const telefono  = document.getElementById('txtTelefono').value;
+    fila.style.display = 'block';
+    btn.classList.add('btn--history--active');
 
-        if (pass1 !== pass2) {
-            e.preventDefault();
-            _mostrarErrorRegistro(feedback, 'Las contraseñas no coinciden.');
+    if (contenido.dataset.loaded) return;
+
+    fetch(window._ctxPath + '/ServletCultivo?accion=historialJson&id=' + idCultivo, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+        contenido.dataset.loaded = 'true';
+        if (!data.length) {
+            contenido.innerHTML = '<p class="no-data">Sin registros históricos.</p>';
             return;
         }
-        if (!/^\d{10}$/.test(telefono)) {
-            e.preventDefault();
-            _mostrarErrorRegistro(feedback, 'El teléfono debe tener exactamente 10 dígitos.');
-        }
+        let html = '<table class="history-table"><thead>'
+            + '<tr><th>Labor</th><th>Responsable</th>'
+            + '<th>Inicio</th><th>Finalización</th><th>Observaciones</th><th></th></tr>'
+            + '</thead><tbody>';
+        data.forEach(function (r) {
+            html += '<tr id="registro-fila-' + r.idTrabajoRealizado + '">'
+                + '<td>' + _esc(r.descripcionTrabajo) + '</td>'
+                + '<td>' + _esc(r.nombreUsuario)      + '</td>'
+                + '<td>' + r.fechaInicio              + '</td>'
+                + '<td>' + r.fechaFinalizo            + '</td>'
+                + '<td>' + (r.observaciones ? _esc(r.observaciones) : '—') + '</td>'
+                + '<td>'
+                + '<button class="btn btn--delete" style="padding:4px 10px;font-size:12px;"'
+                + ' onclick="abrirModalEliminarRegistro('
+                + r.idTrabajoRealizado + ',' + idCultivo + ')">'
+                + '<i class="fa-solid fa-trash"></i>'
+                + '</button>'
+                + '</td>'
+                + '</tr>';
+        });
+        html += '</tbody></table>';
+        contenido.innerHTML = html;
+    })
+    .catch(function () {
+        contenido.innerHTML = '<p class="no-data">Error al cargar historial.</p>';
     });
-});
-
-window.abrirModalRegistro = function (idCultivo) {
-    _setVal('regIdCultivo', idCultivo);
-    abrirModal('modalRegistro');
 };
-
-function _mostrarErrorRegistro(el, mensaje) {
-    el.textContent = mensaje;
-    el.style.display = 'block';
-    el.classList.add('feedback-message--error');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
 
 
 /* ══════════════════════════════════════════════════════════════════════════
-   UTILIDADES INTERNAS (privadas, prefijo _)
+   6. MÓDULO: TRABAJOS — modal eliminar trabajo
    ══════════════════════════════════════════════════════════════════════ */
 
-/** Asigna value a un input/textarea por ID (no falla si no existe). */
-function _setVal(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.value = value;
-}
+let _idTrabajoEliminar = null;
 
-/** Asigna textContent a un elemento por ID (no falla si no existe). */
-function _setText(id, text) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = text;
-}
+window.abrirModalEliminarTrabajo = function (id) {
+    _idTrabajoEliminar = id;
+    abrirModal('modalConfirmacionTrabajo');
+};
+
+window.ejecutarEliminacionTrabajo = function () {
+    if (_idTrabajoEliminar) {
+        window.location.href = (window._ctxPath || '')
+            + '/ServletTrabajo?accion=eliminar&id=' + _idTrabajoEliminar;
+    }
+};
 
 
+/* ══════════════════════════════════════════════════════════════════════════
+   7. MÓDULO: REGISTROS HISTÓRICOS — eliminar registro individual
+   ══════════════════════════════════════════════════════════════════════ */
+
+let _idRegistroEliminar   = null;
+let _idCultivoDelRegistro = null;
+
+window.abrirModalEliminarRegistro = function (idRegistro, idCultivo) {
+    _idRegistroEliminar   = idRegistro;
+    _idCultivoDelRegistro = idCultivo;
+    abrirModal('modalConfirmacionRegistro');
+};
+
+window.ejecutarEliminacionRegistro = function () {
+    if (!_idRegistroEliminar) return;
+
+    fetch((window._ctxPath || '')
+            + '/ServletCultivo?accion=eliminarRegistro&id='  + _idRegistroEliminar
+            + '&idCultivo=' + _idCultivoDelRegistro)
+        .then(function (res) {
+            if (res.ok) {
+                const fila = document.getElementById('registro-fila-' + _idRegistroEliminar);
+                if (fila) fila.remove();
+
+                const contenido = document.getElementById('history-content-' + _idCultivoDelRegistro);
+                const filas     = contenido ? contenido.querySelectorAll('tbody tr') : [];
+                if (filas.length === 0) {
+                    contenido.innerHTML = '<p class="no-data">Sin registros históricos.</p>';
+                }
+
+                const btnHistorial = document.querySelector(
+                    '[onclick="toggleHistorial(this, \'' + _idCultivoDelRegistro + '\')"]'
+                );
+                if (btnHistorial) {
+                    const match = btnHistorial.textContent.trim().match(/\((\d+)\)/);
+                    if (match) {
+                        const nuevo = Math.max(0, parseInt(match[1]) - 1);
+                        btnHistorial.innerHTML = btnHistorial.innerHTML.replace(
+                            /\(\d+\)/, '(' + nuevo + ')'
+                        );
+                    }
+                }
+            }
+
+            cerrarModal('modalConfirmacionRegistro');
+            _idRegistroEliminar   = null;
+            _idCultivoDelRegistro = null;
+        })
+        .catch(function () {
+            cerrarModal('modalConfirmacionRegistro');
+            alert('Error al eliminar el registro.');
+        });
+};
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8. MÓDULO: FILTRO DE USUARIOS — tabla con filtro por estado
+   ══════════════════════════════════════════════════════════════════════ */
 
 (function () {
     const filtros    = document.querySelectorAll('.filtro-btn');
@@ -337,7 +397,7 @@ function _setText(id, text) {
     function actualizarContador(visibles, total) {
         if (contador) {
             contador.textContent = visibles === total
-                ? total + ' usuario' + (total !== 1 ? 's' : '')
+                ? total    + ' usuario' + (total   !== 1 ? 's' : '')
                 : visibles + ' de ' + total + ' usuario' + (total !== 1 ? 's' : '');
         }
     }
@@ -346,8 +406,7 @@ function _setText(id, text) {
         const filas = tabla.querySelectorAll('tbody tr[data-estado]');
         let visibles = 0;
         filas.forEach(function (fila) {
-            const estado = fila.getAttribute('data-estado');
-            const mostrar = filtro === 'todos' || estado === filtro;
+            const mostrar = filtro === 'todos' || fila.getAttribute('data-estado') === filtro;
             fila.classList.toggle('fila-oculta', !mostrar);
             if (mostrar) visibles++;
         });
@@ -367,62 +426,20 @@ function _setText(id, text) {
 })();
 
 
-// En script.js — nuevo módulo: HISTORIAL DE CULTIVOS
-window.toggleHistorial = function(btn, idCultivo) {
-    var fila = document.getElementById('historial-' + idCultivo);
-    var contenido = document.getElementById('history-content-' + idCultivo);
-    var estaVisible = fila.style.display !== 'none';
+/* ══════════════════════════════════════════════════════════════════════════
+   UTILIDADES INTERNAS (privadas, prefijo _)
+   ══════════════════════════════════════════════════════════════════════ */
 
-    if (estaVisible) {
-        fila.style.display = 'none';
-        btn.classList.remove('btn--history--active');
-        return;
-    }
+function _setVal(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+}
 
-    fila.style.display = 'table-row';
-    btn.classList.add('btn--history--active');
+function _setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
 
-    // Solo cargar si aún no tiene datos reales (evita peticiones repetidas)
-    if (contenido.dataset.loaded) return;
-
-    fetch(window._ctxPath + '/ServletCultivo?accion=historialJson&id=' + idCultivo, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-        contenido.dataset.loaded = 'true';
-        if (!data.length) {
-            contenido.innerHTML = '<p class="no-data">Sin registros históricos.</p>';
-            return;
-        }
-        var html = '<table class="history-table"><thead>'
-            + '<tr><th>Labor</th><th>Responsable</th>'
-            + '<th>Inicio</th><th>Finalización</th><th>Observaciones</th><th></th></tr>'
-            + '</thead><tbody>';
-        data.forEach(function(r) {
-            html += '<tr id="registro-fila-' + r.idTrabajoRealizado + '">'
-                + '<td>' + _esc(r.descripcionTrabajo) + '</td>'
-                + '<td>' + _esc(r.nombreUsuario) + '</td>'
-                + '<td>' + r.fechaInicio + '</td>'
-                + '<td>' + r.fechaFinalizo + '</td>'
-                + '<td>' + (r.observaciones ? _esc(r.observaciones) : '—') + '</td>'
-                + '<td>'
-                + '<button class="btn btn--delete" style="padding:4px 10px;font-size:12px;"'
-                + ' onclick="abrirModalEliminarRegistro(' + r.idTrabajoRealizado + ',' + idCultivo + ')">'
-                + '<i class="fa-solid fa-trash"></i>'
-                + '</button>'
-                + '</td>'
-                + '</tr>';
-        });
-        html += '</tbody></table>';
-        contenido.innerHTML = html;
-    })
-    .catch(function() {
-        contenido.innerHTML = '<p class="no-data">Error al cargar historial.</p>';
-    });
-};
-
-// Escape HTML para prevenir XSS en datos dinámicos
 function _esc(str) {
     return String(str)
         .replace(/&/g, '&amp;')
@@ -430,78 +447,3 @@ function _esc(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
 }
-
-/* ══════════════════════════════════════════════════════════════════════════
-   6. MÓDULO: TRABAJOS
-   ══════════════════════════════════════════════════════════════════════ */
-
-let _idTrabajoEliminar = null;
-
-window.abrirModalEliminarTrabajo = function (id) {
-    _idTrabajoEliminar = id;
-    abrirModal('modalConfirmacionTrabajo');
-};
-
-window.ejecutarEliminacionTrabajo = function () {
-    if (_idTrabajoEliminar) {
-        window.location.href = (window._ctxPath || '')
-            + '/ServletTrabajo?accion=eliminar&id=' + _idTrabajoEliminar;
-    }
-};
-
-/* ══════════════════════════════════════════════════════════════════════════
-   7. MÓDULO: REGISTROS HISTÓRICOS
-   ══════════════════════════════════════════════════════════════════════ */
-
-let _idRegistroEliminar = null;
-let _idCultivoDelRegistro = null;
-
-window.abrirModalEliminarRegistro = function (idRegistro, idCultivo) {
-    _idRegistroEliminar = idRegistro;
-    _idCultivoDelRegistro = idCultivo;
-    abrirModal('modalConfirmacionRegistro');
-};
-
-window.ejecutarEliminacionRegistro = function () {
-    if (!_idRegistroEliminar) return;
-
-    fetch((window._ctxPath || '')
-            + '/ServletCultivo?accion=eliminarRegistro&id=' + _idRegistroEliminar
-            + '&idCultivo=' + _idCultivoDelRegistro)
-        .then(function(res) {
-            if (res.ok) {
-                // Quitar la fila de la tabla sin recargar la página
-                var fila = document.getElementById('registro-fila-' + _idRegistroEliminar);
-                if (fila) fila.remove();
-
-                // Actualizar el contador del botón historial
-                var contenido = document.getElementById('history-content-' + _idCultivoDelRegistro);
-                var filas = contenido ? contenido.querySelectorAll('tbody tr') : [];
-                if (filas.length === 0) {
-                    contenido.innerHTML = '<p class="no-data">Sin registros históricos.</p>';
-                }
-
-                // Actualizar el número entre paréntesis del botón
-                var btnHistorial = document.querySelector(
-                    '[onclick="toggleHistorial(this, \'' + _idCultivoDelRegistro + '\')"]'
-                );
-                if (btnHistorial) {
-                    var texto = btnHistorial.textContent.trim();
-                    var match = texto.match(/\((\d+)\)/);
-                    if (match) {
-                        var nuevo = Math.max(0, parseInt(match[1]) - 1);
-                        btnHistorial.innerHTML = btnHistorial.innerHTML.replace(
-                            /\(\d+\)/, '(' + nuevo + ')'
-                        );
-                    }
-                }
-            }
-            cerrarModal('modalConfirmacionRegistro');
-            _idRegistroEliminar = null;
-            _idCultivoDelRegistro = null;
-        })
-        .catch(function() {
-            cerrarModal('modalConfirmacionRegistro');
-            alert('Error al eliminar el registro.');
-        });
-};

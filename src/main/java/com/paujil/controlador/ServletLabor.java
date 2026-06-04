@@ -11,108 +11,151 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.sql.Date;
 
+/**
+ * ServletLabor — capa de seguridad mínima en backend.
+ *
+ * Responsabilidades tras la migración de validaciones al frontend:
+ *
+ *  1. Autenticación: verifica sesión activa antes de cualquier operación.
+ *  2. Sanitización: null-check, trim, longitudes máximas.
+ *  3. Parseo defensivo de tipos (Integer, Date) — rechazo genérico si fallan.
+ *  4. Persistencia vía DAO.
+ *
+ * Lo que ya NO hace este servlet:
+ *  - Validar que fechaInicio >= hoy              → validaciones-cultivos.js → validarFechaInicio()
+ *  - Validar que fechaFinalizo >= fechaInicio     → validaciones-cultivos.js → validarFechaFin()
+ *  - Validar longitud de descripción (UX)        → validaciones-cultivos.js → validarTextoRequerido()
+ *  - Validar campos obligatorios vacíos (UX)     → validaciones-cultivos.js → validarFormLabor()
+ *
+ * Se conserva una guardia anti-bypass para fechaInicio > fechaFinalizo porque
+ * protege la integridad de la BD ante peticiones que no pasaron por el formulario.
+ */
 @WebServlet("/ServletLabor")
 public class ServletLabor extends HttpServlet {
+
+    // Límites de longitud máxima: defensa contra payloads oversized
+    private static final int MAX_DESCRIPCION   = 1000;
+    private static final int MAX_OBSERVACIONES =  500;
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // false evita crear sesion fantasma; si no hay sesion el usuario no esta autenticado
+        // ── 1. Autenticación ─────────────────────────────────────────────────
+        // false evita crear sesión fantasma; si no hay sesión el usuario no está autenticado
         HttpSession session = request.getSession(false);
-        // Tanto admin como trabajador pueden registrar labores; solo se exige identidad activa
         if (session == null || session.getAttribute("idUsuario") == null) {
-            // Redirige al login sin exponer el recurso solicitado
             response.sendRedirect(request.getContextPath() + "/templates/login.jsp");
             return;
         }
-        // Recupera el ID del usuario autenticado para asociarlo al registro de trabajo
         int idUsuario = (Integer) session.getAttribute("idUsuario");
 
-        // Lee los parametros del formulario antes de cualquier validacion
+        // ── 2. Lectura de parámetros ─────────────────────────────────────────
         String idCultivoStr     = request.getParameter("idCultivo");
-        String descripcion      = request.getParameter("descripcionTrabajo");
-        String fechaInicioStr   = request.getParameter("fechaInicio");
-        // fechaFinalizo puede ser igual a fechaInicio si el trabajo dura un solo dia
-        String fechaFinalizoStr = request.getParameter("fechaFinalizo");
-        // Campo opcional; se almacenara como null si viene vacio
-        String observaciones    = request.getParameter("observaciones");
+        String descripcion      = sanitizar(request.getParameter("descripcionTrabajo"));
+        String fechaInicioStr   = sanitizar(request.getParameter("fechaInicio"));
+        String fechaFinalizoStr = sanitizar(request.getParameter("fechaFinalizo"));
+        // Campo opcional; se almacenará como null si viene vacío
+        String observaciones    = sanitizar(request.getParameter("observaciones"));
 
-        // Todos los campos excepto observaciones son obligatorios para construir el registro
-        if (estaVacio(idCultivoStr) || estaVacio(descripcion)
-                || estaVacio(fechaInicioStr) || estaVacio(fechaFinalizoStr)) {
-            reenviarConError("Todos los campos obligatorios deben completarse.",
+        // ── 3. Guardias de seguridad (anti-bypass) ───────────────────────────
+        // Rechaza peticiones que no pasaron por el validador JS (curl, Burp, scripts).
+        // Mensajes genéricos intencionalmente: no revelan qué campo falló.
+
+        // 3a. Presencia de campos obligatorios y longitudes máximas
+        if (estaVacioONulo(idCultivoStr)
+         || estaVacioONulo(descripcion)      || excedeLongitud(descripcion,   MAX_DESCRIPCION)
+         || estaVacioONulo(fechaInicioStr)
+         || estaVacioONulo(fechaFinalizoStr)
+         || excedeLongitud(observaciones,    MAX_OBSERVACIONES)) {
+
+            reenviarConError("Solicitud inválida. Verifica todos los campos.",
                     idCultivoStr, request, response);
             return;
         }
 
+        // 3b. Parseo defensivo del ID de cultivo
         int idCultivo;
         try {
-            // Parseo explicito necesario porque los parametros HTTP siempre llegan como String
             idCultivo = Integer.parseInt(idCultivoStr);
         } catch (NumberFormatException e) {
-            // Valor no numerico indica manipulacion del formulario o error del cliente
-            reenviarConError("Cultivo no valido.", idCultivoStr, request, response);
-            return;
-        }
-
-        // Limite de 1000 caracteres previene desbordamiento en la columna de BD y abuso de almacenamiento
-        if (descripcion.length() > 1000) {
-            reenviarConError("La descripcion no puede superar 1000 caracteres.",
+            // Valor no numérico indica manipulación del formulario
+            reenviarConError("Solicitud inválida. Verifica todos los campos.",
                     idCultivoStr, request, response);
             return;
         }
 
+        // 3c. Parseo defensivo de fechas: Date.valueOf espera estrictamente "yyyy-MM-dd"
         Date fechaInicio, fechaFinalizo;
         try {
-            // trim() elimina espacios que algunos navegadores insertan al enviar inputs de tipo date
-            fechaInicio   = Date.valueOf(fechaInicioStr.trim());
-            fechaFinalizo = Date.valueOf(fechaFinalizoStr.trim());
+            fechaInicio   = Date.valueOf(fechaInicioStr);
+            fechaFinalizo = Date.valueOf(fechaFinalizoStr);
         } catch (IllegalArgumentException e) {
-            // Date.valueOf lanza esta excepcion ante cualquier formato distinto a yyyy-MM-dd
-            reenviarConError("Formato de fecha invalido. Use yyyy-MM-dd.",
+            reenviarConError("Solicitud inválida. Verifica todos los campos.",
                     idCultivoStr, request, response);
             return;
         }
 
-        // Regla de negocio: un trabajo no puede finalizar antes de haber comenzado
+        // 3d. Guardia de integridad: fechaInicio no puede ser posterior a fechaFinalizo.
+        // Esta es la única regla de negocio que se mantiene en el backend porque:
+        //  a) Es trivial de verificar.
+        //  b) Una inversión de fechas corrompería los datos de historial de labor.
+        //  c) Protege contra bypass directo de la validación JS.
         if (fechaInicio.after(fechaFinalizo)) {
-            reenviarConError("La fecha de inicio no puede ser posterior a la fecha de finalizacion.",
+            reenviarConError("Solicitud inválida. Verifica todos los campos.",
                     idCultivoStr, request, response);
             return;
         }
 
-        // Convierte observaciones vacias a null para diferenciarlas de texto real en BD
+        // ── 4. Persistencia ──────────────────────────────────────────────────
+        // Observaciones vacías se convierten a null para distinguirlas de texto real en BD
         registros reg = new registros(
-            idCultivo, descripcion.trim(), idUsuario,
-            fechaInicio, fechaFinalizo,
-            (observaciones != null && !observaciones.trim().isEmpty())
-                ? observaciones.trim() : null
+            idCultivo,
+            descripcion,
+            idUsuario,
+            fechaInicio,
+            fechaFinalizo,
+            estaVacioONulo(observaciones) ? null : observaciones
         );
-        // Delega la persistencia al DAO; el boolean indica exito o fallo de la operacion en BD
+
         boolean exito = new RegistroTrabajoDao().registrarLabor(reg);
 
-        // Patron Redirect-After-POST evita que recargar la pagina duplique el registro
+        // Redirect-After-POST: evita duplicar el registro al recargar la página
         String status = exito ? "registrado" : "error";
-        // idCultivoActivo permite que la vista destino expanda automaticamente el historial correcto
         response.sendRedirect(request.getContextPath()
                 + "/ServletCultivo?status=" + status + "&idCultivoActivo=" + idCultivo);
     }
 
-    // Centraliza la verificacion de vacios para evitar repetir la condicion null + trim en cada campo
-    private boolean estaVacio(String v) {
-        return v == null || v.trim().isEmpty();
+    // ── Helpers privados ──────────────────────────────────────────────────────
+
+    /** Aplica trim o devuelve null si el parámetro es nulo. */
+    private String sanitizar(String valor) {
+        return (valor != null) ? valor.trim() : null;
     }
 
-    // Usa forward para que el mensaje de error permanezca en el scope de request,
-    // ya que no sobrevive una redireccion HTTP
+    /** Verdadero si el valor es null o cadena vacía (post-trim). */
+    private boolean estaVacioONulo(String valor) {
+        return valor == null || valor.isEmpty();
+    }
+
+    /** Verdadero si la longitud supera el límite máximo. Tolera null. */
+    private boolean excedeLongitud(String valor, int max) {
+        return valor != null && valor.length() > max;
+    }
+
+    /**
+     * Forward con mensaje de error.
+     * Usa forward (no redirect) para que el mensaje sobreviva en el scope de request.
+     * Recarga el listado de cultivos para que la vista tenga contexto completo.
+     */
     private void reenviarConError(String mensaje, String idCultivo,
             HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // El JSP lee este atributo para renderizar el aviso de error al usuario
         request.setAttribute("mensajeError", mensaje);
-        // Preserva el ID del cultivo para que el formulario de la vista recupere el contexto correcto
-        request.setAttribute("idCultivo", idCultivo);
+        request.setAttribute("idCultivo",    idCultivo);
+        // Recarga el listado para que cultivos.jsp pueda renderizar la tabla junto al error
+        request.setAttribute("listaCultivos",
+                new com.paujil.dao.CultivoDao().listarCultivos());
         request.getRequestDispatcher("/templates/administrador/cultivos.jsp")
                .forward(request, response);
     }

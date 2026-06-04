@@ -1,0 +1,89 @@
+/*
+ * _validacion.css — Estados visuales de validación de formularios
+ * Finca El Paujil
+ *
+ * Importar en registro.css o en base.css:
+ *   @import '_validacion.css';
+ *
+ * Clases generadas por validaciones.js:
+ *   .campo-error   → campo con error
+ *   .campo-ok      → campo válido
+ *   .mensaje-error → span de texto de error insertado dinámicamente
+ */
+
+/* ── Transición base para todos los inputs y selects del formulario ── */
+.register-card__input,
+.register-card__select {
+    transition:
+        border-color 0.25s ease,
+        box-shadow   0.25s ease,
+        background   0.25s ease;
+}
+
+/* ── Estado de error ──────────────────────────────────────────────── */
+.register-card__input.campo-error,
+.register-card__select.campo-error {
+    border-color: #ff4d4f;
+    box-shadow:   0 0 0 3px rgba(255, 77, 79, 0.20);
+    background:   rgba(255, 77, 79, 0.06);
+    outline:      none;
+}
+
+/* ── Estado de éxito ──────────────────────────────────────────────── */
+.register-card__input.campo-ok,
+.register-card__select.campo-ok {
+    border-color: #52c41a;
+    box-shadow:   0 0 0 3px rgba(82, 196, 26, 0.18);
+    background:   rgba(82, 196, 26, 0.04);
+    outline:      none;
+}
+
+/* ── Mensaje de error dinámico ────────────────────────────────────── */
+.mensaje-error {
+    display:     none;          /* mostrarError() lo hace visible vía JS */
+    font-size:   0.78rem;
+    font-weight: 500;
+    color:        #ff4d4f;
+    margin-top:  4px;
+    margin-left:  2px;
+    line-height: 1.4;
+    /* Animación de entrada suave */
+    animation:   slideInError 0.2s ease forwards;
+}
+
+.mensaje-error::before {
+    content: '⚠ ';
+    font-size: 0.72rem;
+}
+
+@keyframes slideInError {
+    from {
+        opacity:   0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity:   1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Mensaje global de error del backend ─────────────────────────── */
+.error-message {
+    display:       flex;
+    align-items:   center;
+    gap:           8px;
+    background:    rgba(255, 77, 79, 0.15);
+    border:        1px solid rgba(255, 77, 79, 0.45);
+    border-radius: 8px;
+    padding:       10px 14px;
+    margin-bottom: 16px;
+    font-size:     0.875rem;
+    color:         #ff4d4f;
+    font-weight:   500;
+    animation:     slideInError 0.25s ease forwards;
+}
+
+.error-message i {
+    flex-shrink: 0;
+    font-size:   1rem;
+}

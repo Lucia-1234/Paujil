@@ -21,72 +21,137 @@
 
     <main class="register-card">
 
-        <%-- Mensaje de error del backend --%>
+        <%--
+            Mensajes del backend: solo se muestran para errores de seguridad o BD
+            (correo/teléfono duplicado, fallo al guardar). La lógica de negocio
+            ya no genera estos mensajes porque el frontend la intercepta primero.
+        --%>
         <% String msg = (String) request.getAttribute("mensaje");
            if (msg != null) { %>
-            <div class="error-message">
+            <div class="error-message" role="alert">
                 <i class="fa-solid fa-circle-exclamation"></i> <%= msg %>
             </div>
         <% } %>
-
-        <%-- Contenedor para mensajes de validación JS --%>
-        <div id="mensaje-feedback" class="feedback-message" style="display:none;"></div>
 
         <form id="formRegistro"
               action="${pageContext.request.contextPath}/ServletRegistro"
               method="POST"
               novalidate>
 
+            <%-- Nombre completo --%>
             <div class="register-card__group">
                 <i class="fa-solid fa-user register-card__icon"></i>
-                <input type="text" name="txtNombre" class="register-card__input"
-                       placeholder="Nombre completo" required autocomplete="name">
+                <input type="text"
+                       id="txtNombre"
+                       name="txtNombre"
+                       class="register-card__input"
+                       placeholder="Nombre completo"
+                       value="${not empty nombre ? nombre : ''}"
+                       autocomplete="name"
+                       maxlength="80"
+                       aria-required="true">
             </div>
 
+            <%-- Correo electrónico --%>
             <div class="register-card__group">
                 <i class="fa-solid fa-envelope register-card__icon"></i>
-                <input type="email" name="txtEmail" class="register-card__input"
-                       placeholder="Correo electrónico" required autocomplete="email">
+                <input type="email"
+                       id="txtEmail"
+                       name="txtEmail"
+                       class="register-card__input"
+                       placeholder="Correo electrónico"
+                       value="${not empty email ? email : ''}"
+                       autocomplete="email"
+                       maxlength="120"
+                       aria-required="true">
             </div>
 
+            <%-- Teléfono --%>
             <div class="register-card__group">
                 <i class="fa-solid fa-phone register-card__icon"></i>
-                <input type="tel" name="txtTelefono" id="txtTelefono" class="register-card__input"
-                       placeholder="Teléfono (10 dígitos)" required autocomplete="tel">
+                <input type="tel"
+                       id="txtTelefono"
+                       name="txtTelefono"
+                       class="register-card__input"
+                       placeholder="Teléfono (10 dígitos)"
+                       value="${not empty telefono ? telefono : ''}"
+                       autocomplete="tel"
+                       maxlength="10"
+                       inputmode="numeric"
+                       aria-required="true">
             </div>
 
+            <%-- Fecha de nacimiento --%>
             <div class="register-card__group">
                 <i class="fa-solid fa-calendar-days register-card__icon"></i>
-                <input type="date" name="txtFechaNacimiento" class="register-card__input" required>
+                <input type="date"
+                       id="txtFechaNacimiento"
+                       name="txtFechaNacimiento"
+                       class="register-card__input"
+                       value="${not empty fecha ? fecha : ''}"
+                       aria-required="true">
             </div>
 
+            <%-- Dirección --%>
             <div class="register-card__group">
                 <i class="fa-solid fa-location-dot register-card__icon"></i>
-                <input type="text" name="txtDireccion" class="register-card__input"
-                       placeholder="Dirección" required autocomplete="street-address">
+                <input type="text"
+                       id="txtDireccion"
+                       name="txtDireccion"
+                       class="register-card__input"
+                       placeholder="Dirección"
+                       value="${not empty direccion ? direccion : ''}"
+                       autocomplete="street-address"
+                       maxlength="120"
+                       aria-required="true">
             </div>
 
+            <%-- Rol --%>
             <div class="register-card__group register-card__group--select">
                 <i class="fa-solid fa-user-gear register-card__icon"></i>
-                <select name="txtRol" class="register-card__select" required>
-                    <option value="" disabled selected>Selecciona tu rol</option>
-                    <option value="trabajador">Trabajador</option>
-                    <option value="administrador">Administrador</option>
+                <select id="txtRol"
+                        name="txtRol"
+                        class="register-card__select"
+                        aria-required="true">
+                    <option value="" disabled
+                        ${''.equals(pageContext.request.getAttribute("rol")) || pageContext.request.getAttribute("rol") == null ? "selected" : ""}>
+                        Selecciona tu rol
+                    </option>
+                    <option value="trabajador"
+                        ${"trabajador".equals(pageContext.request.getAttribute("rol")) ? "selected" : ""}>
+                        Trabajador
+                    </option>
+                    <option value="administrador"
+                        ${"administrador".equals(pageContext.request.getAttribute("rol")) ? "selected" : ""}>
+                        Administrador
+                    </option>
                 </select>
             </div>
 
+            <%-- Contraseña --%>
             <div class="register-card__group">
                 <i class="fa-solid fa-lock register-card__icon"></i>
-                <input type="password" name="txtContrasena" id="txtContrasena"
-                       class="register-card__input" placeholder="Contraseña" required
-                       autocomplete="new-password">
+                <input type="password"
+                       id="txtContrasena"
+                       name="txtContrasena"
+                       class="register-card__input"
+                       placeholder="Contraseña"
+                       autocomplete="new-password"
+                       maxlength="100"
+                       aria-required="true">
             </div>
 
+            <%-- Confirmar contraseña --%>
             <div class="register-card__group">
                 <i class="fa-solid fa-shield-halved register-card__icon"></i>
-                <input type="password" name="txtConfirmarContrasena" id="txtConfirmarContrasena"
-                       class="register-card__input" placeholder="Confirmar contraseña" required
-                       autocomplete="new-password">
+                <input type="password"
+                       id="txtConfirmarContrasena"
+                       name="txtConfirmarContrasena"
+                       class="register-card__input"
+                       placeholder="Confirmar contraseña"
+                       autocomplete="new-password"
+                       maxlength="100"
+                       aria-required="true">
             </div>
 
             <button type="submit" class="register-card__button">Registrarse</button>
@@ -99,6 +164,8 @@
         </p>
     </main>
 
-    <script src="${pageContext.request.contextPath}/static/js/script.js"></script>
+    <%-- El script se carga al final del body para garantizar que el DOM esté listo --%>
+    <script src="${pageContext.request.contextPath}/static/js/validaciones.js"></script>
 </body>
 </html>
+

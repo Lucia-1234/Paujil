@@ -13,18 +13,26 @@
 <body>
 <main class="page-wrapper">
 
-    <%-- Mensajes de estado --%>
+    <%-- Mensajes de estado del backend (operaciones completadas o errores de BD) --%>
     <% String status = request.getParameter("status"); %>
     <% if ("success".equals(status) || "eliminado".equals(status) || "registroEliminado".equals(status)) { %>
-        <div class="feedback-message feedback-message--ok">
+        <div class="feedback-message feedback-message--ok" role="status">
             <i class="fa-solid fa-circle-check"></i>
-            <%= "eliminado".equals(status) ? "Cultivo eliminado correctamente."
+            <%= "eliminado".equals(status)        ? "Cultivo eliminado correctamente."
               : "registroEliminado".equals(status) ? "Registro eliminado correctamente."
-              : "Operación realizada correctamente." %>
+              :                                       "Operación realizada correctamente." %>
         </div>
     <% } else if ("error".equals(status)) { %>
-        <div class="feedback-message feedback-message--error">
+        <div class="feedback-message feedback-message--error" role="alert">
             <i class="fa-solid fa-circle-exclamation"></i> Ocurrió un error. Intente nuevamente.
+        </div>
+    <% } %>
+
+    <%-- Mensaje de error del backend (validación de seguridad que pasó el servlet) --%>
+    <% String mensajeError = (String) request.getAttribute("mensajeError");
+       if (mensajeError != null) { %>
+        <div class="feedback-message feedback-message--error" role="alert">
+            <i class="fa-solid fa-circle-exclamation"></i> <%= mensajeError %>
         </div>
     <% } %>
 
@@ -52,6 +60,7 @@
     } else {
         for (cultivo c : lista) {
             Integer conteo = (contadores != null) ? contadores.get(c.getIdCultivo()) : 0;
+            // Escape de comillas simples para uso seguro en atributos data-* y onclick inline
             String nomEsc  = c.getNombreCultivo().replace("'", "\\'");
             String tipoEsc = c.getTipoCultivo() != null ? c.getTipoCultivo().replace("'", "\\'") : "";
             String cosecha = c.getFechaCosecha() != null ? c.getFechaCosecha().toString() : "";
@@ -102,7 +111,7 @@
                 </div>
             </article>
 
-            <%-- Fila expandible del historial --%>
+            <%-- Panel expandible del historial (se rellena vía fetch desde script.js) --%>
             <div id="historial-<%= c.getIdCultivo() %>" class="history-panel" style="display:none;">
                 <div id="history-content-<%= c.getIdCultivo() %>" class="history-content">
                     <p class="no-data">Cargando...</p>
@@ -121,23 +130,54 @@
     </div>
 </main>
 
-<%-- ═══════════════ MODALES ═══════════════ --%>
+<%-- ═══════════════════════════════════════════════════════
+     MODALES
+     ═══════════════════════════════════════════════════════ --%>
 
-<%-- Modal Agregar / Editar Cultivo --%>
-<div id="modalEditar" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+<%-- ── Modal Agregar / Editar Cultivo ── --%>
+<div id="modalEditar" class="modal-overlay" style="display:none;"
+     role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
     <div class="modal-content">
-        <button type="button" class="modal-close" onclick="cerrarModal('modalEditar')" aria-label="Cerrar">&times;</button>
+        <button type="button" class="modal-close"
+                onclick="cerrarModal('modalEditar')" aria-label="Cerrar">&times;</button>
         <h2 id="modalTitulo">Editar Cultivo</h2>
-        <form action="${pageContext.request.contextPath}/ServletCultivo" method="POST">
+
+        <%--
+            id="formCultivo" → referenciado por validaciones-cultivos.js
+            novalidate      → desactiva la validación nativa del navegador;
+                              la validación JS toma el control completo.
+        --%>
+        <form id="formCultivo"
+              action="${pageContext.request.contextPath}/ServletCultivo"
+              method="POST"
+              novalidate>
+
             <input type="hidden" id="editId" name="id">
-            <label>Nombre del cultivo</label>
-            <input type="text" id="editNombre" name="nombreCultivo" required>
-            <label>Tipo</label>
-            <input type="text" id="editTipo" name="tipoCultivo">
-            <label>Fecha de siembra</label>
-            <input type="date" id="editSiembra" name="fechaSiembra" required>
-            <label>Fecha de cosecha</label>
-            <input type="date" id="editCosecha" name="fechaCosecha">
+
+            <label for="editNombre">Nombre del cultivo *</label>
+            <input type="text"
+                   id="editNombre"
+                   name="nombreCultivo"
+                   maxlength="80"
+                   aria-required="true">
+
+            <label for="editTipo">Tipo</label>
+            <input type="text"
+                   id="editTipo"
+                   name="tipoCultivo"
+                   maxlength="60">
+
+            <label for="editSiembra">Fecha de siembra *</label>
+            <input type="date"
+                   id="editSiembra"
+                   name="fechaSiembra"
+                   aria-required="true">
+
+            <label for="editCosecha">Fecha de cosecha</label>
+            <input type="date"
+                   id="editCosecha"
+                   name="fechaCosecha">
+
             <button type="submit" class="btn--save-form">
                 <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
             </button>
@@ -145,42 +185,74 @@
     </div>
 </div>
 
-<%-- Modal Confirmación Eliminación --%>
-<div id="modalConfirmacion" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
+<%-- ── Modal Confirmación Eliminación Cultivo ── --%>
+<div id="modalConfirmacion" class="modal-overlay" style="display:none;"
+     role="dialog" aria-modal="true">
     <div class="confirm-modal">
         <div class="confirm-modal__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
         <p class="confirm-modal__text">¿Seguro que deseas<br>eliminar este cultivo?</p>
         <div class="confirm-modal__actions">
-            <button type="button" class="btn btn--cancel" onclick="cerrarModal('modalConfirmacion')">Cancelar</button>
-            <button type="button" class="btn--confirm-delete" onclick="ejecutarEliminacion()">Eliminar</button>
+            <button type="button" class="btn btn--cancel"
+                    onclick="cerrarModal('modalConfirmacion')">Cancelar</button>
+            <button type="button" class="btn--confirm-delete"
+                    onclick="ejecutarEliminacion()">Eliminar</button>
         </div>
     </div>
 </div>
 
-<%-- Modal Agregar Registro Histórico --%>
-<div id="modalRegistro" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
+<%-- ── Modal Agregar Registro de Labor ── --%>
+<div id="modalRegistro" class="modal-overlay" style="display:none;"
+     role="dialog" aria-modal="true">
     <div class="modal-content">
-        <button type="button" class="modal-close" onclick="cerrarModal('modalRegistro')" aria-label="Cerrar">&times;</button>
+        <button type="button" class="modal-close"
+                onclick="cerrarModal('modalRegistro')" aria-label="Cerrar">&times;</button>
         <h2>Agregar registro de labor</h2>
-        <form action="${pageContext.request.contextPath}/ServletLabor" method="POST">
+
+        <%--
+            id="formLabor" → referenciado por validaciones-cultivos.js
+        --%>
+        <form id="formLabor"
+              action="${pageContext.request.contextPath}/ServletLabor"
+              method="POST"
+              novalidate>
+
             <input type="hidden" id="regIdCultivo" name="idCultivo">
-            <label>Labor realizada *</label>
-            <textarea name="descripcionTrabajo" required maxlength="1000" rows="3"></textarea>
-            <label>Fecha de inicio *</label>
-            <input type="date" name="fechaInicio" required>
-            <label>Fecha de finalización *</label>
-            <input type="date" name="fechaFinalizo" required>
-            <label>Observaciones</label>
-            <textarea name="observaciones" rows="2" maxlength="500"></textarea>
+
+            <label for="laborDesc">Labor realizada *</label>
+            <textarea id="laborDesc"
+                      name="descripcionTrabajo"
+                      maxlength="1000"
+                      rows="3"
+                      aria-required="true"></textarea>
+
+            <label for="laborInicio">Fecha de inicio *</label>
+            <input type="date"
+                   id="laborInicio"
+                   name="fechaInicio"
+                   aria-required="true">
+
+            <label for="laborFin">Fecha de finalización *</label>
+            <input type="date"
+                   id="laborFin"
+                   name="fechaFinalizo"
+                   aria-required="true">
+
+            <label for="laborObs">Observaciones</label>
+            <textarea id="laborObs"
+                      name="observaciones"
+                      rows="2"
+                      maxlength="500"></textarea>
+
             <button type="submit" class="btn--save-form">
                 <i class="fa-solid fa-floppy-disk"></i> Guardar registro
             </button>
         </form>
     </div>
 </div>
-            
-<%-- Modal confirmación eliminar registro --%>
-<div id="modalConfirmacionRegistro" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
+
+<%-- ── Modal Confirmación Eliminación Registro ── --%>
+<div id="modalConfirmacionRegistro" class="modal-overlay" style="display:none;"
+     role="dialog" aria-modal="true">
     <div class="confirm-modal">
         <div class="confirm-modal__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
         <p class="confirm-modal__text">¿Seguro que deseas<br>eliminar este registro?</p>
@@ -194,6 +266,16 @@
 </div>
 
 <script>window._ctxPath = '${pageContext.request.contextPath}';</script>
+
+<%--
+    Orden de carga obligatorio:
+    1. validaciones.js   → funciones puras y helpers de UI (base compartida)
+    2. validaciones-cultivos.js → lógica específica de cultivos y labor
+    3. script.js         → lógica de modales, historial, toggles (puede llamar
+                           limpiarEstadosForm() al abrir modales)
+--%>
+<script src="${pageContext.request.contextPath}/static/js/validaciones.js"></script>
+<script src="${pageContext.request.contextPath}/static/js/validaciones-cultivos.js"></script>
 <script src="${pageContext.request.contextPath}/static/js/script.js"></script>
 </body>
 </html>
