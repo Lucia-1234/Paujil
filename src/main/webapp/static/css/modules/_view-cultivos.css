@@ -141,3 +141,94 @@
     border: none;
     border-radius: var(--radius-sm);
 }
+
+
+/* ==========================================================================
+   cultivos-errores.css
+   Estilos para mensajes de error de validación de fechas.
+   Añadir al final de cultivos.css (o importar desde base.css).
+   ========================================================================== */
+
+/* ── Estado de campo con error ── */
+.campo-error {
+    border-color: #e53e3e !important;
+    background-color: #fff5f5 !important;
+    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15) !important;
+    outline: none;
+}
+
+/* ── Estado de campo válido ── */
+.campo-ok {
+    border-color: #38a169 !important;
+    background-color: #f0fff4 !important;
+    box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.12) !important;
+    outline: none;
+}
+
+.campo-error,
+textarea.campo-error {          /* <-- garantiza cobertura en textarea */
+    border-color: #e53e3e !important;
+    background-color: #fff5f5 !important;
+    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15) !important;
+    outline: none;
+}
+
+.campo-ok,
+textarea.campo-ok {
+    border-color: #38a169 !important;
+    background-color: #f0fff4 !important;
+    box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.12) !important;
+    outline: none;
+}
+
+/* ── Mensaje de error de fecha ──
+   Se inserta dinámicamente justo después del <input type="date">
+   con id="error-{campo.id}"
+   ── */
+.error-fecha {
+    display: none;                          /* oculto por defecto */
+    margin-top: 4px;
+    padding: 5px 10px 5px 28px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #c53030;
+    background-color: #fff5f5;
+    border-left: 3px solid #e53e3e;
+    border-radius: 4px;
+    position: relative;
+    line-height: 1.4;
+
+    /* Animación de entrada (slide-down + fade) */
+    animation: errorEntrada 0.22s ease-out both;
+}
+
+/* Icono de advertencia mediante pseudo-elemento, sin dependencias externas */
+.error-fecha::before {
+    content: '⚠';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.85rem;
+    color: #e53e3e;
+    line-height: 1;
+}
+
+@keyframes errorEntrada {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Responsive: en pantallas pequeñas el texto puede ser más compacto ── */
+@media (max-width: 480px) {
+    .error-fecha {
+        font-size: 0.73rem;
+        padding: 4px 8px 4px 24px;
+    }
+}

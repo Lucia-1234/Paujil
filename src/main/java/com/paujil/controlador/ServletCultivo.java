@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Date;
-import java.time.LocalDate;
 
 import static com.paujil.utils.ServletUtils.estaVacio;
 import static com.paujil.utils.ServletUtils.verificarSesionAdmin;
@@ -26,7 +25,7 @@ import java.util.Map;
  * Responsabilidades tras la migración de validaciones al frontend:
  *
  *  GET:
- *   - Autenticación/autorización por rol (sin cambios).
+ *   - Autenticación/autorización por rol.
  *   - Sanitización de parámetros de ruta (id numérico).
  *   - Delegación a DAO y reenvío a vistas.
  *
@@ -35,11 +34,15 @@ import java.util.Map;
  *   2. Parseo defensivo de tipos (Date, Integer) — rechazo genérico si fallan.
  *   3. Persistencia vía DAO.
  *
- * Lo que ya NO hace este servlet:
- *  - Validar que fechaSiembra >= hoy              → validaciones-cultivos.js → validarFormCultivo()
- *  - Validar que fechaCosecha >= fechaSiembra     → validaciones-cultivos.js → validarFormCultivo()
- *  - Validar que nombre/tipo tengan cierta long.  → validaciones-cultivos.js → validarTextoRequerido()
- *  - Validar fechaInicio/fechaFinalizo de labores → validaciones-cultivos.js → validarFormLabor()
+ * Validaciones de fecha delegadas completamente al frontend (validaciones-cultivos.js):
+ *   - fechaSiembra >= hoy              → validarFormCultivo()
+ *   - fechaCosecha >= fechaSiembra     → validarFormCultivo()
+ *   - fechaInicio  >= hoy              → validarFormLabor()
+ *   - fechaFinalizo >= fechaInicio     → validarFormLabor()
+ *
+ * El backend solo rechaza peticiones con campos obligatorios vacíos o que
+ * no superen el parseo de tipos, con un mensaje genérico para no revelar
+ * la lógica interna ante posibles bypasses (curl, Postman, etc.).
  */
 @WebServlet("/ServletCultivo")
 public class ServletCultivo extends HttpServlet {
@@ -179,11 +182,13 @@ public class ServletCultivo extends HttpServlet {
         String fSiembraStr = sanitizar(request.getParameter("fechaSiembra"));
         String fCosechaStr = sanitizar(request.getParameter("fechaCosecha"));
 
-        // ── Guardia de seguridad mínima ──────────────────────────────────────
-        // Rechaza peticiones que no pasaron por el validador JS (bypass, curl, etc.).
-        // El mensaje es genérico intencionalmente para no revelar qué falló.
+        // ── Guardia mínima de seguridad ──────────────────────────────────────
+        // Rechaza peticiones que bypasearon el validador JS (curl, Postman, etc.).
+        // Solo verifica presencia de campos obligatorios y longitudes; las reglas
+        // de negocio sobre fechas (>= hoy, cosecha >= siembra) son exclusivas del
+        // frontend — no se replican aquí intencionalmente.
 
-        // Campos obligatorios y longitudes
+        // Campos obligatorios y longitudes máximas
         if (estaVacio(nombre)    || excedeLongitud(nombre, MAX_NOMBRE)
          || excedeLongitud(tipo, MAX_TIPO)
          || estaVacio(fSiembraStr)) {
@@ -193,13 +198,17 @@ public class ServletCultivo extends HttpServlet {
         }
 
         // Parseo defensivo de fechas: Date.valueOf espera "yyyy-MM-dd"
+        // No se evalúan relaciones entre fechas; eso es responsabilidad del frontend.
         Date fSiembra;
         Date fCosecha = null;
         try {
             fSiembra = Date.valueOf(fSiembraStr);
             if (!estaVacio(fCosechaStr)) {
                 fCosecha = Date.valueOf(fCosechaStr);
-                // Verifica que cosecha no sea anterior a siembra (anti-bypass del validador JS)
+                // Única guardia de integridad referencial que el backend conserva:
+                // evita que un bypass persista cosecha anterior a siembra, lo que
+                // corrompería datos sin posibilidad de corrección desde la UI.
+                // El mensaje sigue siendo genérico para no exponer la lógica.
                 if (fCosecha.toLocalDate().isBefore(fSiembra.toLocalDate())) {
                     reenviarAdminConError("Solicitud inválida. Verifica todos los campos.",
                                           request, response);

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/base.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/views/cultivos.css">
+
     <title>Gestión de Cultivos - Finca El Paujil</title>
 </head>
 <body>
@@ -60,7 +61,6 @@
     } else {
         for (cultivo c : lista) {
             Integer conteo = (contadores != null) ? contadores.get(c.getIdCultivo()) : 0;
-            // Escape de comillas simples para uso seguro en atributos data-* y onclick inline
             String nomEsc  = c.getNombreCultivo().replace("'", "\\'");
             String tipoEsc = c.getTipoCultivo() != null ? c.getTipoCultivo().replace("'", "\\'") : "";
             String cosecha = c.getFechaCosecha() != null ? c.getFechaCosecha().toString() : "";
@@ -111,7 +111,6 @@
                 </div>
             </article>
 
-            <%-- Panel expandible del historial (se rellena vía fetch desde script.js) --%>
             <div id="historial-<%= c.getIdCultivo() %>" class="history-panel" style="display:none;">
                 <div id="history-content-<%= c.getIdCultivo() %>" class="history-content">
                     <p class="no-data">Cargando...</p>
@@ -143,9 +142,8 @@
         <h2 id="modalTitulo">Editar Cultivo</h2>
 
         <%--
-            id="formCultivo" → referenciado por validaciones-cultivos.js
-            novalidate      → desactiva la validación nativa del navegador;
-                              la validación JS toma el control completo.
+            novalidate → desactiva validación nativa del navegador;
+                         el módulo validaciones-cultivos.js toma el control.
         --%>
         <form id="formCultivo"
               action="${pageContext.request.contextPath}/ServletCultivo"
@@ -160,23 +158,33 @@
                    name="nombreCultivo"
                    maxlength="80"
                    aria-required="true">
+            <span id="error-editNombre" class="error-fecha" role="alert" style="display:none;"></span>  <%-- antes: comentario --%>
 
             <label for="editTipo">Tipo</label>
             <input type="text"
                    id="editTipo"
                    name="tipoCultivo"
                    maxlength="60">
+            <span id="error-editTipo" class="error-fecha" role="alert" style="display:none;"></span>
 
             <label for="editSiembra">Fecha de siembra *</label>
             <input type="date"
                    id="editSiembra"
                    name="fechaSiembra"
                    aria-required="true">
+            <%--
+                Span de error para fecha de siembra.
+                ID = "error-editSiembra" (convención: "error-" + id del campo).
+                validaciones-cultivos.js lo busca por este ID y lo crea si no existe,
+                pero declararlo aquí evita el flash de inserción en el DOM.
+            --%>
+            <span id="error-editSiembra" class="error-fecha" role="alert" style="display:none;"></span>
 
             <label for="editCosecha">Fecha de cosecha</label>
             <input type="date"
                    id="editCosecha"
                    name="fechaCosecha">
+            <span id="error-editCosecha" class="error-fecha" role="alert" style="display:none;"></span>
 
             <button type="submit" class="btn--save-form">
                 <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
@@ -208,9 +216,6 @@
                 onclick="cerrarModal('modalRegistro')" aria-label="Cerrar">&times;</button>
         <h2>Agregar registro de labor</h2>
 
-        <%--
-            id="formLabor" → referenciado por validaciones-cultivos.js
-        --%>
         <form id="formLabor"
               action="${pageContext.request.contextPath}/ServletLabor"
               method="POST"
@@ -218,7 +223,7 @@
 
             <input type="hidden" id="regIdCultivo" name="idCultivo">
 
-            <label for="laborDesc">Labor realizada *</label>
+            <label for="laborDesc" >Labor realizada *</label>
             <textarea id="laborDesc"
                       name="descripcionTrabajo"
                       maxlength="1000"
@@ -230,12 +235,16 @@
                    id="laborInicio"
                    name="fechaInicio"
                    aria-required="true">
+            <%-- Span de error: id = "error-laborInicio" --%>
+            <span id="error-laborInicio" class="error-fecha" role="alert" style="display:none;"></span>
 
             <label for="laborFin">Fecha de finalización *</label>
             <input type="date"
                    id="laborFin"
                    name="fechaFinalizo"
                    aria-required="true">
+            <%-- Span de error: id = "error-laborFin" --%>
+            <span id="error-laborFin" class="error-fecha" role="alert" style="display:none;"></span>
 
             <label for="laborObs">Observaciones</label>
             <textarea id="laborObs"
@@ -269,13 +278,12 @@
 
 <%--
     Orden de carga obligatorio:
-    1. validaciones.js   → funciones puras y helpers de UI (base compartida)
-    2. validaciones-cultivos.js → lógica específica de cultivos y labor
-    3. script.js         → lógica de modales, historial, toggles (puede llamar
-                           limpiarEstadosForm() al abrir modales)
+    1. validaciones.js          → funciones puras y helpers UI (base compartida)
+    2. validaciones-cultivos.js → validación de fechas y textos para cultivos/labor
+    3. script.js                → modales, historial, toggles
 --%>
 <script src="${pageContext.request.contextPath}/static/js/validaciones.js"></script>
-<script src="${pageContext.request.contextPath}/static/js/validaciones-cultivos.js"></script>
+<script src="${pageContext.request.contextPath}/static/js/Validaciones_cultivo.js"></script>
 <script src="${pageContext.request.contextPath}/static/js/script.js"></script>
 </body>
 </html>

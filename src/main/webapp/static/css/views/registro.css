@@ -1,3 +1,5 @@
 /* Vista: registro_usuario.jsp
    Los estilos .register-* ya están en _forms.css (importado desde base.css).
    Este archivo existe para overrides puntuales del registro. */
+
+@import url("../modules/validaciones.css");
