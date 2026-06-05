@@ -1,0 +1,325 @@
+/* ==========================================================================
+   MÓDULO: _feedback.css  — Sistema unificado de mensajes de error/éxito
+   Finca El Paujil
+   --------------------------------------------------------------------------
+   REEMPLAZA y consolida las 3 definiciones divergentes de .error-message
+   que existían en:
+     • _forms.css        → rgba(220,53,69,.85) sobre blanco
+     • _view-login.css   → rgba(220,53,69,.88) sobre degradado
+     • validaciones.css  → rgba(255,77,79,.15) con borde
+
+   TAMBIÉN consolida y estandariza:
+     • .campo-error / .campo-ok — duplicados en validaciones.css y
+       _view-cultivos.css (con valores de color distintos)
+     • .mensaje-error y .error-fecha — clases gemelas con la misma función
+     • .feedback-message --ok / --error — ya definidas en _forms.css
+
+   CLASES PÚBLICAS:
+     — Mensajes globales (banner) —
+     .alert                → base de todo banner de alerta
+     .alert--error         → error (rojo)
+     .alert--success       → éxito (verde)
+     .alert--warning       → advertencia (ámbar)
+     .alert--info          → información (azul)
+
+     — Mensajes inline de campo —
+     .campo-error          → input/select en estado de error
+     .campo-ok             → input/select en estado válido
+     .field-hint           → span de texto de error debajo del campo
+                             (unifica .mensaje-error y .error-fecha)
+
+   PATRÓN DE USO EN JS (ver feedback-manager.js):
+     FeedbackUI.show(containerEl, tipo, mensaje);
+     FeedbackUI.hide(containerEl);
+   ========================================================================== */
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   1. ANIMACIONES COMPARTIDAS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes fb-slide-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes fb-slide-out {
+    from { opacity: 1; transform: translateY(0);    }
+    to   { opacity: 0; transform: translateY(-6px); }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2. BANNERS DE ALERTA GLOBALES  (.alert)
+   Mismo lenguaje visual en login, registro, modales y formularios.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.alert {
+    /* Layout */
+    display:       flex;
+    align-items:   flex-start;
+    gap:           10px;
+
+    /* Espaciado */
+    padding:       11px 14px;
+    margin-bottom: var(--spacing-md);
+
+    /* Forma */
+    border-radius: var(--radius-sm);
+    border-left:   4px solid transparent;   /* borde de acento */
+
+    /* Tipografía */
+    font-size:     var(--font-size-sm);
+    font-weight:   500;
+    line-height:   1.5;
+
+    /* Animación de entrada */
+    animation: fb-slide-in 0.22s ease both;
+}
+
+/* Icono (pseudo-elemento — sin dependencias de icon-font) */
+.alert::before {
+    flex-shrink:  0;
+    font-size:    1rem;
+    line-height:  1.4;
+    margin-top:   1px;    /* alineación óptica con el texto */
+}
+
+/* Botón de cierre (generado por JS, opcional) */
+.alert__close {
+    margin-left:      auto;
+    flex-shrink:      0;
+    background:       none;
+    border:           none;
+    cursor:           pointer;
+    font-size:        1rem;
+    line-height:      1;
+    opacity:          .55;
+    color:            inherit;
+    padding:          0 2px;
+    transition:       opacity var(--transition-fast);
+}
+.alert__close:hover { opacity: 1; }
+
+/* Salida animada (añadida por FeedbackUI.hide()) */
+.alert--exiting {
+    animation: fb-slide-out 0.18s ease both;
+    pointer-events: none;
+}
+
+
+/* ── Variante: Error ─────────────────────────────────────────────────────── */
+.alert--error {
+    background:   #fff0f0;
+    color:        #c0392b;
+    border-color: #e53e3e;
+}
+.alert--error::before { content: '⚠'; }
+
+/*
+   CONTEXTO OSCURO (sobre fondos de degradado: login, registro)
+   Añadir la clase .alert--on-dark cuando el banner se muestre
+   sobre el panel izquierdo oscuro (login.jsp, register-page).
+*/
+.alert--error.alert--on-dark {
+    background:   rgba(220, 53, 69, 0.18);
+    color:        #ffc2c2;
+    border-color: rgba(220, 53, 69, 0.60);
+}
+
+
+/* ── Variante: Éxito ─────────────────────────────────────────────────────── */
+.alert--success {
+    background:   #f0fff4;
+    color:        #1e6e38;
+    border-color: #38a169;
+}
+.alert--success::before { content: '✓'; }
+
+.alert--success.alert--on-dark {
+    background:   rgba(56, 161, 105, 0.18);
+    color:        #b2f5d0;
+    border-color: rgba(56, 161, 105, 0.55);
+}
+
+
+/* ── Variante: Advertencia ───────────────────────────────────────────────── */
+.alert--warning {
+    background:   #fffbeb;
+    color:        #856404;
+    border-color: #d97706;
+}
+.alert--warning::before { content: '⚠'; }
+
+.alert--warning.alert--on-dark {
+    background:   rgba(217, 119, 6, 0.18);
+    color:        #fde68a;
+    border-color: rgba(217, 119, 6, 0.55);
+}
+
+
+/* ── Variante: Información ───────────────────────────────────────────────── */
+.alert--info {
+    background:   #eff6ff;
+    color:        #1e40af;
+    border-color: #3b82f6;
+}
+.alert--info::before { content: 'ℹ'; }
+
+.alert--info.alert--on-dark {
+    background:   rgba(59, 130, 246, 0.18);
+    color:        #bfdbfe;
+    border-color: rgba(59, 130, 246, 0.55);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   3. ESTADOS DE CAMPO  (.campo-error / .campo-ok)
+   Definición única — ELIMINAR las copias en validaciones.css y
+   _view-cultivos.css (que usaban colores hex ligeramente distintos).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.campo-error {
+    box-shadow:       0 0 0 3px rgba(229, 62, 62, 0.15) !important;
+    outline:          none;
+    transition:       border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+}
+
+.campo-ok {
+    box-shadow:       0 0 0 3px rgba(56, 161, 105, 0.12) !important;
+    outline:          none;
+    transition:       border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+}
+
+
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4. MENSAJE INLINE DE CAMPO  (.field-hint)
+   Unifica .mensaje-error (validaciones.css) y .error-fecha (_view-cultivos)
+   en una sola clase con el mismo comportamiento visual.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.field-hint {
+    display:       none;          /* JS lo muestra con style.display='block' */
+    position:      relative;
+    margin-top:    4px;
+    padding:       5px 10px 5px 28px;
+    font-size:     0.78rem;
+    font-weight:   500;
+    color:         #c53030;
+    background:    #fff5f5;
+    border-left:   3px solid #e53e3e;
+    border-radius: 4px;
+    line-height:   1.4;
+    animation:     fb-slide-in 0.22s ease both;
+}
+
+/* Icono ⚠ vía pseudo-elemento */
+.field-hint::before {
+    content:   '⚠';
+    position:  absolute;
+    left:      8px;
+    top:       50%;
+    transform: translateY(-50%);
+    font-size: 0.82rem;
+    color:     #e53e3e;
+    line-height: 1;
+}
+
+/* En modal oscuro: texto e icono más claros */
+.modal-content .field-hint {
+    background:  rgba(229, 62, 62, 0.12);
+    color:       #ffc2c2;
+    border-color: rgba(229, 62, 62, 0.55);
+}
+.modal-content .field-hint::before { color: #ffc2c2; }
+
+/* Pantallas pequeñas */
+@media (max-width: 480px) {
+    .field-hint { font-size: 0.73rem; padding: 4px 8px 4px 24px; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5. COMPATIBILIDAD RETROACTIVA
+   Mantiene las clases antiguas como alias para no romper JSPs existentes
+   mientras se migra progresivamente.
+   ELIMINAR cuando todos los JSP usen .alert y .field-hint.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* .error-message → .alert.alert--error */
+.error-message {
+    display:       flex;
+    align-items:   flex-start;
+    gap:           10px;
+    padding:       11px 14px;
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    border-left:   4px solid #e53e3e;
+    font-size:     var(--font-size-sm);
+    font-weight:   500;
+    line-height:   1.5;
+    background:    #fff0f0;
+    color:         #c0392b;
+    animation:     fb-slide-in 0.22s ease both;
+}
+
+/* Mantiene compatibilidad con el uso de login.jsp (fondo oscuro) */
+.login-container .error-message,
+.register-page   .error-message {
+    background:   rgba(220, 53, 69, 0.18);
+    color:        #ffc2c2;
+    border-color: rgba(220, 53, 69, 0.60);
+}
+
+/* .mensaje-error → .field-hint  */
+.mensaje-error {
+    display:      none;
+    position:     relative;
+    margin-top:   1px;
+    padding:      5px 10px 5px 28px;
+    font-size:    0.78rem;
+    font-weight:  500;
+    color:        #c53030;
+    background:   #fff5f5;
+    border-left:  3px solid #e53e3e;
+    border-radius: var(--radius-sm) ;
+    line-height:  1.4;
+    animation:    fb-slide-in 0.22s ease both;
+}
+.mensaje-error::before {
+    content:   '⚠';
+    position:  absolute;
+    left:      8px;
+    top:       50%;
+    transform: translateY(-50%);
+    font-size: 0.82rem;
+    color:     #e53e3e;
+}
+
+/* .error-fecha → .field-hint  (alias exacto) */
+.error-fecha { }   /* Usa los mismos estilos; el selector se elimina cuando se migre */
+.error-fecha {
+    display:      none;
+    position:     relative;
+    margin-top:   4px;
+    padding:      5px 10px 5px 28px;
+    font-size:    0.78rem;
+    font-weight:  500;
+    color:        #c53030;
+    background:   #fff5f5;
+    border-left:  3px solid #e53e3e;
+    border-radius: 4px;
+    line-height:  1.4;
+    animation:    fb-slide-in 0.22s ease both;
+}
+.error-fecha::before {
+    content:   '⚠';
+    position:  absolute;
+    left:      8px;
+    top:       50%;
+    transform: translateY(-50%);
+    font-size: 0.82rem;
+    color:     #e53e3e;
+}

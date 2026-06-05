@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function () {
         [cDir,      'txtDireccion'],
         [cRol,      'txtRol'],
         [cPass,     'txtContrasena'],
-        [cConf,     'txtConfirmarContrasena'],
+        [cConf,     'txtConfirmarContrasena']
     ];
     campos.forEach(([el, id]) => { if (el && !el.id) el.id = id; });
 
@@ -474,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function () {
             validarTextoRequerido(cDir, 'La dirección', 5, 120),
             validarSelect(cRol, 'El rol'),
             validarContrasena(cPass),
-            validarConfirmacion(cConf, cPass),
+            validarConfirmacion(cConf, cPass)
         ];
 
         const todosValidos = resultados.every(Boolean);
