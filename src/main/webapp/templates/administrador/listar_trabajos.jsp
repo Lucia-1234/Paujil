@@ -8,35 +8,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/base.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/views/trabajos.css">
-    <title>Trabajos Asignados - Finca El Paujil</title>
+    <title>Monitoreo de Trabajos - Finca El Paujil</title>
 </head>
 <body>
 <main class="page-wrapper">
 
-    <%
-        String status = request.getParameter("status");
-        if ("success".equals(status)) {
-    %>
-        <div class="feedback-message feedback-message--ok">
-            <i class="fa-solid fa-circle-check"></i> Acción realizada correctamente.
-        </div>
-    <% } else if ("error".equals(status)) { %>
-        <div class="feedback-message feedback-message--error">
-            <i class="fa-solid fa-circle-exclamation"></i> Ocurrió un error. Intente nuevamente.
-        </div>
-    <% } %>
-
     <header class="list-header">
-        <a href="${pageContext.request.contextPath}/templates/administrador/menu_administrador.jsp"
-           class="list-header__back" aria-label="Volver al menú">
+        <a href="${pageContext.request.contextPath}/templates/administrador/menu_administrador.jsp" class="list-header__back">
             <i class="fa-solid fa-arrow-left-long"></i>
         </a>
-        <h1 class="list-header__title">Trabajos asignados</h1>
-        <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=prepararCreacion"
-           class="btn btn--new" style="margin-left:auto;">
-            <i class="fa-solid fa-circle-plus"></i> Agregar trabajo
+        <h1 class="list-header__title">Monitoreo de Trabajos</h1>
+        <a href="${pageContext.request.contextPath}/ServletTrabajo?accion=prepararCreacion" class="btn btn--new" style="margin-left:auto;">
+            <i class="fa-solid fa-circle-plus"></i> Asignar trabajo
         </a>
     </header>
+
+    <%-- Filtros para el Administrador --%>
+    <div class="filtros-estado" id="filtrosEstado">
+        <span><i class="fa-solid fa-filter"></i> Filtrar:</span>
+        <button class="filtro-btn seleccionado" data-filtro="todos">Todos</button>
+        <button class="filtro-btn" data-filtro="pendiente">Pendientes</button>
+        <button class="filtro-btn" data-filtro="finalizado">Finalizados</button>
+    </div>
 
     <div class="panel">
         <div class="job-list">
@@ -44,37 +37,38 @@
                 List<trabajo> lista = (List<trabajo>) request.getAttribute("listaTrabajos");
                 if (lista == null || lista.isEmpty()) {
             %>
-                <p class="no-data">
-                    <i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>
-                    No hay trabajos registrados.
-                </p>
+                <p class="no-data"><i class="fa-solid fa-circle-info"></i> No hay trabajos registrados actualmente.</p>
             <%
                 } else {
                     for (trabajo t : lista) {
+                        boolean finalizado = (t.getFechaFinalizacion() != null);
             %>
-                <article class="job-card">
-                    <h2 class="job-card__title"><%= t.getNombre() %></h2>
-                    <p class="job-card__desc"><%= t.getDescripcion() %></p>
-                    <div class="job-card__info">
-                        <div class="job-card__meta">
-                            <i class="fa-solid fa-calendar" style="color:var(--color-brand-green);margin-right:4px;"></i>
-                            <%= t.getFechaAsignacion() %>
-                        </div>
-                        <div class="job-card__meta">
-                            <i class="fa-solid fa-seedling" style="color:var(--color-brand-green);margin-right:4px;"></i>
-                            <%= t.getNombreCultivo() != null ? t.getNombreCultivo() : "—" %>
-                        </div>
-                        <div class="job-card__meta">
-                            <i class="fa-solid fa-user" style="color:var(--color-brand-green);margin-right:4px;"></i>
-                            <%= t.getNombreUsuario() != null ? t.getNombreUsuario() : "—" %>
-                        </div>
+                <article class="job-card" data-estado="<%= finalizado ? "finalizado" : "pendiente" %>">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h2 class="job-card__title" style="margin:0;"><%= t.getNombre() %></h2>
+                        <span class="badge <%= finalizado ? "badge--activo" : "badge--pendiente" %>">
+                            <%= finalizado ? "Finalizado" : "Pendiente" %>
+                        </span>
                     </div>
-                    <div class="job-card__actions">
-                        <button class="btn btn--delete"
-                                data-id="<%= t.getId() %>"
-                                onclick="abrirModalEliminarTrabajo(this.dataset.id)">
-                            <i class="fa-solid fa-trash"></i> Eliminar
-                        </button>
+
+                    <div class="job-card__info" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <p><strong><i class="fa-solid fa-user"></i> Encargado:</strong> <%= t.getNombreUsuario() %></p>
+                        <p><strong><i class="fa-solid fa-seedling"></i> Cultivo:</strong> <%= t.getNombreCultivo() %></p>
+                        <p><strong><i class="fa-solid fa-calendar"></i> Asignado:</strong> <%= t.getFechaAsignacion() %></p>
+                        <% if (finalizado) { %>
+                            <p><strong><i class="fa-solid fa-check-double"></i> Terminado:</strong> <%= t.getFechaFinalizacion() %></p>
+                        <% } %>
+                    </div>
+
+                    <p class="job-card__desc" style="border-top:1px solid #eee; padding-top:10px;">
+                        <strong>Descripción:</strong> <%= t.getDescripcion() %>
+                    </p>
+
+                    <div class="obs-container" style="margin-top:10px; padding:10px; background:#f9f9f9; border-left:4px solid var(--color-brand-green); border-radius:4px;">
+                        <strong><i class="fa-solid fa-pen-to-square"></i> Comentarios del trabajador:</strong>
+                        <p style="margin:5px 0 0 0; color: #555;">
+                            <%= (t.getObservaciones() != null && !t.getObservaciones().isEmpty()) ? t.getObservaciones() : "Sin observaciones aún." %>
+                        </p>
                     </div>
                 </article>
             <%
@@ -85,18 +79,6 @@
     </div>
 </main>
 
-<%-- Modal Confirmación Eliminación --%>
-<div id="modalConfirmacionTrabajo" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
-    <div class="confirm-modal">
-        <div class="confirm-modal__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <p class="confirm-modal__text">¿Eliminar este<br>trabajo?</p>
-        <div class="confirm-modal__actions">
-            <button type="button" class="btn btn--cancel" onclick="cerrarModal('modalConfirmacionTrabajo')">Cancelar</button>
-            <button type="button" class="btn--confirm-delete" onclick="ejecutarEliminacionTrabajo()">Eliminar</button>
-        </div>
-    </div>
-</div>
-<script>window._ctxPath = '${pageContext.request.contextPath}';</script>
-<script src="${pageContext.request.contextPath}/static/js/script.js"></script>
+<script src="${pageContext.request.contextPath}/static/js/filtros-trabajos.js"></script>
 </body>
 </html>
