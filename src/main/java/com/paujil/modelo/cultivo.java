@@ -11,14 +11,8 @@ public class cultivo {
     private String tipoCultivo;
     private Date fechaSiembra;
     private Date fechaCosecha;
-
-    // Lista de nombres de biopreparados aplicados al cultivo; modela la relacion muchos-a-muchos de forma simplificada usando strings en lugar de objetos completos
-    private List<String> biopreparados;
-
-    public cultivo() {
-        // Inicializa la lista en el constructor vacio para evitar NullPointerException al llamar addBiopreparado sin pasar por el constructor parametrizado
-        this.biopreparados = new ArrayList<>();
-    }
+    
+    public cultivo() {}
 
     // Constructor parametrizado con los campos esenciales del cultivo; excluye id porque lo genera la base de datos y biopreparados porque se agregan de forma incremental
     public cultivo(String nombreCultivo, String tipoCultivo, Date fechaSiembra, Date fechaCosecha) {
@@ -26,8 +20,7 @@ public class cultivo {
         this.tipoCultivo = tipoCultivo;
         this.fechaSiembra = fechaSiembra;
         this.fechaCosecha = fechaCosecha;
-        // Garantiza que la lista este lista para recibir biopreparados inmediatamente despues de crear el objeto
-        this.biopreparados = new ArrayList<>();
+
     }
 
     // Retorna el id de base de datos; necesario para operaciones de UPDATE, DELETE o como FK en tablas relacionadas
@@ -55,8 +48,4 @@ public class cultivo {
     // Permite actualizar la fecha de cosecha ante cambios de estimacion o ajustes del ciclo real del cultivo
     public void setFechaCosecha(Date fechaCosecha) { this.fechaCosecha = fechaCosecha; }
 
-    // Retorna la lista completa de nombres de biopreparados aplicados; usada para iterar en vistas o generar reportes de tratamientos
-    public List<String> getBiopreparados() { return biopreparados; }
-    // Agrega un biopreparado por nombre a la lista existente sin reemplazarla; permite construccion incremental de la relacion durante el mapeo de resultados
-    public void addBiopreparado(String nombre) { this.biopreparados.add(nombre); }
 }

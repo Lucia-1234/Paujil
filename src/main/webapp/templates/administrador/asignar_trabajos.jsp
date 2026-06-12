@@ -1,5 +1,6 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@page import="com.paujil.modelo.cultivo, com.paujil.modelo.usuario, java.util.List"%>
+<%@page import="com.paujil.modelo.cultivo, com.paujil.modelo.usuario,
+                com.paujil.modelo.tipoTrabajo, java.util.List"%>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -30,7 +31,9 @@
 
     <div class="job-form-wrapper">
         <form class="job-form" action="${pageContext.request.contextPath}/ServletTrabajo" method="POST">
+            <input type="hidden" name="accion" value="registrar">
 
+            <%-- Cultivo --%>
             <div class="job-form__row">
                 <label class="job-form__label" for="idCultivo">
                     <i class="fa-solid fa-seedling" style="margin-right:4px;color:var(--color-brand-green);"></i> Cultivo
@@ -49,6 +52,7 @@
                 </select>
             </div>
 
+            <%-- Trabajador --%>
             <div class="job-form__row">
                 <label class="job-form__label" for="idUsuario">
                     <i class="fa-solid fa-user-hard-hat" style="margin-right:4px;color:var(--color-brand-green);"></i> Trabajador
@@ -67,14 +71,35 @@
                 </select>
             </div>
 
+            <%-- Tipo de trabajo --%>
+            <div class="job-form__row">
+                <label class="job-form__label" for="idTipoTrabajo">
+                    <i class="fa-solid fa-tag" style="margin-right:4px;color:var(--color-brand-green);"></i> Tipo de trabajo
+                </label>
+                <select id="idTipoTrabajo" name="idTipoTrabajo" class="job-form__select" required>
+                    <option value="">— Seleccione un tipo —</option>
+                    <%
+                        List<tipoTrabajo> tipos = (List<tipoTrabajo>) request.getAttribute("listaTiposTrabajo");
+                        if (tipos != null) {
+                            for (tipoTrabajo tp : tipos) {
+                    %>
+                        <option value="<%= tp.getIdTipoTrabajo() %>"><%= tp.getNombreTipo() %></option>
+                    <%      }
+                        }
+                    %>
+                </select>
+            </div>
+
+            <%-- Nombre del trabajo --%>
             <div class="job-form__row">
                 <label class="job-form__label" for="nombreTrabajo">
                     <i class="fa-solid fa-clipboard-list" style="margin-right:4px;color:var(--color-brand-green);"></i> Nombre del trabajo
                 </label>
                 <input type="text" id="nombreTrabajo" name="nombreTrabajo"
-                       class="job-form__input" placeholder="Ej: Poda, fumigación, abono..." required>
+                       class="job-form__input" placeholder="Ej: Poda sector norte" required>
             </div>
 
+            <%-- Descripción --%>
             <div class="job-form__row">
                 <label class="job-form__label" for="descripcion">
                     <i class="fa-solid fa-align-left" style="margin-right:4px;color:var(--color-brand-green);"></i> Descripción
@@ -83,6 +108,7 @@
                           placeholder="Describe las tareas a realizar..." required></textarea>
             </div>
 
+            <%-- Fecha de asignación --%>
             <div class="job-form__row">
                 <label class="job-form__label" for="fechaAsignacion">
                     <i class="fa-solid fa-calendar-days" style="margin-right:4px;color:var(--color-brand-green);"></i> Fecha de asignación

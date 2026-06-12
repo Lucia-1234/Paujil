@@ -5,14 +5,16 @@
  *
  * Depende de validaciones.js (que debe cargarse antes en el HTML).
  * Reutiliza las funciones puras ya definidas allí:
- *   estaVacio, enRango, mostrarError, limpiarError, resetearCampo,
- *   validarTextoRequerido
+ *   estaVacio, enRango, validarTextoRequerido
  *
- * Implementa validaciones de fecha EXCLUSIVAMENTE en el frontend:
- *   - fechaSiembra / fechaInicio : no puede ser anterior a hoy
- *   - fechaCosecha / fechaFinalizo : no puede ser anterior a la fecha de inicio
+ * Este archivo es la única fuente de verdad para:
+ *   - fechaNoEsAnteriorAHoy
+ *   - fechaFinNoEsAnteriorAInicio
  *
- * El backend NO valida estas reglas de negocio.
+ * Todos los helpers de error de este módulo usan mostrarErrorFecha /
+ * limpiarErrorFecha de forma consistente, incluyendo campos de texto
+ * como nombre, tipo, descripción y observaciones, para garantizar que
+ * los spans de error queden siempre insertados justo después del campo.
  */
 
 'use strict';
@@ -22,12 +24,11 @@
    ========================================================= */
 
 /**
- * Devuelve la fecha de hoy en formato YYYY-MM-DD sin componente de hora,
- * de modo que la comparación sea solo por día calendario.
+ * Devuelve la fecha de hoy en formato YYYY-MM-DD.
  * @returns {string}
  */
 function hoyISO() {
-    const hoy = new Date();
+    const hoy  = new Date();
     const yyyy = hoy.getFullYear();
     const mm   = String(hoy.getMonth() + 1).padStart(2, '0');
     const dd   = String(hoy.getDate()).padStart(2, '0');
@@ -35,8 +36,7 @@ function hoyISO() {
 }
 
 /**
- * Compara dos cadenas YYYY-MM-DD lexicográficamente (funciona porque el
- * formato ISO 8601 es ordenable como string).
+ * Compara dos cadenas YYYY-MM-DD lexicográficamente.
  * @param {string} fechaISO
  * @returns {boolean} true si la fecha NO es anterior a hoy.
  */
@@ -56,15 +56,14 @@ function fechaFinNoEsAnteriorAInicio(inicioISO, finISO) {
 
 
 /* =========================================================
-   HELPERS DE MENSAJES DE ERROR
-   Los span de error se buscan por ID convencional:
-     campo  → #error-{campo.id}
-   Si no existe el span se crea y se inserta justo después del campo.
+   HELPERS DE ERROR
+   Única familia de helpers para todo este módulo.
+   Buscan el span por ID convencional: "error-{campo.id}"
+   Si no existe lo crean insertándolo justo después del campo.
    ========================================================= */
 
 /**
- * Muestra un mensaje de error debajo del campo con animación de entrada.
- * Crea el span si no existe aún en el DOM.
+ * Muestra un mensaje de error junto al campo.
  * @param {HTMLElement} campo
  * @param {string}      mensaje
  */
@@ -84,19 +83,17 @@ function mostrarErrorFecha(campo, mensaje) {
         campo.insertAdjacentElement('afterend', span);
     }
 
-    // Solo actualiza y anima si el texto cambió, para no resetear la animación
     if (span.textContent !== mensaje) {
         span.textContent = mensaje;
         span.style.animation = 'none';
-        // Fuerza reflow para reiniciar la animación
-        void span.offsetHeight;
+        void span.offsetHeight; // fuerza reflow para reiniciar animación CSS
         span.style.animation = '';
     }
     span.style.display = 'block';
 }
 
 /**
- * Elimina el mensaje de error del campo y marca el campo como válido.
+ * Limpia el estado de error del campo y lo marca como válido.
  * @param {HTMLElement} campo
  */
 function limpiarErrorFecha(campo) {
@@ -112,8 +109,8 @@ function limpiarErrorFecha(campo) {
 }
 
 /**
- * Quita toda marca visual (error/ok) sin mostrar éxito.
- * Útil al limpiar el modal antes de abrirlo.
+ * Quita toda marca visual (error/ok) sin indicar éxito.
+ * Útil para limpiar el modal antes de abrirlo.
  * @param {HTMLElement} campo
  */
 function neutralizarCampo(campo) {
@@ -132,12 +129,48 @@ function neutralizarCampo(campo) {
    ========================================================= */
 
 /**
- * Valida el campo fechaSiembra.
- * Reglas:
- *   - Obligatorio siempre.
- *   - En CREACIÓN: debe ser >= hoy (regla de negocio).
- *   - En EDICIÓN:  solo se exige que tenga valor (puede ser fecha pasada legítima).
- *
+ * Valida el nombre del cultivo.
+ * Usa mostrarErrorFecha para mantener consistencia visual en este modal.
+ * @param {HTMLInputElement} cNombre
+ * @returns {boolean}
+ */
+function validarNombreCultivo(cNombre) {
+    const valor = cNombre.value.trim();
+    if (estaVacio(valor)) {
+        mostrarErrorFecha(cNombre, 'El nombre del cultivo es obligatorio.');
+        return false;
+    }
+    if (!enRango(valor, 2, 80)) {
+        mostrarErrorFecha(cNombre, 'El nombre debe tener entre 2 y 80 caracteres.');
+        return false;
+    }
+    limpiarErrorFecha(cNombre);
+    return true;
+}
+
+/**
+ * Valida el tipo del cultivo (campo opcional).
+ * Si se ingresa, debe tener entre 2 y 60 caracteres.
+ * @param {HTMLInputElement} cTipo
+ * @returns {boolean}
+ */
+function validarTipoCultivo(cTipo) {
+    if (estaVacio(cTipo.value)) {
+        limpiarErrorFecha(cTipo);
+        return true;
+    }
+    if (!enRango(cTipo.value, 2, 60)) {
+        mostrarErrorFecha(cTipo, 'El tipo debe tener entre 2 y 60 caracteres.');
+        return false;
+    }
+    limpiarErrorFecha(cTipo);
+    return true;
+}
+
+/**
+ * Valida la fecha de siembra.
+ * - En CREACIÓN: obligatoria y >= hoy.
+ * - En EDICIÓN:  solo obligatoria (puede ser una fecha pasada legítima).
  * @param {HTMLInputElement} cSiembra
  * @param {boolean}          esEdicion
  * @returns {boolean}
@@ -151,21 +184,18 @@ function validarSiembra(cSiembra, esEdicion) {
         mostrarErrorFecha(cSiembra, 'La fecha de siembra no puede ser anterior a hoy.');
         return false;
     }
-    
-     const anio = new Date(cSiembra.value).getFullYear();
+    const anio = new Date(cSiembra.value).getFullYear();
     if (isNaN(anio) || anio < 1900 || anio > 9999) {
         mostrarErrorFecha(cSiembra, 'El año de la fecha de siembra no es válido.');
         return false;
     }
-    
     limpiarErrorFecha(cSiembra);
     return true;
 }
 
 /**
- * Valida el campo fechaCosecha (opcional).
+ * Valida la fecha de cosecha (campo opcional).
  * Si tiene valor, debe ser >= fechaSiembra.
- *
  * @param {HTMLInputElement} cCosecha
  * @param {HTMLInputElement} cSiembra
  * @returns {boolean}
@@ -175,7 +205,8 @@ function validarCosecha(cCosecha, cSiembra) {
         limpiarErrorFecha(cCosecha);
         return true;
     }
-    if (!estaVacio(cSiembra.value) && !fechaFinNoEsAnteriorAInicio(cSiembra.value, cCosecha.value)) {
+    if (!estaVacio(cSiembra.value) &&
+        !fechaFinNoEsAnteriorAInicio(cSiembra.value, cCosecha.value)) {
         mostrarErrorFecha(cCosecha, 'La fecha de cosecha no puede ser anterior a la de siembra.');
         return false;
     }
@@ -197,22 +228,8 @@ function validarFormCultivo() {
 
     let valido = true;
 
-    // Nombre: obligatorio, 2–80 caracteres
-    if (!validarTextoRequerido(cNombre, 'El nombre del cultivo', 2, 80)) valido = false;
-
-    // Tipo: opcional; si se ingresa debe tener 2–60 caracteres
-    if (cTipo && !estaVacio(cTipo.value)) {
-        if (!enRango(cTipo.value, 2, 60)) {
-            mostrarError(cTipo, 'El tipo debe tener entre 2 y 60 caracteres.');
-            valido = false;
-        } else {
-            limpiarError(cTipo);
-        }
-    } else if (cTipo) {
-        limpiarError(cTipo);
-    }
-
-    // Fechas
+    if (!validarNombreCultivo(cNombre))       valido = false;
+    if (!validarTipoCultivo(cTipo))           valido = false;
     if (!validarSiembra(cSiembra, esEdicion)) valido = false;
     if (!validarCosecha(cCosecha, cSiembra))  valido = false;
 
@@ -226,9 +243,30 @@ function validarFormCultivo() {
    ========================================================= */
 
 /**
- * Valida el campo fechaInicio de una labor.
- * Reglas: obligatorio y >= hoy.
- *
+ * Valida la descripción de la labor.
+ * @param {HTMLTextAreaElement} cDesc
+ * @returns {boolean}
+ */
+function validarDescripcionLabor(cDesc) {
+    const valor = cDesc.value.trim();
+    if (!valor) {
+        mostrarErrorFecha(cDesc, 'La descripción de la labor es obligatoria.');
+        return false;
+    }
+    if (valor.length < 5) {
+        mostrarErrorFecha(cDesc, 'La descripción debe tener al menos 5 caracteres.');
+        return false;
+    }
+    if (valor.length > 1000) {
+        mostrarErrorFecha(cDesc, 'La descripción no puede superar los 1000 caracteres.');
+        return false;
+    }
+    limpiarErrorFecha(cDesc);
+    return true;
+}
+
+/**
+ * Valida la fecha de inicio de una labor: obligatoria y >= hoy.
  * @param {HTMLInputElement} cInicio
  * @returns {boolean}
  */
@@ -246,9 +284,7 @@ function validarFechaInicioLabor(cInicio) {
 }
 
 /**
- * Valida el campo fechaFinalizo de una labor.
- * Reglas: obligatorio y >= fechaInicio.
- *
+ * Valida la fecha de finalización de una labor: obligatoria y >= fechaInicio.
  * @param {HTMLInputElement} cFin
  * @param {HTMLInputElement} cInicio
  * @returns {boolean}
@@ -258,7 +294,8 @@ function validarFechaFinLabor(cFin, cInicio) {
         mostrarErrorFecha(cFin, 'La fecha de finalización es obligatoria.');
         return false;
     }
-    if (!estaVacio(cInicio.value) && !fechaFinNoEsAnteriorAInicio(cInicio.value, cFin.value)) {
+    if (!estaVacio(cInicio.value) &&
+        !fechaFinNoEsAnteriorAInicio(cInicio.value, cFin.value)) {
         mostrarErrorFecha(cFin, 'La fecha de finalización no puede ser anterior a la de inicio.');
         return false;
     }
@@ -267,30 +304,16 @@ function validarFechaFinLabor(cFin, cInicio) {
 }
 
 /**
- * Valida el campo descripcionTrabajo del formLabor.
- * Usa mostrarErrorFecha / limpiarErrorFecha para inserción consistente,
- * garantizando que el span quede justo después del textarea en el DOM.
- *
- * @param {HTMLTextAreaElement} cDesc
+ * Valida las observaciones de una labor (campo opcional, máx. 500 chars).
+ * @param {HTMLTextAreaElement} cObs
  * @returns {boolean}
  */
-function validarDescripcionLabor(cDesc) {
-    const valor = cDesc.value.trim();
-
-    if (!valor) {
-        mostrarErrorFecha(cDesc, 'La descripción de la labor es obligatoria.');
+function validarObservacionesLabor(cObs) {
+    if (!estaVacio(cObs.value) && cObs.value.trim().length > 500) {
+        mostrarErrorFecha(cObs, 'Las observaciones no pueden superar los 500 caracteres.');
         return false;
     }
-    if (valor.length < 5) {
-        mostrarErrorFecha(cDesc, 'La descripción debe tener al menos 5 caracteres.');
-        return false;
-    }
-    if (valor.length > 1000) {
-        mostrarErrorFecha(cDesc, 'La descripción no puede superar los 1000 caracteres.');
-        return false;
-    }
-
-    limpiarErrorFecha(cDesc);
+    limpiarErrorFecha(cObs);
     return true;
 }
 
@@ -307,20 +330,10 @@ function validarFormLabor() {
 
     let valido = true;
 
-    // Descripción: obligatoria, 5–1000 caracteres
-    if (!validarDescripcionLabor(cDesc)) valido = false;
-
-    // Fechas
-    if (!validarFechaInicioLabor(cInicio)) valido = false;
-    if (!validarFechaFinLabor(cFin, cInicio)) valido = false;
-
-    // Observaciones: opcional, máx 500 caracteres
-    if (cObs && !estaVacio(cObs.value) && cObs.value.trim().length > 500) {
-        mostrarError(cObs, 'Las observaciones no pueden superar los 500 caracteres.');
-        valido = false;
-    } else if (cObs) {
-        limpiarError(cObs);
-    }
+    if (!validarDescripcionLabor(cDesc))       valido = false;
+    if (!validarFechaInicioLabor(cInicio))     valido = false;
+    if (!validarFechaFinLabor(cFin, cInicio))  valido = false;
+    if (!validarObservacionesLabor(cObs))      valido = false;
 
     if (!valido) enfocarPrimerError(form);
     return valido;
@@ -332,7 +345,7 @@ function validarFormLabor() {
    ========================================================= */
 
 /**
- * Desplaza la vista y enfoca el primer campo con error dentro de un formulario.
+ * Desplaza la vista y enfoca el primer campo con error dentro del formulario.
  * @param {HTMLFormElement} form
  */
 function enfocarPrimerError(form) {
@@ -361,7 +374,7 @@ function limpiarEstadosForm(form) {
 
 
 /* =========================================================
-   4. LISTENERS — tiempo real (change + input)
+   4. LISTENERS — tiempo real (change, input, blur) y submit
    ========================================================= */
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -375,45 +388,33 @@ document.addEventListener('DOMContentLoaded', function () {
         const cSiembra = formCultivo.querySelector('[name="fechaSiembra"]');
         const cCosecha = formCultivo.querySelector('[name="fechaCosecha"]');
 
-        /* Nombre */
         if (cNombre) {
             ['input', 'blur'].forEach(ev =>
-                cNombre.addEventListener(ev, () =>
-                    validarTextoRequerido(cNombre, 'El nombre del cultivo', 2, 80)));
+                cNombre.addEventListener(ev, () => validarNombreCultivo(cNombre)));
         }
 
-        /* Tipo */
         if (cTipo) {
             ['input', 'blur'].forEach(ev =>
-                cTipo.addEventListener(ev, () => {
-                    if (!estaVacio(cTipo.value) && !enRango(cTipo.value, 2, 60))
-                        mostrarError(cTipo, 'El tipo debe tener entre 2 y 60 caracteres.');
-                    else
-                        limpiarError(cTipo);
-                }));
+                cTipo.addEventListener(ev, () => validarTipoCultivo(cTipo)));
         }
 
-        /* Fecha de siembra */
         if (cSiembra) {
             ['change', 'input'].forEach(ev =>
                 cSiembra.addEventListener(ev, () => {
                     const esEdicion = !estaVacio(document.getElementById('editId').value);
                     validarSiembra(cSiembra, esEdicion);
-                    // Revalida cosecha si ya tiene valor
                     if (cCosecha && !estaVacio(cCosecha.value)) {
                         validarCosecha(cCosecha, cSiembra);
                     }
                 }));
         }
 
-        /* Fecha de cosecha */
         if (cCosecha) {
             ['change', 'input'].forEach(ev =>
                 cCosecha.addEventListener(ev, () =>
                     validarCosecha(cCosecha, cSiembra)));
         }
 
-        /* Submit */
         formCultivo.addEventListener('submit', function (e) {
             if (!validarFormCultivo()) e.preventDefault();
         });
@@ -428,19 +429,15 @@ document.addEventListener('DOMContentLoaded', function () {
         const cFin    = formLabor.querySelector('[name="fechaFinalizo"]');
         const cObs    = formLabor.querySelector('[name="observaciones"]');
 
-        /* Descripción */
         if (cDesc) {
             ['input', 'blur'].forEach(ev =>
-                cDesc.addEventListener(ev, () =>
-                    validarDescripcionLabor(cDesc)));
+                cDesc.addEventListener(ev, () => validarDescripcionLabor(cDesc)));
         }
 
-        /* Fecha de inicio */
         if (cInicio) {
             ['change', 'input'].forEach(ev =>
                 cInicio.addEventListener(ev, () => {
                     validarFechaInicioLabor(cInicio);
-                    // Revalida fin si ya tiene valor
                     if (cFin && !estaVacio(cFin.value)) {
                         validarFechaFinLabor(cFin, cInicio);
                     } else if (cFin) {
@@ -449,25 +446,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 }));
         }
 
-        /* Fecha de finalización */
         if (cFin) {
             ['change', 'input'].forEach(ev =>
                 cFin.addEventListener(ev, () =>
                     validarFechaFinLabor(cFin, cInicio)));
         }
 
-        /* Observaciones */
         if (cObs) {
             ['input', 'blur'].forEach(ev =>
-                cObs.addEventListener(ev, () => {
-                    if (!estaVacio(cObs.value) && cObs.value.trim().length > 500)
-                        mostrarError(cObs, 'Las observaciones no pueden superar los 500 caracteres.');
-                    else
-                        limpiarError(cObs);
-                }));
+                cObs.addEventListener(ev, () => validarObservacionesLabor(cObs)));
         }
 
-        /* Submit */
         formLabor.addEventListener('submit', function (e) {
             if (!validarFormLabor()) e.preventDefault();
         });

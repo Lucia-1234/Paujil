@@ -1,9 +1,9 @@
 package com.paujil.controlador;
 
 import com.paujil.dao.CultivoDao;
-import com.paujil.dao.RegistroTrabajoDao;
+import com.paujil.dao.AsignacionDao;
 import com.paujil.modelo.cultivo;
-import com.paujil.modelo.registros;
+import com.paujil.modelo.asignacion;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -43,6 +43,18 @@ import java.util.Map;
  * El backend solo rechaza peticiones con campos obligatorios vacíos o que
  * no superen el parseo de tipos, con un mensaje genérico para no revelar
  * la lógica interna ante posibles bypasses (curl, Postman, etc.).
+ *
+ * NOTA DE MIGRACIÓN: el antiguo RegistroTrabajoDao / modelo "registros" fue
+ * reemplazado por AsignacionDao / modelo "asignacion". El historial de un
+ * cultivo ahora corresponde a las asignaciones (tabla asignaciones) ligadas
+ * a ese cultivo, con sus datos de trabajo (JOIN trabajos) y usuario (JOIN
+ * usuarios). Mapeo de campos:
+ *   idTrabajoRealizado  -> a.getId()                 (id_asignacion)
+ *   descripcionTrabajo  -> a.getDescripcionTrabajo()
+ *   nombreUsuario       -> a.getNombreUsuario()
+ *   fechaInicio         -> a.getFechaInicio()
+ *   fechaFinalizo       -> a.getFechaFinalizacion()
+ *   observaciones       -> a.getObservaciones()
  */
 @WebServlet("/ServletCultivo")
 public class ServletCultivo extends HttpServlet {
@@ -80,8 +92,8 @@ public class ServletCultivo extends HttpServlet {
             }
             try {
                 int idCultivo = Integer.parseInt(idStr);
-                RegistroTrabajoDao registroDao = new RegistroTrabajoDao();
-                request.setAttribute("historialCultivo", registroDao.listarPorCultivo(idCultivo));
+                AsignacionDao asignacionDao = new AsignacionDao();
+                request.setAttribute("historialCultivo", asignacionDao.listarPorCultivo(idCultivo));
                 request.setAttribute("idCultivoActivo",  idCultivo);
             } catch (NumberFormatException e) {
                 // ID no numérico: se carga solo el listado, sin historial
@@ -102,19 +114,19 @@ public class ServletCultivo extends HttpServlet {
             }
             try {
                 int idCultivo = Integer.parseInt(idStr);
-                List<registros> lista = new RegistroTrabajoDao().listarPorCultivo(idCultivo);
+                List<asignacion> lista = new AsignacionDao().listarPorCultivo(idCultivo);
                 StringBuilder json = new StringBuilder("[");
                 for (int i = 0; i < lista.size(); i++) {
-                    registros r = lista.get(i);
+                    asignacion a = lista.get(i);
                     if (i > 0) json.append(",");
                     json.append("{")
-                        .append("\"idTrabajoRealizado\":").append(r.getIdTrabajoRealizado()).append(",")
-                        .append("\"descripcionTrabajo\":\"").append(escaparJson(r.getDescripcionTrabajo())).append("\",")
-                        .append("\"nombreUsuario\":\"").append(escaparJson(r.getNombreUsuario())).append("\",")
-                        .append("\"fechaInicio\":\"").append(r.getFechaInicio()).append("\",")
-                        .append("\"fechaFinalizo\":\"").append(r.getFechaFinalizo()).append("\",")
-                        .append("\"observaciones\":").append(r.getObservaciones() != null
-                            ? "\"" + escaparJson(r.getObservaciones()) + "\""
+                        .append("\"idTrabajoRealizado\":").append(a.getId()).append(",")
+                        .append("\"descripcionTrabajo\":\"").append(escaparJson(a.getDescripcionTrabajo())).append("\",")
+                        .append("\"nombreUsuario\":\"").append(escaparJson(a.getNombreUsuario())).append("\",")
+                        .append("\"fechaInicio\":\"").append(a.getFechaInicio()).append("\",")
+                        .append("\"fechaFinalizo\":\"").append(a.getFechaFinalizacion()).append("\",")
+                        .append("\"observaciones\":").append(a.getObservaciones() != null
+                            ? "\"" + escaparJson(a.getObservaciones()) + "\""
                             : "null")
                         .append("}");
                 }
@@ -138,13 +150,13 @@ public class ServletCultivo extends HttpServlet {
             return;
         }
 
-        // ── Eliminar registro de trabajo ──
+        // ── Eliminar registro de trabajo (asignación) ──
         if ("eliminarRegistro".equals(accion)) {
             String idStr        = request.getParameter("id");
             String idCultivoStr = request.getParameter("idCultivo");
             if (!estaVacio(idStr)) {
                 try {
-                    new RegistroTrabajoDao().eliminarLabor(Integer.parseInt(idStr));
+                    new AsignacionDao().eliminarAsignacion(Integer.parseInt(idStr));
                 } catch (NumberFormatException ignored) {}
             }
             String redirect = request.getContextPath() + "/ServletCultivo?status=registroEliminado";
@@ -155,12 +167,12 @@ public class ServletCultivo extends HttpServlet {
 
         // ── Caso por defecto: listado admin ──
         List<cultivo> lista = dao.listarCultivos();
-        RegistroTrabajoDao registroDao = new RegistroTrabajoDao();
+        AsignacionDao asignacionDao = new AsignacionDao();
         Map<Integer, Integer> contadoresHistorial = new HashMap<>();
         for (cultivo c : lista) {
             contadoresHistorial.put(
                 c.getIdCultivo(),
-                registroDao.contarPorCultivo(c.getIdCultivo())
+                asignacionDao.contarPorCultivo(c.getIdCultivo())
             );
         }
         request.setAttribute("listaCultivos",        lista);
