@@ -3,7 +3,7 @@ package com.paujil.controlador;
 import com.paujil.dao.CultivoDao;
 import com.paujil.dao.TipoTrabajoDao;
 import com.paujil.dao.UsuarioDao;
-import com.paujil.modelo.asignacion;
+import com.paujil.modelo.tipoTrabajo;
 import com.paujil.modelo.trabajo;
 import com.paujil.servicio.AsignacionServicio;
 import jakarta.servlet.ServletException;
@@ -11,7 +11,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.Date;
 import java.util.List;
@@ -107,35 +106,61 @@ public class ServletTrabajo extends HttpServlet {
         String accion = request.getParameter("accion");
         if (accion == null) accion = "";
 
+        // ── CORRECCIÓN CRÍTICA: default al final, nunca antes de los casos ──
         switch (accion) {
             case "registrar":
                 if (!verificarSesionAdmin(request, response)) return;
                 registrarTrabajo(request, response);
                 break;
+
             case "actualizarEstado":
                 if (!verificarSesionUsuario(request, response)) return;
                 actualizarEstado(request, response);
                 break;
+
+            case "crearTipo":
+                if (!verificarSesionAdmin(request, response)) return;
+                crearTipo(request, response);
+                break;
+
+            case "eliminarTipo":
+                if (!verificarSesionAdmin(request, response)) return;
+                eliminarTipo(request, response);
+                break;
+
             default:
                 response.sendRedirect("ServletTrabajo?accion=listar");
+                break;
         }
     }
 
     // ── Helper: registrar trabajo + asignación ────────────────────────────────
+    // nombreTrabajo eliminado — el nombre ya no es un campo del formulario.
+    // La tabla trabajos lo sigue teniendo en DB, se rellena con el nombre
+    // del tipo de trabajo para mantener la FK sin romper el schema existente.
     private void registrarTrabajo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String nombre           = request.getParameter("nombreTrabajo");
         String desc             = request.getParameter("descripcion");
         String fechaStr         = request.getParameter("fechaAsignacion");
         String idCultivoStr     = request.getParameter("idCultivo");
         String idUsuarioStr     = request.getParameter("idUsuario");
         String idTipoTrabajoStr = request.getParameter("idTipoTrabajo");
 
-        if (estaVacio(nombre) || estaVacio(desc) || estaVacio(fechaStr)
+        if (estaVacio(desc) || estaVacio(fechaStr)
                 || estaVacio(idCultivoStr) || estaVacio(idUsuarioStr)
                 || estaVacio(idTipoTrabajoStr)) {
             enviarError("Todos los campos son obligatorios.", request, response);
+            return;
+        }
+
+        // Validaciones de longitud
+        if (desc.trim().length() < 10) {
+            enviarError("La descripción debe tener al menos 10 caracteres.", request, response);
+            return;
+        }
+        if (desc.trim().length() > 500) {
+            enviarError("La descripción no puede superar 500 caracteres.", request, response);
             return;
         }
 
@@ -145,7 +170,8 @@ public class ServletTrabajo extends HttpServlet {
             int idTipoTrabajo    = Integer.parseInt(idTipoTrabajoStr);
             Date fechaAsignacion = Date.valueOf(fechaStr);
 
-            trabajo t = new trabajo(nombre.trim(), desc.trim(), idTipoTrabajo);
+            // Nombre del trabajo = nombre del tipo (se obtiene en el servicio/DAO)
+            trabajo t = new trabajo(idTipoTrabajo);
             boolean ok = servicio.registrarTrabajoCompleto(t, idCultivo, idUsuario, fechaAsignacion);
 
             if (ok) {
@@ -168,6 +194,12 @@ public class ServletTrabajo extends HttpServlet {
 
         if (estaVacio(idAsignacionStr)) {
             response.sendRedirect("ServletTrabajo?accion=misTrabajos&status=error");
+            return;
+        }
+
+        // Validar longitud de observaciones si vienen rellenas
+        if (observaciones != null && observaciones.trim().length() > 500) {
+            response.sendRedirect("ServletTrabajo?accion=misTrabajos&status=error_obs");
             return;
         }
 
@@ -206,5 +238,71 @@ public class ServletTrabajo extends HttpServlet {
         request.setAttribute("listaTiposTrabajo",new TipoTrabajoDao().listarTipos());
         request.getRequestDispatcher("/templates/administrador/asignar_trabajos.jsp")
                .forward(request, response);
+    }
+
+    // ── Helper: crear tipo de trabajo (responde JSON) ─────────────────────────
+    private void crearTipo(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        response.setContentType("application/json; charset=UTF-8");
+        String nombre = request.getParameter("nombreTipo");
+
+        if (estaVacio(nombre)) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"El nombre no puede estar vacío.\"}");
+            return;
+        }
+        nombre = nombre.trim();
+        if (nombre.length() < 3) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"El nombre debe tener al menos 3 caracteres.\"}");
+            return;
+        }
+        if (nombre.length() > 50) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"El nombre no puede superar 50 caracteres.\"}");
+            return;
+        }
+        // Solo letras, espacios, tildes y guion
+        if (!nombre.matches("[\\p{L}\\s\\-]+")) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"El nombre solo puede contener letras, espacios y guiones.\"}");
+            return;
+        }
+
+        TipoTrabajoDao dao = new TipoTrabajoDao();
+        boolean ok = dao.registrarTipo(nombre);
+        if (!ok) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"Ya existe un tipo con ese nombre o error al guardar.\"}");
+            return;
+        }
+
+        List<tipoTrabajo> tipos = dao.listarTipos();
+        StringBuilder json = new StringBuilder("{\"ok\":true,\"tipos\":[");
+        for (int i = 0; i < tipos.size(); i++) {
+            if (i > 0) json.append(",");
+            json.append("{\"id\":").append(tipos.get(i).getIdTipoTrabajo())
+                .append(",\"nombre\":\"").append(escaparJson(tipos.get(i).getNombreTipo()))
+                .append("\"}");
+        }
+        json.append("]}");
+        response.getWriter().write(json.toString());
+    }
+
+    // ── Helper: eliminar tipo de trabajo (responde JSON) ──────────────────────
+    private void eliminarTipo(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        response.setContentType("application/json; charset=UTF-8");
+        String idStr = request.getParameter("id");
+        if (estaVacio(idStr)) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"ID inválido.\"}");
+            return;
+        }
+        try {
+            boolean ok = new TipoTrabajoDao().eliminarTipo(Integer.parseInt(idStr));
+            response.getWriter().write("{\"ok\":" + ok + "}");
+        } catch (NumberFormatException e) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"ID inválido.\"}");
+        }
+    }
+
+    private String escaparJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

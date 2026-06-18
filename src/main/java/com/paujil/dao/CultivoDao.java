@@ -38,26 +38,6 @@ public class CultivoDao {
         return lista;
     }
 
-    // Cuenta los trabajos (asignaciones) registrados para un cultivo; usado para mostrar
-    // badges en la vista sin consultas adicionales en la JSP.
-    // NOTA DE MIGRACIÓN: la tabla "trabajos_realizados" fue reemplazada por "asignaciones".
-    // Este conteo ahora se hace sobre la tabla asignaciones (cada fila = un trabajo
-    // asignado/realizado sobre el cultivo). Equivalente a AsignacionDao.contarPorCultivo.
-    public int contarPorCultivo(int idCultivo) {
-        String sql = "SELECT COUNT(*) FROM asignaciones WHERE id_cultivo = ?";
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, idCultivo);
-            try (ResultSet rs = ps.executeQuery()) {
-                // COUNT(*) siempre devuelve una fila; rs.getInt(1) lee la primera columna del resultado
-                if (rs.next()) return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            System.err.println("Error al contar: " + e.getMessage());
-        }
-        // 0 como valor seguro permite que la vista muestre el badge sin manejar null
-        return 0;
-    }
 
     //  Registrar cultivo nuevo 
     public boolean registrarCultivo(cultivo c) {

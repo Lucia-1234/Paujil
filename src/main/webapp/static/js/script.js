@@ -427,6 +427,75 @@ window.ejecutarEliminacionRegistro = function () {
 
 
 /* ══════════════════════════════════════════════════════════════════════════
+   9. MÓDULO: TIPOS DE TRABAJO — crear tipo desde modal (AJAX)
+   ══════════════════════════════════════════════════════════════════════ */
+
+window.abrirModalTipoTrabajo = function () {
+    _setVal('inputNombreTipo', '');
+    const error = document.getElementById('errorTipoTrabajo');
+    if (error) error.style.display = 'none';
+    abrirModal('modalTipoTrabajo');
+};
+
+window.ejecutarCrearTipoTrabajo = function () {
+    const input  = document.getElementById('inputNombreTipo');
+    const error  = document.getElementById('errorTipoTrabajo');
+    const select = document.getElementById('idTipoTrabajo');
+    const nombre = input.value.trim();
+
+    function mostrarErrorTipo(msg) {
+        if (error) {
+            error.textContent = msg;
+            error.style.display = 'block';
+        }
+    }
+
+    if (nombre.length === 0) {
+        mostrarErrorTipo('El nombre no puede estar vacío.');
+        return;
+    }
+    if (nombre.length > 50) {
+        mostrarErrorTipo('El nombre no puede tener más de 50 caracteres.');
+        return;
+    }
+
+    const params = new URLSearchParams();
+    params.append('accion', 'crearTipo');
+    params.append('nombreTipo', nombre);
+
+    fetch((window._ctxPath || '') + '/ServletTrabajo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+        if (!data.ok) {
+            mostrarErrorTipo(data.mensaje || 'No se pudo guardar el tipo de trabajo.');
+            return;
+        }
+
+        if (select) {
+            select.innerHTML = '<option value="">— Seleccione un tipo —</option>';
+            let idUltimo = null;
+            data.tipos.forEach(function (t) {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = t.nombre;
+                select.appendChild(opt);
+                idUltimo = t.id;
+            });
+            select.value = idUltimo;
+        }
+
+        cerrarModal('modalTipoTrabajo');
+    })
+    .catch(function () {
+        mostrarErrorTipo('Error de conexión con el servidor.');
+    });
+};
+
+/* ══════════════════════════════════════════════════════════════════════════
    UTILIDADES INTERNAS (privadas, prefijo _)
    ══════════════════════════════════════════════════════════════════════ */
 
