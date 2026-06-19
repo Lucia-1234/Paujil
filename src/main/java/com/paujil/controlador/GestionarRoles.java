@@ -1,15 +1,15 @@
-package com.paujil.controlador; // Define el paquete del controlador.
+package com.paujil.controlador; 
 
-import com.paujil.dao.UsuarioDao; // Importa el DAO de usuario.
-import com.paujil.modelo.usuario; // Importa el modelo de usuario.
-import java.io.IOException; // Manejo de entrada/salida.
-import java.util.List; // Importa List.
-import jakarta.servlet.ServletException; // Excepción de servlet.
-import jakarta.servlet.annotation.WebServlet; // Anotación para mapeo.
-import jakarta.servlet.http.HttpServlet; // Clase base del servlet.
-import jakarta.servlet.http.HttpServletRequest; // Solicitud HTTP.
-import jakarta.servlet.http.HttpServletResponse; // Respuesta HTTP.
-import jakarta.servlet.http.HttpSession; // Gestión de sesión.
+import com.paujil.dao.UsuarioDao; 
+import com.paujil.modelo.usuario; 
+import java.io.IOException;
+import java.util.List; 
+import jakarta.servlet.ServletException; 
+import jakarta.servlet.annotation.WebServlet; 
+import jakarta.servlet.http.HttpServlet; 
+import jakarta.servlet.http.HttpServletRequest; 
+import jakarta.servlet.http.HttpServletResponse; 
+import jakarta.servlet.http.HttpSession; 
 
 @WebServlet("/GestionarRoles") // Mapeo de la URL.
 public class GestionarRoles extends HttpServlet { // Servlet para gestión de roles.
