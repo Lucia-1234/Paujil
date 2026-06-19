@@ -1,10 +1,10 @@
-package com.paujil.dao; // Define el paquete del DAO de usuarios.
+package com.paujil.dao;
 
-import com.paujil.modelo.usuario; // Importa el modelo de usuario.
-import java.sql.*; // Importa API JDBC.
-import java.util.ArrayList; // Importa lista dinámica.
-import java.util.List; // Importa interfaz List.
-import paujil.basedatos.clase_Conexion; // Importa conector BD.
+import com.paujil.modelo.usuario; 
+import java.sql.*; 
+import java.util.ArrayList; 
+import java.util.List; 
+import paujil.basedatos.clase_Conexion; 
 
 public class UsuarioDao { // Clase DAO para gestión de usuarios.
 

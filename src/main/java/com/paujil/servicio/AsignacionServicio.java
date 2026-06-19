@@ -1,10 +1,10 @@
-package com.paujil.servicio; // Define el paquete de la capa de servicio.
+package com.paujil.servicio; 
 
-import com.paujil.dao.AsignacionDao; // Importa el DAO de asignaciones.
-import com.paujil.modelo.asignacion; // Importa el modelo de asignación.
-import com.paujil.modelo.trabajo; // Importa el modelo de trabajo.
-import java.sql.Date; // Importa API de fechas.
-import java.util.List; // Importa interfaz List.
+import com.paujil.dao.AsignacionDao; 
+import com.paujil.modelo.asignacion; 
+import com.paujil.modelo.trabajo; 
+import java.sql.Date;
+import java.util.List; 
 
 public class AsignacionServicio { // Clase de servicio para gestionar asignaciones.
 

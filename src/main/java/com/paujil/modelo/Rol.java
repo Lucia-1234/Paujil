@@ -1,4 +1,4 @@
-package com.paujil.modelo; // Define el paquete del modelo.
+package com.paujil.modelo; 
 
 public enum Rol { // Definición del tipo enumerado para roles de usuario.
 

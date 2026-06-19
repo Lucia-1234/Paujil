@@ -1,10 +1,10 @@
-package com.paujil.dao; // Define el paquete del DAO de cultivos.
+package com.paujil.dao;
 
-import com.paujil.modelo.cultivo; // Importa el modelo de datos Cultivo.
-import java.sql.*; // Importa la API JDBC para acceso a datos.
-import java.util.ArrayList; // Importa la lista dinámica.
-import java.util.List; // Importa la interfaz List.
-import paujil.basedatos.clase_Conexion; // Importa el conector a la base de datos.
+import com.paujil.modelo.cultivo;
+import java.sql.*; 
+import java.util.ArrayList; 
+import java.util.List; 
+import paujil.basedatos.clase_Conexion; 
 
 public class CultivoDao { // Clase DAO para operaciones CRUD de cultivos.
 

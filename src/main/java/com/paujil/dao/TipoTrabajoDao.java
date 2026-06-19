@@ -1,10 +1,10 @@
-package com.paujil.dao; // Define el paquete del DAO de tipos de trabajo.
+package com.paujil.dao; 
 
-import com.paujil.modelo.tipoTrabajo; // Importa el modelo de datos.
-import java.sql.*; // Importa la API JDBC.
-import java.util.ArrayList; // Importa la lista dinámica.
-import java.util.List; // Importa la interfaz List.
-import paujil.basedatos.clase_Conexion; // Importa el conector a la BD.
+import com.paujil.modelo.tipoTrabajo; 
+import java.sql.*; 
+import java.util.ArrayList;
+import java.util.List; 
+import paujil.basedatos.clase_Conexion; 
 
 public class TipoTrabajoDao { // Clase DAO para gestión de tipos de trabajo.
 

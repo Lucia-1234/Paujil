@@ -1,11 +1,11 @@
-package com.paujil.dao; // Define el paquete al que pertenece la clase.
+package com.paujil.dao; 
 
-import com.paujil.modelo.asignacion; // Importa el modelo de asignación.
-import com.paujil.modelo.trabajo; // Importa el modelo de trabajo.
-import java.sql.*; // Importa todas las clases del paquete SQL.
-import java.util.ArrayList; // Importa la clase ArrayList.
-import java.util.List; // Importa la interfaz List.
-import paujil.basedatos.clase_Conexion; // Importa la clase de conexión.
+import com.paujil.modelo.asignacion;
+import com.paujil.modelo.trabajo; 
+import java.sql.*; 
+import java.util.ArrayList;
+import java.util.List; 
+import paujil.basedatos.clase_Conexion; 
 
 public class AsignacionDao { // Define la clase AsignacionDao.
 

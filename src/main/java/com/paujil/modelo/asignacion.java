@@ -1,6 +1,5 @@
-package com.paujil.modelo; // Define el paquete del modelo.
-
-import java.sql.Date; // Importa clase Date para fechas SQL.
+package com.paujil.modelo; 
+import java.sql.Date; 
 
 public class asignacion { // Clase modelo para la entidad Asignación.
 

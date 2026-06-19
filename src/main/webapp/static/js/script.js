@@ -252,3 +252,39 @@ function _setText(id, text) { const el = document.getElementById(id); if (el) el
 function _esc(str) { // Sanitiza strings contra XSS.
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+/* ── Filtro cliente: Todos / Activo / Inactivo ── */
+document.addEventListener('DOMContentLoaded', function () {
+    const btns = document.querySelectorAll('.filtro-btn');
+    if (!btns.length) return;
+
+    btns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            // Marcar botón activo
+            btns.forEach(b => b.classList.remove('seleccionado'));
+            btn.classList.add('seleccionado');
+
+            const filtro = btn.dataset.filtro; // 'todos' | 'Activo' | 'Inactivo'
+            const filas  = document.querySelectorAll('#tablaUsuarios tbody tr[data-estado]');
+            let visibles = 0;
+
+            filas.forEach(function (fila) {
+                const coincide = filtro === 'todos' || fila.dataset.estado === filtro;
+                fila.style.display = coincide ? '' : 'none';
+                if (coincide) visibles++;
+            });
+
+            // Mostrar fila de "sin resultados" si no hay coincidencias
+            const sinResultados = document.getElementById('filaSinResultados');
+            if (sinResultados) sinResultados.style.display = visibles === 0 ? '' : 'none';
+
+            // Actualizar contador
+            const contador = document.getElementById('contadorResultados');
+            if (contador) contador.textContent = visibles + ' usuario' + (visibles !== 1 ? 's' : '');
+        });
+    });
+
+    // Ocultar la fila de "sin resultados" al inicio
+    const sinResultados = document.getElementById('filaSinResultados');
+    if (sinResultados) sinResultados.style.display = 'none';
+});

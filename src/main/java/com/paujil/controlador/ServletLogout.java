@@ -1,4 +1,5 @@
-package com.paujil.controlador; // Define el paquete lógico del controlador.
+
+package com.paujil.controlador; 
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;

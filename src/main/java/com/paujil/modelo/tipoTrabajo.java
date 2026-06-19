@@ -1,4 +1,4 @@
-package com.paujil.modelo; // Define el paquete del modelo.
+package com.paujil.modelo; 
 
 public class tipoTrabajo { // Clase modelo para la entidad TipoTrabajo.
 
