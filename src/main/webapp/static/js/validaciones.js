@@ -48,6 +48,18 @@ function enRango(valor, min, max) {
     return len >= min && len <= max;
 }
 
+
+/**
+ * Valida que el nombre no contenga dígitos (solo letras, espacios y
+ * acentos/diéresis/ñ). Espejo de la validación en ServletRegistro.java.
+ * @param {string} nombre
+ * @returns {boolean}
+ */
+function esNombreValido(nombre) {
+    const regex = /^[A-Za-zÁÉÍÓÚÑÜáéíóúñü\s]+$/;
+    return regex.test(String(nombre).trim());
+}
+
 /**
  * Valida formato de correo electrónico.
  * Regex alineada con la del backend (validador.java → esCorreoValido).
@@ -188,20 +200,28 @@ function resetearCampo(campo) {
  * @param {number}           max
  * @returns {boolean}
  */
-function validarTextoRequerido(campo, etiqueta, min, max) {
+/**
+ * Valida el campo de nombre: obligatorio, rango de caracteres y sin dígitos.
+ * @param {HTMLInputElement} campo
+ * @returns {boolean}
+ */
+function validarNombre(campo) {
     const valor = campo.value.trim();
     if (estaVacio(valor)) {
-        mostrarError(campo, `${etiqueta} es obligatorio.`);
+        mostrarError(campo, 'El nombre completo es obligatorio.');
         return false;
     }
-    if (!enRango(valor, min, max)) {
-        mostrarError(campo, `${etiqueta} debe tener entre ${min} y ${max} caracteres.`);
+    if (!enRango(valor, 2, 80)) {
+        mostrarError(campo, 'El nombre completo debe tener entre 2 y 80 caracteres.');
+        return false;
+    }
+    if (!esNombreValido(valor)) {
+        mostrarError(campo, 'El nombre no puede contener números.');
         return false;
     }
     limpiarError(campo);
     return true;
 }
-
 /**
  * Valida el campo de correo electrónico.
  * @param {HTMLInputElement} campo
@@ -350,8 +370,7 @@ document.addEventListener('DOMContentLoaded', function () {
     campos.forEach(([el, id]) => { if (el && !el.id) el.id = id; });
 
     if (cNombre)
-        cNombre.addEventListener('blur', () =>
-            validarTextoRequerido(cNombre, 'El nombre completo', 2, 80));
+    cNombre.addEventListener('blur', () => validarNombre(cNombre));
 
     if (cEmail)
         cEmail.addEventListener('blur', () => validarCorreo(cEmail));
@@ -386,8 +405,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     formRegistro.addEventListener('submit', function (e) {
         const resultados = [
-            validarTextoRequerido(cNombre,   'El nombre completo', 2, 80),
-            validarCorreo(cEmail),
+            validarTextoRequerido(cNombre,   'El nombre completo', 2, 80),            validarCorreo(cEmail),
             validarTelefono(cTelefono),
             validarFechaNacimiento(cFecha),
             validarTextoRequerido(cDir, 'La dirección', 5, 120),

@@ -23,3 +23,145 @@
 .job-status--running    { background-color: #cff4fc; color: #055160; }
 .job-status--done       { background-color: #d1e7dd; color: #0a3622; }
 .job-status--postponed  { background-color: #f8d7da; color: #842029; }
+
+/* ── Acordeón de tipos de trabajo ── */
+.tipos-acordeon {
+    margin-bottom: 18px;
+}
+.tipos-acordeon__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-brand-green, #2e7d32);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: border-radius 0.2s;
+}
+.tipos-acordeon__header.abierto {
+    border-radius: 8px 8px 0 0;
+}
+.tipos-acordeon__header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 15px;
+}
+.tipos-acordeon__header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.tipos-acordeon__chevron {
+    transition: transform 0.25s;
+    font-size: 13px;
+}
+.tipos-acordeon__chevron.abierto {
+    transform: rotate(180deg);
+}
+.tipos-acordeon__body {
+    display: none;
+    background: var(--color-brand-green, #2e7d32);
+    border-radius: 0 0 8px 8px;
+    padding: 0 16px 14px;
+    overflow: hidden;
+}
+.tipos-acordeon__body.abierto {
+    display: block;
+}
+.tipos-acordeon__table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #fff;
+    font-size: 14px;
+}
+.tipos-acordeon__table th {
+    text-align: left;
+    padding: 8px 6px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    font-weight: 600;
+}
+.tipos-acordeon__table td {
+    padding: 8px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    vertical-align: middle;
+}
+.tipos-acordeon__table tr:last-child td {
+    border-bottom: none;
+}
+.tipos-acordeon__table .acciones-td {
+    width: 100px;
+    text-align: right;
+}
+.tipos-acordeon__table .btn-tipo-edit,
+.tipos-acordeon__table .btn-tipo-del {
+    border: none;
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #fff;
+}
+.tipos-acordeon__table .btn-tipo-edit {
+    background: rgba(255,255,255,0.22);
+}
+.tipos-acordeon__table .btn-tipo-edit:hover {
+    background: rgba(255,255,255,0.38);
+}
+.tipos-acordeon__table .btn-tipo-del {
+    background: #c0392b;
+    margin-left: 4px;
+}
+.tipos-acordeon__table .btn-tipo-del:hover {
+    background: #a93226;
+}
+.no-tipos-msg {
+    color: rgba(255,255,255,0.8);
+    font-style: italic;
+    padding: 10px 0 4px;
+    font-size: 13px;
+}
+/* Botón "Nuevo tipo" dentro del acordeón header */
+.btn-nuevo-tipo {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.18s;
+}
+.btn-nuevo-tipo:hover {
+    background: rgba(255,255,255,0.32);
+}
+/* Evitar que el click en el botón propague al acordeón */
+.btn-nuevo-tipo { position: relative; z-index: 2; }
+
+/* ── Color por estado en botones de filtro seleccionados ── */
+.filtro-estado-btn[data-filtro="todos"].seleccionado {
+    background: #757575;   /* gris */
+    color: #fff;
+    border-color: #757575;
+}
+.filtro-estado-btn[data-filtro="Pendiente"].seleccionado {
+    background: #f57c00;   /* naranja */
+    color: #fff;
+    border-color: #f57c00;
+}
+.filtro-estado-btn[data-filtro="En proceso"].seleccionado {
+    background: #1976d2;   /* azul */
+    color: #fff;
+    border-color: #1976d2;
+}
+.filtro-estado-btn[data-filtro="Finalizado"].seleccionado {
+    background: var(--color-brand-green, #2e7d32);   /* verde */
+    color: #fff;
+    border-color: var(--color-brand-green, #2e7d32);
+}

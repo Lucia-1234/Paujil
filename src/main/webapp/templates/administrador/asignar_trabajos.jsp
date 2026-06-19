@@ -80,26 +80,19 @@
                 <label class="job-form__label" for="idTipoTrabajo">
                     <i class="fa-solid fa-tag" style="margin-right:4px;color:var(--color-brand-green);"></i> Tipo de trabajo
                 </label>
-                <div style="display:flex; gap:10px; align-items:flex-start; flex-direction:column; width:100%;">
-                    <div style="display:flex; gap:10px; align-items:center; width:100%;">
-                        <select id="idTipoTrabajo" name="idTipoTrabajo" class="job-form__select" required style="flex:1;">
-                            <option value="">— Seleccione un tipo —</option>
-                            <%
-                                List<tipoTrabajo> tipos = (List<tipoTrabajo>) request.getAttribute("listaTiposTrabajo");
-                                if (tipos != null) {
-                                    for (tipoTrabajo tp : tipos) {
-                            %>
-                                <option value="<%= tp.getIdTipoTrabajo() %>"><%= tp.getNombreTipo() %></option>
-                            <%      }
-                                }
-                            %>
-                        </select>
-                        <button type="button" class="btn btn--edit btn--sm" onclick="abrirModalTipoTrabajo()">
-                            <i class="fa-solid fa-plus"></i> Nuevo tipo
-                        </button>
-                    </div>
-                    <span id="error-idTipoTrabajo" class="mensaje-error" role="alert" style="display:none;"></span>
-                </div>
+                <select id="idTipoTrabajo" name="idTipoTrabajo" class="job-form__select" required>
+                    <option value="">— Seleccione un tipo —</option>
+                    <%
+                        List<tipoTrabajo> tipos = (List<tipoTrabajo>) request.getAttribute("listaTiposTrabajo");
+                        if (tipos != null) {
+                            for (tipoTrabajo tp : tipos) {
+                    %>
+                        <option value="<%= tp.getIdTipoTrabajo() %>"><%= tp.getNombreTipo() %></option>
+                    <%      }
+                        }
+                    %>
+                </select>
+                <span id="error-idTipoTrabajo" class="mensaje-error" role="alert" style="display:none;"></span>
             </div>
 
             <%-- Descripción --%>
@@ -139,35 +132,9 @@
         </form>
     </div>
 
-    <%-- Modal: nuevo tipo de trabajo --%>
-    <div id="modalTipoTrabajo" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
-        <div class="confirm-modal">
-            <div class="confirm-modal__icon"><i class="fa-solid fa-tag"></i></div>
-            <p class="confirm-modal__text">Crear nuevo tipo de trabajo</p>
-
-            <div id="errorTipoTrabajo" class="feedback-message feedback-message--error"
-                 style="display:none; margin-bottom:12px;"></div>
-
-            <input type="text" id="inputNombreTipo" class="job-form__input"
-                   placeholder="Ej: Riego, Poda, Fertilización..." maxlength="50"
-                   style="margin-bottom:4px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
-                <span id="errorInlineNombreTipo" style="font-size:12px; color:#c0392b; display:none;"></span>
-                <span id="contadorTipo" style="font-size:11px; color:var(--color-text-secondary); margin-left:auto;">0 / 50</span>
-            </div>
-
-            <div class="confirm-modal__actions">
-                <button class="btn btn--cancel" onclick="cerrarModal('modalTipoTrabajo')">Cancelar</button>
-                <button class="btn--confirm-delete" style="background:var(--color-brand-green);"
-                        onclick="ejecutarCrearTipoTrabajo()">
-                    <i class="fa-solid fa-floppy-disk"></i> Guardar
-                </button>
-            </div>
-        </div>
-    </div>
-
 </main>
 
+<script>window._ctxPath = '${pageContext.request.contextPath}';</script>
 <script src="${pageContext.request.contextPath}/static/js/validaciones.js"></script>
 <script src="${pageContext.request.contextPath}/static/js/script.js"></script>
 <script src="${pageContext.request.contextPath}/static/js/validaciones-asignar.js"></script>

@@ -33,6 +33,7 @@ public class ServletRegistro extends HttpServlet {
     private static final int MAX_TELEFONO  = 10;
     private static final int MAX_DIRECCION = 120;
     private static final int MAX_PASS      = 100;
+    
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -75,6 +76,12 @@ public class ServletRegistro extends HttpServlet {
          || estaVacioONulo(rolStr)
          || estaVacioONulo(pass)      || excedeLongitud(pass,      MAX_PASS)) {
 
+            enviarError("Solicitud inválida. Verifica todos los campos.", request, response);
+            return;
+        }
+        
+        // 3b'. Nombre: no debe contener dígitos
+        if (!nombre.matches("^[A-Za-zÁÉÍÓÚÑÜáéíóúñü\\s]+$")) {
             enviarError("Solicitud inválida. Verifica todos los campos.", request, response);
             return;
         }

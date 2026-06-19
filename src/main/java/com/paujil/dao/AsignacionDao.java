@@ -10,14 +10,17 @@ import paujil.basedatos.clase_Conexion;
 /**
  * DAO para la gestión de trabajos y asignaciones.
  *
- * Tablas involucradas (nombres reales del schema):
- *   trabajos          (id_trabajo, nombre_trabajo, descripcion_trabajo, id_tipo_trabajo)
+ * Tablas involucradas (nombres reales del schema actual):
+ *   trabajos          (id_trabajo, descripcion_trabajo, id_tipo_trabajo)
  *   asignaciones      (id_asignacion, id_trabajo, id_cultivo, id_usuario,
  *                      fecha_asignacion, fecha_inicio, fecha_finalizacion,
  *                      estado_trabajo, observaciones)
  *   cultivos          (id_cultivo, nombre_cultivo)
  *   usuarios          (id_usuario, nombre_usuario)
  *   tipos_trabajo     (id_tipo_trabajo, nombre_tipo)
+ *
+ * NOTA: la columna trabajos.nombre_trabajo fue eliminada de la base de datos.
+ * Este DAO ya no la referencia en ningún INSERT ni SELECT.
  */
 public class AsignacionDao {
 
@@ -26,7 +29,6 @@ public class AsignacionDao {
         "SELECT a.id_asignacion, a.id_trabajo, a.id_cultivo, a.id_usuario, " +
         "       a.fecha_asignacion, a.fecha_inicio, a.fecha_finalizacion, " +
         "       a.estado_trabajo, a.observaciones, " +
-        "       t.nombre_trabajo, " +
         "       t.descripcion_trabajo, " +
         "       c.nombre_cultivo, " +
         "       u.nombre_usuario, " +
@@ -43,8 +45,8 @@ public class AsignacionDao {
     public boolean registrarTrabajoCompleto(trabajo t, int idCultivo,
                                             int idUsuario, Date fechaAsignacion) {
         String sqlTrabajo =
-            "INSERT INTO trabajos (nombre_trabajo, descripcion_trabajo, id_tipo_trabajo) " +
-            "VALUES (?, ?, ?)";
+            "INSERT INTO trabajos (descripcion_trabajo, id_tipo_trabajo) " +
+            "VALUES (?, ?)";
 
         String sqlAsignacion =
             "INSERT INTO asignaciones " +
@@ -60,9 +62,8 @@ public class AsignacionDao {
             int idTrabajo;
             try (PreparedStatement psTrabajo = con.prepareStatement(
                     sqlTrabajo, Statement.RETURN_GENERATED_KEYS)) {
-                psTrabajo.setString(1, t.getNombre());
-                psTrabajo.setString(2, t.getDescripcion());
-                psTrabajo.setInt(3, t.getIdTipoTrabajo());
+                psTrabajo.setString(1, t.getDescripcion());
+                psTrabajo.setInt(2, t.getIdTipoTrabajo());
                 psTrabajo.executeUpdate();
 
                 try (ResultSet keys = psTrabajo.getGeneratedKeys()) {
@@ -132,7 +133,6 @@ public class AsignacionDao {
     public boolean actualizarEstadoAsignacion(int idAsignacion,
                                               String observaciones,
                                               String nuevoEstado) {
-        // Construimos el UPDATE dinámicamente según si cambia estado o no
         StringBuilder sql = new StringBuilder(
             "UPDATE asignaciones SET observaciones = ? ");
 
@@ -199,7 +199,7 @@ public class AsignacionDao {
             }
         }
     }
-    
+
     // ─────────────────────────────────────────────────────────────────────────
     // 6. Listar asignaciones de un cultivo (historial del cultivo)
     // ─────────────────────────────────────────────────────────────────────────
@@ -246,7 +246,7 @@ public class AsignacionDao {
 
     // ─────────────────────────────────────────────────────────────────────────
     // Helper privado: ejecuta una consulta con 0, 1 o 2 parámetros
-    //   param1 → int (id_usuario) o null
+    //   param1 → int (id_usuario o id_cultivo) o null
     //   param2 → String (estado)  o null
     // ─────────────────────────────────────────────────────────────────────────
     private List<asignacion> ejecutarConsulta(String sql,
@@ -285,7 +285,6 @@ public class AsignacionDao {
         a.setFechaFinalizacion(rs.getDate("fecha_finalizacion"));
         a.setEstadoTrabajo(rs.getString("estado_trabajo"));
         a.setObservaciones(rs.getString("observaciones"));
-        a.setNombreTrabajo(rs.getString("nombre_trabajo"));
         a.setDescripcionTrabajo(rs.getString("descripcion_trabajo"));
         a.setNombreCultivo(rs.getString("nombre_cultivo"));
         a.setNombreUsuario(rs.getString("nombre_usuario"));

@@ -43,10 +43,15 @@
                 for (asignacion a : lista) { %>
                 <article class="job-card">
 
-                    <%-- Cabecera: nombre + badge --%>
+                    <%-- Cabecera: nombre (tipo) + badge --%>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--spacing-sm);">
+                        <%--
+                            CORRECCIÓN 8: getNombreTrabajo() eliminado — columna inexistente en BD.
+                            Se usa getNombreTipoTrabajo() como identificador del trabajo.
+                        --%>
                         <h2 class="job-card__title" style="margin-bottom:0;">
-                            <%= a.getNombreTrabajo() %>
+                            <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
+                            <%= a.getNombreTipoTrabajo() %>
                         </h2>
                         <span class="job-status job-status--done">
                             <i class="fa-solid fa-circle-check" style="margin-right:4px;"></i>Finalizado
@@ -55,10 +60,6 @@
 
                     <%-- Meta --%>
                     <div class="job-card__info">
-                        <div class="job-card__meta">
-                            <i class="fa-solid fa-tag" style="color:var(--color-brand-green);margin-right:4px;"></i>
-                            <%= a.getNombreTipoTrabajo() %>
-                        </div>
                         <div class="job-card__meta">
                             <i class="fa-solid fa-seedling" style="color:var(--color-brand-green);margin-right:4px;"></i>
                             <%= a.getNombreCultivo() != null ? a.getNombreCultivo() : "N/A" %>

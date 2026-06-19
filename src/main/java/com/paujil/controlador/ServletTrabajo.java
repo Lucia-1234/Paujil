@@ -37,6 +37,7 @@ public class ServletTrabajo extends HttpServlet {
             case "listar":
                 if (!verificarSesionAdmin(request, response)) return;
                 request.setAttribute("listaAsignaciones", servicio.listarTodas());
+                request.setAttribute("listaTiposTrabajo", new TipoTrabajoDao().listarTipos());
                 request.getRequestDispatcher("/templates/administrador/listar_trabajos.jsp")
                        .forward(request, response);
                 break;
@@ -106,7 +107,6 @@ public class ServletTrabajo extends HttpServlet {
         String accion = request.getParameter("accion");
         if (accion == null) accion = "";
 
-        // ── CORRECCIÓN CRÍTICA: default al final, nunca antes de los casos ──
         switch (accion) {
             case "registrar":
                 if (!verificarSesionAdmin(request, response)) return;
@@ -123,6 +123,12 @@ public class ServletTrabajo extends HttpServlet {
                 crearTipo(request, response);
                 break;
 
+            // ── CORRECCIÓN 1: caso faltante que impedía editar tipos ──────────
+            case "editarTipo":
+                if (!verificarSesionAdmin(request, response)) return;
+                editarTipo(request, response);
+                break;
+
             case "eliminarTipo":
                 if (!verificarSesionAdmin(request, response)) return;
                 eliminarTipo(request, response);
@@ -135,9 +141,6 @@ public class ServletTrabajo extends HttpServlet {
     }
 
     // ── Helper: registrar trabajo + asignación ────────────────────────────────
-    // nombreTrabajo eliminado — el nombre ya no es un campo del formulario.
-    // La tabla trabajos lo sigue teniendo en DB, se rellena con el nombre
-    // del tipo de trabajo para mantener la FK sin romper el schema existente.
     private void registrarTrabajo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -154,7 +157,6 @@ public class ServletTrabajo extends HttpServlet {
             return;
         }
 
-        // Validaciones de longitud
         if (desc.trim().length() < 10) {
             enviarError("La descripción debe tener al menos 10 caracteres.", request, response);
             return;
@@ -170,8 +172,7 @@ public class ServletTrabajo extends HttpServlet {
             int idTipoTrabajo    = Integer.parseInt(idTipoTrabajoStr);
             Date fechaAsignacion = Date.valueOf(fechaStr);
 
-            // Nombre del trabajo = nombre del tipo (se obtiene en el servicio/DAO)
-            trabajo t = new trabajo(idTipoTrabajo);
+            trabajo t = new trabajo(desc.trim(), idTipoTrabajo);
             boolean ok = servicio.registrarTrabajoCompleto(t, idCultivo, idUsuario, fechaAsignacion);
 
             if (ok) {
@@ -197,7 +198,6 @@ public class ServletTrabajo extends HttpServlet {
             return;
         }
 
-        // Validar longitud de observaciones si vienen rellenas
         if (observaciones != null && observaciones.trim().length() > 500) {
             response.sendRedirect("ServletTrabajo?accion=misTrabajos&status=error_obs");
             return;
@@ -210,7 +210,7 @@ public class ServletTrabajo extends HttpServlet {
             switch (btnAccion != null ? btnAccion : "") {
                 case "iniciar":   nuevoEstado = "En proceso"; break;
                 case "finalizar": nuevoEstado = "Finalizado"; break;
-                default:          nuevoEstado = null;          // solo guarda observaciones
+                default:          nuevoEstado = null;
             }
 
             boolean ok = servicio.actualizarEstado(idAsignacion, observaciones, nuevoEstado);
@@ -259,7 +259,6 @@ public class ServletTrabajo extends HttpServlet {
             response.getWriter().write("{\"ok\":false,\"mensaje\":\"El nombre no puede superar 50 caracteres.\"}");
             return;
         }
-        // Solo letras, espacios, tildes y guion
         if (!nombre.matches("[\\p{L}\\s\\-]+")) {
             response.getWriter().write("{\"ok\":false,\"mensaje\":\"El nombre solo puede contener letras, espacios y guiones.\"}");
             return;
@@ -272,16 +271,52 @@ public class ServletTrabajo extends HttpServlet {
             return;
         }
 
-        List<tipoTrabajo> tipos = dao.listarTipos();
-        StringBuilder json = new StringBuilder("{\"ok\":true,\"tipos\":[");
-        for (int i = 0; i < tipos.size(); i++) {
-            if (i > 0) json.append(",");
-            json.append("{\"id\":").append(tipos.get(i).getIdTipoTrabajo())
-                .append(",\"nombre\":\"").append(escaparJson(tipos.get(i).getNombreTipo()))
-                .append("\"}");
+        response.getWriter().write(construirJsonTipos(dao.listarTipos()));
+    }
+
+    // ── Helper: editar tipo de trabajo (responde JSON) ────────────────────────
+    // CORRECCIÓN 2: método nuevo que faltaba completamente en el Servlet.
+    private void editarTipo(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        response.setContentType("application/json; charset=UTF-8");
+
+        String idStr  = request.getParameter("id");
+        String nombre = request.getParameter("nombreTipo");
+
+        if (estaVacio(idStr)) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"ID de tipo inválido.\"}");
+            return;
         }
-        json.append("]}");
-        response.getWriter().write(json.toString());
+        if (estaVacio(nombre)) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"El nombre no puede estar vacío.\"}");
+            return;
+        }
+        nombre = nombre.trim();
+        if (nombre.length() < 3) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"El nombre debe tener al menos 3 caracteres.\"}");
+            return;
+        }
+        if (nombre.length() > 50) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"El nombre no puede superar 50 caracteres.\"}");
+            return;
+        }
+        if (!nombre.matches("[\\p{L}\\s\\-]+")) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"El nombre solo puede contener letras, espacios y guiones.\"}");
+            return;
+        }
+
+        try {
+            int id = Integer.parseInt(idStr);
+            TipoTrabajoDao dao = new TipoTrabajoDao();
+            boolean ok = dao.editarTipo(id, nombre);
+            if (!ok) {
+                response.getWriter().write("{\"ok\":false,\"mensaje\":\"Ya existe un tipo con ese nombre o no se encontró el tipo.\"}");
+                return;
+            }
+            response.getWriter().write(construirJsonTipos(dao.listarTipos()));
+        } catch (NumberFormatException e) {
+            response.getWriter().write("{\"ok\":false,\"mensaje\":\"ID de tipo inválido.\"}");
+        }
     }
 
     // ── Helper: eliminar tipo de trabajo (responde JSON) ──────────────────────
@@ -294,11 +329,41 @@ public class ServletTrabajo extends HttpServlet {
             return;
         }
         try {
-            boolean ok = new TipoTrabajoDao().eliminarTipo(Integer.parseInt(idStr));
-            response.getWriter().write("{\"ok\":" + ok + "}");
+            int id = Integer.parseInt(idStr);
+            TipoTrabajoDao dao = new TipoTrabajoDao();
+
+            int enUso = dao.contarTrabajosPorTipo(id);
+            if (enUso > 0) {
+                response.getWriter().write(
+                    "{\"ok\":false,\"mensaje\":\"No se puede eliminar: hay " + enUso
+                    + " trabajo(s) usando este tipo.\"}");
+                return;
+            }
+
+            boolean ok = dao.eliminarTipo(id);
+            if (!ok) {
+                response.getWriter().write("{\"ok\":false,\"mensaje\":\"No se pudo eliminar el tipo.\"}");
+                return;
+            }
+
+            response.getWriter().write(construirJsonTipos(dao.listarTipos()));
+
         } catch (NumberFormatException e) {
             response.getWriter().write("{\"ok\":false,\"mensaje\":\"ID inválido.\"}");
         }
+    }
+
+    // ── Helper: construye el JSON de lista de tipos (evita duplicación) ───────
+    private String construirJsonTipos(List<tipoTrabajo> tipos) {
+        StringBuilder json = new StringBuilder("{\"ok\":true,\"tipos\":[");
+        for (int i = 0; i < tipos.size(); i++) {
+            if (i > 0) json.append(",");
+            json.append("{\"id\":").append(tipos.get(i).getIdTipoTrabajo())
+                .append(",\"nombre\":\"").append(escaparJson(tipos.get(i).getNombreTipo()))
+                .append("\"}");
+        }
+        json.append("]}");
+        return json.toString();
     }
 
     private String escaparJson(String s) {

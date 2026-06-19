@@ -15,7 +15,9 @@ public class asignacion {
     private String observaciones;
 
     // Campos de solo lectura, llenados por JOIN
-    private String nombreTrabajo;
+    // nombreTrabajo eliminado: la columna nombre_trabajo ya no existe en BD.
+    // El identificador visible del trabajo ahora es nombreTipoTrabajo
+    // (y, si se necesita más detalle, descripcionTrabajo).
     private String descripcionTrabajo;
     private String nombreCultivo;
     private String nombreUsuario;
@@ -59,9 +61,6 @@ public class asignacion {
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
 
     // Solo lectura (JOINs)
-    public String getNombreTrabajo() { return nombreTrabajo; }
-    public void setNombreTrabajo(String nombreTrabajo) { this.nombreTrabajo = nombreTrabajo; }
-
     public String getDescripcionTrabajo() { return descripcionTrabajo; }
     public void setDescripcionTrabajo(String descripcionTrabajo) { this.descripcionTrabajo = descripcionTrabajo; }
 
