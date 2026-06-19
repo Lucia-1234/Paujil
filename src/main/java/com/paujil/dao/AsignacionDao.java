@@ -1,294 +1,188 @@
-package com.paujil.dao;
+package com.paujil.dao; // Define el paquete al que pertenece la clase.
 
-import com.paujil.modelo.asignacion;
-import com.paujil.modelo.trabajo;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import paujil.basedatos.clase_Conexion;
+import com.paujil.modelo.asignacion; // Importa el modelo de asignación.
+import com.paujil.modelo.trabajo; // Importa el modelo de trabajo.
+import java.sql.*; // Importa todas las clases del paquete SQL.
+import java.util.ArrayList; // Importa la clase ArrayList.
+import java.util.List; // Importa la interfaz List.
+import paujil.basedatos.clase_Conexion; // Importa la clase de conexión.
 
-/**
- * DAO para la gestión de trabajos y asignaciones.
- *
- * Tablas involucradas (nombres reales del schema actual):
- *   trabajos          (id_trabajo, descripcion_trabajo, id_tipo_trabajo)
- *   asignaciones      (id_asignacion, id_trabajo, id_cultivo, id_usuario,
- *                      fecha_asignacion, fecha_inicio, fecha_finalizacion,
- *                      estado_trabajo, observaciones)
- *   cultivos          (id_cultivo, nombre_cultivo)
- *   usuarios          (id_usuario, nombre_usuario)
- *   tipos_trabajo     (id_tipo_trabajo, nombre_tipo)
- *
- * NOTA: la columna trabajos.nombre_trabajo fue eliminada de la base de datos.
- * Este DAO ya no la referencia en ningún INSERT ni SELECT.
- */
-public class AsignacionDao {
+public class AsignacionDao { // Define la clase AsignacionDao.
 
-    // ── SQL de consulta completa (JOIN de todas las tablas) ───────────────────
-    private static final String SQL_SELECT_COMPLETO =
-        "SELECT a.id_asignacion, a.id_trabajo, a.id_cultivo, a.id_usuario, " +
-        "       a.fecha_asignacion, a.fecha_inicio, a.fecha_finalizacion, " +
-        "       a.estado_trabajo, a.observaciones, " +
-        "       t.descripcion_trabajo, " +
-        "       c.nombre_cultivo, " +
-        "       u.nombre_usuario, " +
-        "       tp.nombre_tipo  AS nombre_tipo_trabajo " +
-        "FROM   asignaciones  a " +
-        "JOIN   trabajos      t  ON t.id_trabajo       = a.id_trabajo " +
-        "JOIN   cultivos      c  ON c.id_cultivo       = a.id_cultivo " +
-        "JOIN   usuarios      u  ON u.id_usuario       = a.id_usuario " +
-        "JOIN   tipos_trabajo tp ON tp.id_tipo_trabajo = t.id_tipo_trabajo ";
+    private static final String SQL_SELECT_COMPLETO = // Define la constante SQL.
+        "SELECT a.id_asignacion, a.id_trabajo, a.id_cultivo, a.id_usuario, " + // Select campos asignación.
+        "       a.fecha_asignacion, a.fecha_inicio, a.fecha_finalizacion, " + // Select fechas.
+        "       a.estado_trabajo, a.observaciones, " + // Select estado y obs.
+        "       t.descripcion_trabajo, " + // Select descripción trabajo.
+        "       c.nombre_cultivo, " + // Select nombre cultivo.
+        "       u.nombre_usuario, " + // Select nombre usuario.
+        "       tp.nombre_tipo  AS nombre_tipo_trabajo " + // Select tipo trabajo alias.
+        "FROM   asignaciones  a " + // From tabla asignaciones.
+        "JOIN   trabajos      t  ON t.id_trabajo       = a.id_trabajo " + // Join tabla trabajos.
+        "JOIN   cultivos      c  ON c.id_cultivo       = a.id_cultivo " + // Join tabla cultivos.
+        "JOIN   usuarios      u  ON u.id_usuario       = a.id_usuario " + // Join tabla usuarios.
+        "JOIN   tipos_trabajo tp ON tp.id_tipo_trabajo = t.id_tipo_trabajo "; // Join tabla tipos.
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 1. Registrar trabajo + asignación en una misma transacción
-    // ─────────────────────────────────────────────────────────────────────────
-    public boolean registrarTrabajoCompleto(trabajo t, int idCultivo,
-                                            int idUsuario, Date fechaAsignacion) {
-        String sqlTrabajo =
-            "INSERT INTO trabajos (descripcion_trabajo, id_tipo_trabajo) " +
-            "VALUES (?, ?)";
+    public boolean registrarTrabajoCompleto(trabajo t, int idCultivo, int idUsuario, Date fechaAsignacion) { // Método registro.
+        String sqlTrabajo = "INSERT INTO trabajos (descripcion_trabajo, id_tipo_trabajo) VALUES (?, ?)"; // SQL insert trabajo.
+        String sqlAsignacion = "INSERT INTO asignaciones (id_trabajo, id_cultivo, id_usuario, fecha_asignacion, estado_trabajo) VALUES (?, ?, ?, ?, 'Pendiente')"; // SQL insert asignación.
+        Connection con = null; // Inicializa conexión nula.
+        try { // Inicia bloque try.
+            con = clase_Conexion.MetodoConectar(); // Conecta a la BD.
+            con.setAutoCommit(false); // Desactiva el auto-commit.
+            int idTrabajo; // Declara variable idTrabajo.
+            try (PreparedStatement psTrabajo = con.prepareStatement(sqlTrabajo, Statement.RETURN_GENERATED_KEYS)) { // Prepara insert trabajo.
+                psTrabajo.setString(1, t.getDescripcion()); // Setea descripción.
+                psTrabajo.setInt(2, t.getIdTipoTrabajo()); // Setea tipo trabajo.
+                psTrabajo.executeUpdate(); // Ejecuta insert trabajo.
+                try (ResultSet keys = psTrabajo.getGeneratedKeys()) { // Recupera claves generadas.
+                    if (!keys.next()) { con.rollback(); return false; } // Rollback si falla.
+                    idTrabajo = keys.getInt(1); // Obtiene ID generado.
+                } // Cierra resultSet de claves.
+            } // Cierra PreparedStatement trabajo.
+            try (PreparedStatement psAsig = con.prepareStatement(sqlAsignacion)) { // Prepara insert asignación.
+                psAsig.setInt(1, idTrabajo); // Setea ID trabajo.
+                psAsig.setInt(2, idCultivo); // Setea ID cultivo.
+                psAsig.setInt(3, idUsuario); // Setea ID usuario.
+                psAsig.setDate(4, fechaAsignacion); // Setea fecha.
+                psAsig.executeUpdate(); // Ejecuta insert asignación.
+            } // Cierra PreparedStatement asignación.
+            con.commit(); // Confirma transacción.
+            return true; // Retorna true.
+        } catch (SQLException e) { // Catch de excepciones SQL.
+            if (con != null) { try { con.rollback(); } catch (SQLException ignored) {} } // Rollback en error.
+            e.printStackTrace(); // Imprime traza error.
+            return false; // Retorna false.
+        } finally { // Bloque finally para cerrar.
+            if (con != null) { try { con.setAutoCommit(true); con.close(); } catch (SQLException ignored) {} } // Cierra conexión.
+        } // Fin bloque finally.
+    } // Fin método registrar.
 
-        String sqlAsignacion =
-            "INSERT INTO asignaciones " +
-            "(id_trabajo, id_cultivo, id_usuario, fecha_asignacion, estado_trabajo) " +
-            "VALUES (?, ?, ?, ?, 'Pendiente')";
+    public List<asignacion> listarTodas() { // Método listar todo.
+        String sql = SQL_SELECT_COMPLETO + "ORDER BY a.fecha_asignacion DESC, a.id_asignacion DESC"; // SQL con ordenamiento.
+        return ejecutarConsulta(sql, null, null); // Retorna lista consulta.
+    } // Fin método listar.
 
-        Connection con = null;
-        try {
-            con = clase_Conexion.MetodoConectar();
-            con.setAutoCommit(false);                       // inicio transacción
+    public List<asignacion> listarPorUsuario(int idUsuario, String estado) { // Método listar por usuario.
+        String sql; // Declaración SQL.
+        if (estado != null && !estado.isBlank()) { // Verifica estado no nulo.
+            sql = SQL_SELECT_COMPLETO + "WHERE a.id_usuario = ? AND a.estado_trabajo = ? " + "ORDER BY a.fecha_asignacion DESC"; // SQL con estado.
+            return ejecutarConsulta(sql, idUsuario, estado); // Retorna lista con filtros.
+        } else { // Caso sin estado.
+            sql = SQL_SELECT_COMPLETO + "WHERE a.id_usuario = ? " + "ORDER BY a.fecha_asignacion DESC"; // SQL sin estado.
+            return ejecutarConsulta(sql, idUsuario, null); // Retorna lista simple.
+        } // Fin else.
+    } // Fin método listarPorUsuario.
 
-            // 1a. Insertar trabajo y recuperar id generado
-            int idTrabajo;
-            try (PreparedStatement psTrabajo = con.prepareStatement(
-                    sqlTrabajo, Statement.RETURN_GENERATED_KEYS)) {
-                psTrabajo.setString(1, t.getDescripcion());
-                psTrabajo.setInt(2, t.getIdTipoTrabajo());
-                psTrabajo.executeUpdate();
+    public boolean actualizarEstadoAsignacion(int idAsignacion, String observaciones, String nuevoEstado) { // Método actualizar.
+        StringBuilder sql = new StringBuilder("UPDATE asignaciones SET observaciones = ? "); // Crea builder SQL.
+        if ("En proceso".equals(nuevoEstado)) { // Verifica nuevo estado.
+            sql.append(", estado_trabajo = 'En proceso', fecha_inicio = CURDATE() "); // Agrega campos proceso.
+        } else if ("Finalizado".equals(nuevoEstado)) { // Verifica nuevo estado.
+            sql.append(", estado_trabajo = 'Finalizado', fecha_finalizacion = CURDATE() "); // Agrega campos finalizado.
+        } // Fin if/else.
+        sql.append("WHERE id_asignacion = ?"); // Agrega where.
+        try (Connection con = clase_Conexion.MetodoConectar(); PreparedStatement ps = con.prepareStatement(sql.toString())) { // Prepara update.
+            ps.setString(1, observaciones != null ? observaciones.trim() : ""); // Setea observaciones.
+            ps.setInt(2, idAsignacion); // Setea ID asignación.
+            return ps.executeUpdate() > 0; // Ejecuta y valida afectación.
+        } catch (SQLException e) { // Catch excepciones.
+            e.printStackTrace(); // Imprime error.
+            return false; // Retorna false.
+        } // Fin try-catch.
+    } // Fin método actualizar.
 
-                try (ResultSet keys = psTrabajo.getGeneratedKeys()) {
-                    if (!keys.next()) {
-                        con.rollback();
-                        return false;
-                    }
-                    idTrabajo = keys.getInt(1);
-                }
-            }
+    public boolean eliminarTrabajo(int idTrabajo) { // Método eliminar.
+        String sqlAsig = "DELETE FROM asignaciones WHERE id_trabajo = ?"; // SQL eliminar asignación.
+        String sqlTrabajo = "DELETE FROM trabajos WHERE id_trabajo = ?"; // SQL eliminar trabajo.
+        Connection con = null; // Inicia conexión.
+        try { // Inicia try.
+            con = clase_Conexion.MetodoConectar(); // Conecta.
+            con.setAutoCommit(false); // Inicia transacción.
+            try (PreparedStatement psAsig = con.prepareStatement(sqlAsig)) { // Prepara borrar asignaciones.
+                psAsig.setInt(1, idTrabajo); // Setea ID trabajo.
+                psAsig.executeUpdate(); // Ejecuta delete.
+            } // Cierra psAsig.
+            int filas; // Declara variable filas.
+            try (PreparedStatement psTrab = con.prepareStatement(sqlTrabajo)) { // Prepara borrar trabajo.
+                psTrab.setInt(1, idTrabajo); // Setea ID trabajo.
+                filas = psTrab.executeUpdate(); // Ejecuta delete.
+            } // Cierra psTrab.
+            if (filas == 0) { con.rollback(); return false; } // Rollback si no hay filas.
+            con.commit(); // Confirma.
+            return true; // Retorna éxito.
+        } catch (SQLException e) { // Catch error.
+            if (con != null) { try { con.rollback(); } catch (SQLException ignored) {} } // Rollback en error.
+            e.printStackTrace(); // Imprime error.
+            return false; // Retorna error.
+        } finally { // Bloque finally.
+            if (con != null) { try { con.setAutoCommit(true); con.close(); } catch (SQLException ignored) {} } // Cierra conexión.
+        } // Fin finally.
+    } // Fin método eliminar.
 
-            // 1b. Insertar asignación con el id recién obtenido
-            try (PreparedStatement psAsig = con.prepareStatement(sqlAsignacion)) {
-                psAsig.setInt(1, idTrabajo);
-                psAsig.setInt(2, idCultivo);
-                psAsig.setInt(3, idUsuario);
-                psAsig.setDate(4, fechaAsignacion);
-                psAsig.executeUpdate();
-            }
+    public List<asignacion> listarPorCultivo(int idCultivo) { // Método listar por cultivo.
+        String sql = SQL_SELECT_COMPLETO + "WHERE a.id_cultivo = ? " + "ORDER BY a.fecha_asignacion DESC, a.id_asignacion DESC"; // SQL cultivo.
+        return ejecutarConsulta(sql, idCultivo, null); // Retorna consulta.
+    } // Fin método listarPorCultivo.
 
-            con.commit();
-            return true;
+    public int contarPorCultivo(int idCultivo) { // Método contar.
+        String sql = "SELECT COUNT(*) FROM asignaciones WHERE id_cultivo = ?"; // SQL contar.
+        try (Connection con = clase_Conexion.MetodoConectar(); PreparedStatement ps = con.prepareStatement(sql)) { // Prepara count.
+            ps.setInt(1, idCultivo); // Setea idCultivo.
+            try (ResultSet rs = ps.executeQuery()) { // Ejecuta.
+                if (rs.next()) return rs.getInt(1); // Retorna count.
+            } // Cierra rs.
+        } catch (SQLException e) { // Catch error.
+            System.err.println("Error al contar asignaciones por cultivo: " + e.getMessage()); // Log error.
+            e.printStackTrace(); // Imprime error.
+        } // Fin catch.
+        return 0; // Retorna 0 si falla.
+    } // Fin método contar.
 
-        } catch (SQLException e) {
-            if (con != null) {
-                try { con.rollback(); } catch (SQLException ignored) {}
-            }
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (con != null) {
-                try { con.setAutoCommit(true); con.close(); } catch (SQLException ignored) {}
-            }
-        }
-    }
+    public boolean eliminarAsignacion(int idAsignacion) { // Método eliminar asig.
+        String sql = "DELETE FROM asignaciones WHERE id_asignacion = ?"; // SQL delete.
+        try (Connection con = clase_Conexion.MetodoConectar(); PreparedStatement ps = con.prepareStatement(sql)) { // Prepara delete.
+            ps.setInt(1, idAsignacion); // Setea ID.
+            return ps.executeUpdate() > 0; // Retorna resultado.
+        } catch (SQLException e) { // Catch.
+            System.err.println("Error al eliminar asignacion id=" + idAsignacion + ": " + e.getMessage()); // Log error.
+            e.printStackTrace(); // Imprime error.
+            return false; // Retorna false.
+        } // Fin catch.
+    } // Fin método eliminarAsignacion.
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 2. Listar todas las asignaciones (vista del administrador)
-    // ─────────────────────────────────────────────────────────────────────────
-    public List<asignacion> listarTodas() {
-        String sql = SQL_SELECT_COMPLETO +
-                     "ORDER BY a.fecha_asignacion DESC, a.id_asignacion DESC";
-        return ejecutarConsulta(sql, null, null);
-    }
+    private List<asignacion> ejecutarConsulta(String sql, Integer param1, String param2) { // Método ejecutar consulta.
+        List<asignacion> lista = new ArrayList<>(); // Crea lista.
+        try (Connection con = clase_Conexion.MetodoConectar(); PreparedStatement ps = con.prepareStatement(sql)) { // Prepara.
+            int idx = 1; // Contador params.
+            if (param1 != null) ps.setInt(idx++, param1); // Setea param1.
+            if (param2 != null) ps.setString(idx, param2); // Setea param2.
+            try (ResultSet rs = ps.executeQuery()) { // Ejecuta consulta.
+                while (rs.next()) { // Recorre resultados.
+                    lista.add(mapearAsignacion(rs)); // Mapea objeto.
+                } // Fin while.
+            } // Cierra rs.
+        } catch (SQLException e) { // Catch error.
+            e.printStackTrace(); // Imprime error.
+        } // Fin catch.
+        return lista; // Retorna lista.
+    } // Fin método ejecutarConsulta.
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 3. Listar asignaciones de un usuario (con filtro opcional de estado)
-    // ─────────────────────────────────────────────────────────────────────────
-    public List<asignacion> listarPorUsuario(int idUsuario, String estado) {
-        String sql;
-        if (estado != null && !estado.isBlank()) {
-            sql = SQL_SELECT_COMPLETO +
-                  "WHERE a.id_usuario = ? AND a.estado_trabajo = ? " +
-                  "ORDER BY a.fecha_asignacion DESC";
-            return ejecutarConsulta(sql, idUsuario, estado);
-        } else {
-            sql = SQL_SELECT_COMPLETO +
-                  "WHERE a.id_usuario = ? " +
-                  "ORDER BY a.fecha_asignacion DESC";
-            return ejecutarConsulta(sql, idUsuario, null);
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 4. Actualizar estado y/o observaciones de una asignación
-    // ─────────────────────────────────────────────────────────────────────────
-    public boolean actualizarEstadoAsignacion(int idAsignacion,
-                                              String observaciones,
-                                              String nuevoEstado) {
-        StringBuilder sql = new StringBuilder(
-            "UPDATE asignaciones SET observaciones = ? ");
-
-        if ("En proceso".equals(nuevoEstado)) {
-            sql.append(", estado_trabajo = 'En proceso', fecha_inicio = CURDATE() ");
-        } else if ("Finalizado".equals(nuevoEstado)) {
-            sql.append(", estado_trabajo = 'Finalizado', fecha_finalizacion = CURDATE() ");
-        }
-        sql.append("WHERE id_asignacion = ?");
-
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql.toString())) {
-
-            ps.setString(1, observaciones != null ? observaciones.trim() : "");
-            ps.setInt(2, idAsignacion);
-            return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 5. Eliminar trabajo y sus asignaciones (en transacción)
-    // ─────────────────────────────────────────────────────────────────────────
-    public boolean eliminarTrabajo(int idTrabajo) {
-        String sqlAsig    = "DELETE FROM asignaciones WHERE id_trabajo = ?";
-        String sqlTrabajo = "DELETE FROM trabajos     WHERE id_trabajo = ?";
-
-        Connection con = null;
-        try {
-            con = clase_Conexion.MetodoConectar();
-            con.setAutoCommit(false);
-
-            try (PreparedStatement psAsig = con.prepareStatement(sqlAsig)) {
-                psAsig.setInt(1, idTrabajo);
-                psAsig.executeUpdate();           // puede ser 0 si no tiene asignaciones, eso está bien
-            }
-
-            int filas;
-            try (PreparedStatement psTrab = con.prepareStatement(sqlTrabajo)) {
-                psTrab.setInt(1, idTrabajo);
-                filas = psTrab.executeUpdate();
-            }
-
-            if (filas == 0) {
-                con.rollback();
-                return false;                     // el trabajo no existía
-            }
-
-            con.commit();
-            return true;
-
-        } catch (SQLException e) {
-            if (con != null) {
-                try { con.rollback(); } catch (SQLException ignored) {}
-            }
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (con != null) {
-                try { con.setAutoCommit(true); con.close(); } catch (SQLException ignored) {}
-            }
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 6. Listar asignaciones de un cultivo (historial del cultivo)
-    // ─────────────────────────────────────────────────────────────────────────
-    public List<asignacion> listarPorCultivo(int idCultivo) {
-        String sql = SQL_SELECT_COMPLETO +
-                     "WHERE a.id_cultivo = ? " +
-                     "ORDER BY a.fecha_asignacion DESC, a.id_asignacion DESC";
-        return ejecutarConsulta(sql, idCultivo, null);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 7. Contar asignaciones de un cultivo (badge en la vista)
-    // ─────────────────────────────────────────────────────────────────────────
-    public int contarPorCultivo(int idCultivo) {
-        String sql = "SELECT COUNT(*) FROM asignaciones WHERE id_cultivo = ?";
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, idCultivo);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            System.err.println("Error al contar asignaciones por cultivo: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 8. Eliminar una asignación por su id (sin tocar el trabajo padre)
-    // ─────────────────────────────────────────────────────────────────────────
-    public boolean eliminarAsignacion(int idAsignacion) {
-        String sql = "DELETE FROM asignaciones WHERE id_asignacion = ?";
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, idAsignacion);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Error al eliminar asignacion id=" + idAsignacion + ": " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Helper privado: ejecuta una consulta con 0, 1 o 2 parámetros
-    //   param1 → int (id_usuario o id_cultivo) o null
-    //   param2 → String (estado)  o null
-    // ─────────────────────────────────────────────────────────────────────────
-    private List<asignacion> ejecutarConsulta(String sql,
-                                              Integer param1,
-                                              String  param2) {
-        List<asignacion> lista = new ArrayList<>();
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            int idx = 1;
-            if (param1 != null) ps.setInt(idx++, param1);
-            if (param2 != null) ps.setString(idx, param2);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    lista.add(mapearAsignacion(rs));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return lista;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Helper privado: mapea una fila del ResultSet a un objeto asignacion
-    // ─────────────────────────────────────────────────────────────────────────
-    private asignacion mapearAsignacion(ResultSet rs) throws SQLException {
-        asignacion a = new asignacion();
-        a.setId(rs.getInt("id_asignacion"));
-        a.setIdTrabajo(rs.getInt("id_trabajo"));
-        a.setIdCultivo(rs.getInt("id_cultivo"));
-        a.setIdUsuario(rs.getInt("id_usuario"));
-        a.setFechaAsignacion(rs.getDate("fecha_asignacion"));
-        a.setFechaInicio(rs.getDate("fecha_inicio"));
-        a.setFechaFinalizacion(rs.getDate("fecha_finalizacion"));
-        a.setEstadoTrabajo(rs.getString("estado_trabajo"));
-        a.setObservaciones(rs.getString("observaciones"));
-        a.setDescripcionTrabajo(rs.getString("descripcion_trabajo"));
-        a.setNombreCultivo(rs.getString("nombre_cultivo"));
-        a.setNombreUsuario(rs.getString("nombre_usuario"));
-        a.setNombreTipoTrabajo(rs.getString("nombre_tipo_trabajo"));
-        return a;
-    }
-}
+    private asignacion mapearAsignacion(ResultSet rs) throws SQLException { // Método mapear.
+        asignacion a = new asignacion(); // Crea objeto.
+        a.setId(rs.getInt("id_asignacion")); // Setea ID.
+        a.setIdTrabajo(rs.getInt("id_trabajo")); // Setea idTrabajo.
+        a.setIdCultivo(rs.getInt("id_cultivo")); // Setea idCultivo.
+        a.setIdUsuario(rs.getInt("id_usuario")); // Setea idUsuario.
+        a.setFechaAsignacion(rs.getDate("fecha_asignacion")); // Setea fechaAsignacion.
+        a.setFechaInicio(rs.getDate("fecha_inicio")); // Setea fechaInicio.
+        a.setFechaFinalizacion(rs.getDate("fecha_finalizacion")); // Setea fechaFinalizacion.
+        a.setEstadoTrabajo(rs.getString("estado_trabajo")); // Setea estado.
+        a.setObservaciones(rs.getString("observaciones")); // Setea observaciones.
+        a.setDescripcionTrabajo(rs.getString("descripcion_trabajo")); // Setea descripcion.
+        a.setNombreCultivo(rs.getString("nombre_cultivo")); // Setea nombreCultivo.
+        a.setNombreUsuario(rs.getString("nombre_usuario")); // Setea nombreUsuario.
+        a.setNombreTipoTrabajo(rs.getString("nombre_tipo_trabajo")); // Setea nombreTipo.
+        return a; // Retorna objeto.
+    } // Fin método mapearAsignacion.
+} // Fin clase.

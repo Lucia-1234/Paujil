@@ -1,40 +1,37 @@
-package com.paujil.modelo;
+package com.paujil.modelo; // Define el paquete del modelo.
 
-import java.time.LocalDate;
-import java.time.Period;
+import java.time.LocalDate; // Importa API de fecha.
+import java.time.Period; // Importa API para cálculos de tiempo.
 
-public class validador {
+public class validador { // Clase de utilidades para validación de datos.
 
-    // Minimo 8 caracteres con al menos una mayuscula, una minuscula, un numero y un simbolo
-    // El mensaje de error en ServletRegistro debe mantenerse sincronizado con estas reglas
-    public static boolean esContrasenaSegura(String password) {
-        if (password == null) return false;
-        // Lookaheads independientes validan cada requisito sin importar el orden de los caracteres
-        String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!.\\-_*]).{8,}$";
-        return password.matches(regex);
-    }
+    // Valida complejidad de contraseñas usando expresiones regulares.
+    public static boolean esContrasenaSegura(String password) { // Inicio método.
+        if (password == null) return false; // Verifica nulidad.
+        // Regex: min 8 caracteres, 1 may, 1 min, 1 num, 1 símbolo.
+        String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!.\\-_*]).{8,}$"; // Regla.
+        return password.matches(regex); // Retorna validación.
+    } // Fin método.
 
-    public static boolean esMayorDeEdad(String fechaNacimientoStr) {
-        try {
-            // LocalDate.parse espera formato ISO "yyyy-MM-dd"; cualquier otro formato lanza excepcion
-            LocalDate fechaNacimiento = LocalDate.parse(fechaNacimientoStr);
-            LocalDate hoy = LocalDate.now();
-            // Period.between calcula la diferencia exacta en anos teniendo en cuenta anos bisiestos
-            return Period.between(fechaNacimiento, hoy).getYears() >= 18;
-        } catch (Exception e) {
-            // Fecha malformada o nula se trata como no valida; el caller rechazara el registro
-            return false;
-        }
-    }
+    // Valida mayoría de edad basada en la fecha de nacimiento.
+    public static boolean esMayorDeEdad(String fechaNacimientoStr) { // Inicio método.
+        try { // Bloque try.
+            LocalDate fechaNacimiento = LocalDate.parse(fechaNacimientoStr); // Parsea string.
+            LocalDate hoy = LocalDate.now(); // Obtiene fecha actual.
+            return Period.between(fechaNacimiento, hoy).getYears() >= 18; // Valida 18+.
+        } catch (Exception e) { // Captura error formato.
+            return false; // Retorna falso en caso de error.
+        } // Fin catch.
+    } // Fin método.
 
-    // Patron exacto de 10 digitos; rechaza guiones, espacios o codigos de pais
-    public static boolean esTelefonoValido(String telefono) {
-        return telefono != null && telefono.matches("\\d{10}");
-    }
+    // Valida que el número de teléfono tenga exactamente 10 dígitos.
+    public static boolean esTelefonoValido(String telefono) { // Inicio método.
+        return telefono != null && telefono.matches("\\d{10}"); // Regex 10 dígitos.
+    } // Fin método.
 
-    // Regex permisiva que valida estructura basica de correo; no verifica existencia real del dominio
-    public static boolean esCorreoValido(String correo) {
-        String regex = "^[A-Za-z0-9+_.-]+@(.+)$";
-        return correo != null && correo.matches(regex);
-    }
-}
+    // Valida la estructura básica de una dirección de correo electrónico.
+    public static boolean esCorreoValido(String correo) { // Inicio método.
+        String regex = "^[A-Za-z0-9+_.-]+@(.+)$"; // Estructura de email.
+        return correo != null && correo.matches(regex); // Retorna validación.
+    } // Fin método.
+} // Fin clase.

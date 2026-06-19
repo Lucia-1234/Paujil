@@ -13,97 +13,88 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import paujil.basedatos.clase_Conexion;
 
-@WebServlet("/ServletLogin")
-public class ServletLogin extends HttpServlet {
+@WebServlet("/ServletLogin") // Registra este componente en el contenedor web para manejar las peticiones de inicio de sesión.
+public class ServletLogin extends HttpServlet { // Define la clase como un servlet estándar para procesar solicitudes HTTP.
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    @Override // Indica que sobreescribiremos el método doPost, diseñado para recibir datos sensibles vía POST.
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException { // Define la firma del método que procesa el formulario.
 
-        // Lee las credenciales y el rol enviados desde el formulario de login
-        String correoInput     = request.getParameter("txtUsuario");
-        String contrasenaInput = request.getParameter("txtContrasena");
-        // El rol seleccionado en el formulario restringe la busqueda a un perfil especifico
-        String rolSeleccionado = request.getParameter("txtRol");
+        // Captura el correo, la contraseña y el rol desde los campos del formulario HTML.
+        String correoInput     = request.getParameter("txtUsuario"); 
+        String contrasenaInput = request.getParameter("txtContrasena"); 
+        String rolSeleccionado = request.getParameter("txtRol"); 
 
-        // trim() elimina espacios accidentales; toLowerCase() garantiza comparacion sin importar mayusculas
-        if (correoInput     != null) correoInput     = correoInput.trim().toLowerCase();
-        // La contrasena solo se normaliza en espacios; no se convierte a minusculas para respetar el hash
-        if (contrasenaInput != null) contrasenaInput = contrasenaInput.trim();
-        if (rolSeleccionado != null) rolSeleccionado = rolSeleccionado.trim().toLowerCase();
+        // Sanitización: elimina espacios accidentales y normaliza el correo a minúsculas para evitar inconsistencias en la base de datos.
+        if (correoInput     != null) correoInput     = correoInput.trim().toLowerCase(); 
+        // Normaliza solo espacios en la contraseña; se mantiene el case para no alterar el valor del hash original.
+        if (contrasenaInput != null) contrasenaInput = contrasenaInput.trim(); 
+        // Normaliza el rol seleccionado para asegurar una comparación de texto precisa.
+        if (rolSeleccionado != null) rolSeleccionado = rolSeleccionado.trim().toLowerCase(); 
 
-        // La contrasena se excluye del WHERE a proposito: bcrypt requiere verificacion en memoria,
-        // no comparacion directa en BD, lo que ademas previene timing attacks
+        // Declaración de consulta SQL utilizando JOINs para consolidar datos de usuario, roles y contactos en una sola llamada.
+        // La consulta es deliberadamente selectiva, filtrando por estado 'Activo' antes de cualquier validación.
         String sql = "SELECT u.id_usuario, u.nombre_usuario, u.contrasena_usuario, u.estado_usuario, r.nombre_rol, c.direccion_correo, t.numero_telefono " +
                      "FROM usuarios u " +
-                     // INNER JOIN garantiza que solo usuarios con correo registrado sean candidatos
                      "INNER JOIN correos c ON u.id_usuario = c.id_usuario " +
                      "INNER JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario " +
-                     // INNER JOIN al rol filtra en BD usuarios sin el rol solicitado
                      "INNER JOIN roles r ON ur.id_rol = r.id_rol " +
-                     // LEFT JOIN permite que el telefono sea opcional sin excluir al usuario del resultado
                      "LEFT JOIN telefonos t ON u.id_usuario = t.id_usuario " +
-                     // TRIM/LOWER en BD espeja la normalizacion del input para garantizar coincidencia exacta
                      "WHERE TRIM(LOWER(c.direccion_correo)) = ? " +
                      "AND TRIM(LOWER(r.nombre_rol)) = ? " +
-                     // Filtra usuarios inactivos o pendientes antes de llegar a la verificacion de contrasena
                      "AND u.estado_usuario = 'Activo'";
 
-        // try-with-resources cierra conexion y statement automaticamente aunque ocurra una excepcion
+        // Try-with-resources garantiza que la conexión y el statement se cierren automáticamente, liberando memoria del servidor.
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            // Parametros posicionales previenen inyeccion SQL al tratar los valores como literales
-            ps.setString(1, correoInput);
-            ps.setString(2, rolSeleccionado);
+            // Asignación de parámetros posicionales: esto desactiva cualquier intento de Inyección SQL.
+            ps.setString(1, correoInput); 
+            ps.setString(2, rolSeleccionado); 
 
+            // Ejecuta la consulta preparada y almacena el resultado en un ResultSet.
             try (ResultSet rs = ps.executeQuery()) {
-                // rs.next() avanza al primer resultado; si no hay filas, las credenciales no coinciden
+                // Si rs.next() es true, encontramos un usuario activo que coincide con el correo y el rol.
                 if (rs.next()) {
-                    // El hash se extrae de BD para compararlo en memoria; nunca se loguea ni se transmite
+                    // Recupera el hash de contraseña almacenado en BD (nunca se compara texto plano).
                     String hashEnBD = rs.getString("contrasena_usuario");
 
-                    // BCrypt recomputa el hash del input y lo compara con el almacenado;
-                    // su coste computacional configurable lo hace resistente a fuerza bruta
+                    // Utiliza BCrypt para verificar si la contraseña ingresada coincide con el hash almacenado en memoria.
                     if (Seguridad.verificar(contrasenaInput, hashEnBD)) {
 
-                        // Invalida la sesion previa para prevenir session fixation attacks
-                        HttpSession oldSession = request.getSession(false);
-                        if (oldSession != null) {
-                            // Destruye el ID de sesion anterior antes de crear uno nuevo
-                            oldSession.invalidate();
+                        // Seguridad: invalidamos cualquier sesión existente para prevenir ataques de "Session Fixation".
+                        HttpSession oldSession = request.getSession(false); 
+                        if (oldSession != null) { 
+                            oldSession.invalidate(); // Elimina la sesión antigua.
                         }
-                        // true fuerza la creacion de una sesion nueva con ID regenerado
-                        HttpSession session = request.getSession(true);
+                        // Crea una sesión totalmente nueva y regenera el ID de sesión.
+                        HttpSession session = request.getSession(true); 
 
-                        // Almacena los datos de identidad que filtros y servlets consultaran
-                        // en cada solicitud para autorizar o denegar acceso a recursos protegidos
-                        session.setAttribute("idUsuario",       rs.getInt("id_usuario"));
-                        session.setAttribute("nombreUsuario",   rs.getString("nombre_usuario"));
-                        // rolUsuario es el atributo clave que consultan los filtros de seguridad
-                        session.setAttribute("rolUsuario",      rs.getString("nombre_rol"));
-                        session.setAttribute("telefonoUsuario", rs.getString("numero_telefono"));
+                        // Almacena los datos de perfil en la sesión para persistir la identidad durante la navegación.
+                        session.setAttribute("idUsuario",       rs.getInt("id_usuario")); 
+                        session.setAttribute("nombreUsuario",   rs.getString("nombre_usuario")); 
+                        session.setAttribute("rolUsuario",      rs.getString("nombre_rol")); 
+                        session.setAttribute("telefonoUsuario", rs.getString("numero_telefono")); 
 
-                        // Enrutamiento por rol: cada perfil tiene su propio espacio de trabajo
+                        // Lógica de enrutamiento: redirige al usuario al panel correcto según su rol.
                         if ("administrador".equalsIgnoreCase(rs.getString("nombre_rol"))) {
-                            response.sendRedirect(request.getContextPath() + "/templates/administrador/menu_administrador.jsp");
+                            response.sendRedirect(request.getContextPath() + "/templates/administrador/menu_administrador.jsp"); 
                         } else {
-                            response.sendRedirect(request.getContextPath() + "/templates/trabajador/menu_trabajador.jsp");
+                            response.sendRedirect(request.getContextPath() + "/templates/trabajador/menu_trabajador.jsp"); 
                         }
                     } else {
-                        // si el correo existe en el sistema (previene enumeracion de usuarios)
-                        response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=1");
+                        // Credenciales incorrectas: redirige al login con error genérico para no dar pistas de qué falló.
+                        response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=1"); 
                     }
                 } else {
-                    // Usuario inexistente, inactivo o con rol incorrecto; error generico intencional
-                    response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=1");
+                    // Usuario no encontrado o inactivo: error genérico por seguridad.
+                    response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=1"); 
                 }
             }
         } catch (Exception e) {
-            // Loguea el detalle tecnico internamente sin exponerlo al usuario;
-            // "error=fatal" senala un fallo de infraestructura, distinto al de credenciales
-            e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=fatal");
+            // Manejo de errores: logueamos internamente el fallo y notificamos al usuario de un error genérico (fatal).
+            e.printStackTrace(); 
+            response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=fatal"); 
         }
     }
 }

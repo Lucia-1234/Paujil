@@ -1,152 +1,116 @@
-package com.paujil.dao;
+package com.paujil.dao; // Define el paquete del DAO de cultivos.
 
-import com.paujil.modelo.cultivo;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import paujil.basedatos.clase_Conexion;
+import com.paujil.modelo.cultivo; // Importa el modelo de datos Cultivo.
+import java.sql.*; // Importa la API JDBC para acceso a datos.
+import java.util.ArrayList; // Importa la lista dinámica.
+import java.util.List; // Importa la interfaz List.
+import paujil.basedatos.clase_Conexion; // Importa el conector a la base de datos.
 
-public class CultivoDao {
+public class CultivoDao { // Clase DAO para operaciones CRUD de cultivos.
 
-    //  Listar todos los cultivos 
-    public List<cultivo> listarCultivos() {
-        List<cultivo> lista = new ArrayList<>();
-        String sql = "SELECT id_cultivo, nombre_cultivo, tipo_cultivo, fecha_siembra, fecha_cosecha FROM cultivos";
+    // Método para listar todos los registros de la tabla cultivos.
+    public List<cultivo> listarCultivos() { // Inicio del método.
+        List<cultivo> lista = new ArrayList<>(); // Inicializa la lista resultado.
+        String sql = "SELECT id_cultivo, nombre_cultivo, tipo_cultivo, fecha_siembra, fecha_cosecha FROM cultivos"; // Query SQL.
 
-        // try-with-resources garantiza cierre de conexion, statement y resultset aunque ocurra una excepcion
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection con = clase_Conexion.MetodoConectar(); // Establece conexión.
+             PreparedStatement ps = con.prepareStatement(sql); // Prepara sentencia.
+             ResultSet rs = ps.executeQuery()) { // Ejecuta consulta.
 
-            while (rs.next()) {
-                // Cada iteracion construye un objeto cultivo mapeando las columnas por nombre
-                cultivo c = new cultivo();
-                c.setIdCultivo(rs.getInt("id_cultivo"));
-                c.setNombreCultivo(rs.getString("nombre_cultivo"));
-                c.setTipoCultivo(rs.getString("tipo_cultivo"));
-                c.setFechaSiembra(rs.getDate("fecha_siembra"));
-                // fecha_cosecha puede ser null si el cultivo aun no ha sido cosechado
-                c.setFechaCosecha(rs.getDate("fecha_cosecha"));
-                lista.add(c);
-            }
+            while (rs.next()) { // Itera mientras existan filas.
+                cultivo c = new cultivo(); // Crea nueva instancia de modelo.
+                c.setIdCultivo(rs.getInt("id_cultivo")); // Setea ID desde BD.
+                c.setNombreCultivo(rs.getString("nombre_cultivo")); // Setea nombre.
+                c.setTipoCultivo(rs.getString("tipo_cultivo")); // Setea tipo.
+                c.setFechaSiembra(rs.getDate("fecha_siembra")); // Setea fecha siembra.
+                c.setFechaCosecha(rs.getDate("fecha_cosecha")); // Setea fecha cosecha.
+                lista.add(c); // Agrega objeto a la lista.
+            } // Fin while.
+        } catch (SQLException e) { // Manejo de errores SQL.
+            System.err.println("Error al listar cultivos: " + e.getMessage()); // Imprime error en log.
+            e.printStackTrace(); // Imprime traza del error.
+        } // Fin catch.
+        return lista; // Retorna lista poblada o vacía.
+    } // Fin método listarCultivos.
 
-        } catch (SQLException e) {
-            System.err.println("Error al listar cultivos: " + e.getMessage());
-            e.printStackTrace();
-        }
-        // Retorna lista vacia en caso de error para que el caller no necesite comprobar null
-        return lista;
-    }
+    // Método para insertar un nuevo cultivo en la tabla.
+    public boolean registrarCultivo(cultivo c) { // Inicio método registrar.
+        String sql = "INSERT INTO cultivos (nombre_cultivo, tipo_cultivo, fecha_siembra, fecha_cosecha) " + "VALUES (?, ?, ?, ?)"; // SQL insert.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta a la BD.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara sentencia.
+            ps.setString(1, c.getNombreCultivo()); // Setea parámetro 1.
+            ps.setString(2, c.getTipoCultivo()); // Setea parámetro 2.
+            ps.setDate(3, c.getFechaSiembra()); // Setea parámetro 3.
+            if (c.getFechaCosecha() != null) { // Verifica si hay fecha de cosecha.
+                ps.setDate(4, c.getFechaCosecha()); // Si existe, la setea.
+            } else { // Si es nula.
+                ps.setNull(4, Types.DATE); // Setea valor null en BD.
+            } // Fin if.
+            return ps.executeUpdate() > 0; // Ejecuta e indica si hubo éxito.
+        } catch (SQLException e) { // Manejo de errores.
+            System.err.println("Error al registrar cultivo: " + e.getMessage()); // Error log.
+            e.printStackTrace(); // Imprime traza.
+            return false; // Retorna fallo.
+        } // Fin catch.
+    } // Fin método registrarCultivo.
 
+    // Método para actualizar los datos de un cultivo existente.
+    public boolean actualizarCultivo(int id, String nombre, String tipo, Date siembra, Date cosecha) { // Inicio actualizar.
+        String sql = "UPDATE cultivos SET nombre_cultivo = ?, tipo_cultivo = ?, fecha_siembra = ?, fecha_cosecha = ? WHERE id_cultivo = ?"; // SQL update.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara statement.
+            ps.setString(1, nombre); // Setea nombre.
+            ps.setString(2, tipo); // Setea tipo.
+            ps.setDate(3, siembra); // Setea siembra.
+            if (cosecha != null) { // Verifica fecha cosecha.
+                ps.setDate(4, cosecha); // Setea fecha cosecha.
+            } else { // Si es nula.
+                ps.setNull(4, Types.DATE); // Setea null.
+            } // Fin if.
+            ps.setInt(5, id); // Setea ID para el WHERE.
+            return ps.executeUpdate() > 0; // Ejecuta e indica éxito.
+        } catch (SQLException e) { // Manejo errores.
+            System.err.println("Error al actualizar cultivo id=" + id + ": " + e.getMessage()); // Error log.
+            e.printStackTrace(); // Imprime traza.
+            return false; // Retorna fallo.
+        } // Fin catch.
+    } // Fin método actualizarCultivo.
 
-    //  Registrar cultivo nuevo 
-    public boolean registrarCultivo(cultivo c) {
-        String sql = "INSERT INTO cultivos (nombre_cultivo, tipo_cultivo, fecha_siembra, fecha_cosecha) "
-                   + "VALUES (?, ?, ?, ?)";
+    // Método para eliminar un cultivo por su ID.
+    public boolean eliminarCultivo(int id) { // Inicio método eliminar.
+        String sql = "DELETE FROM cultivos WHERE id_cultivo = ?"; // SQL delete.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara.
+            ps.setInt(1, id); // Setea ID para eliminar.
+            return ps.executeUpdate() > 0; // Ejecuta e indica éxito.
+        } catch (SQLException e) { // Manejo errores.
+            System.err.println("Error al eliminar cultivo id=" + id + ": " + e.getMessage()); // Error log.
+            e.printStackTrace(); // Imprime traza.
+            return false; // Retorna fallo.
+        } // Fin catch.
+    } // Fin método eliminarCultivo.
 
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setString(1, c.getNombreCultivo());
-            ps.setString(2, c.getTipoCultivo());
-            ps.setDate(3, c.getFechaSiembra());
-            // setNull es necesario porque setDate(null) lanza NullPointerException en algunos drivers JDBC
-            if (c.getFechaCosecha() != null) {
-                ps.setDate(4, c.getFechaCosecha());
-            } else {
-                ps.setNull(4, Types.DATE);
-            }
-
-            // executeUpdate > 0 confirma que la insercion afecto al menos una fila
-            return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            System.err.println("Error al registrar cultivo: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    //  Actualizar cultivo existente 
-    // Los nombres de columna usan snake_case del esquema SQL, no camelCase de los getters del modelo
-    public boolean actualizarCultivo(int id, String nombre, String tipo,
-                                     Date siembra, Date cosecha) {
-
-        String sql = "UPDATE cultivos "
-                   + "SET nombre_cultivo = ?, tipo_cultivo = ?, fecha_siembra = ?, fecha_cosecha = ? "
-                   + "WHERE id_cultivo = ?";
-
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setString(1, nombre);
-            ps.setString(2, tipo);
-            ps.setDate(3, siembra);
-            // Permite borrar una fecha de cosecha previamente registrada pasando null al UPDATE
-            if (cosecha != null) {
-                ps.setDate(4, cosecha);
-            } else {
-                ps.setNull(4, Types.DATE);
-            }
-            // El ID va en la ultima posicion para coincidir con el WHERE al final del SQL
-            ps.setInt(5, id);
-
-            return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            System.err.println("Error al actualizar cultivo id=" + id + ": " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    //  Eliminar cultivo 
-    public boolean eliminarCultivo(int id) {
-        String sql = "DELETE FROM cultivos WHERE id_cultivo = ?";
-
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, id);
-            // executeUpdate > 0 verifica que el cultivo existia; 0 indica que el ID no se encontro
-            return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            System.err.println("Error al eliminar cultivo id=" + id + ": " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    //  Buscar cultivo por ID 
-    // Usado principalmente para pre-llenar el modal de edicion desde el servlet
-    public cultivo buscarPorId(int id) {
-        String sql = "SELECT id_cultivo, nombre_cultivo, tipo_cultivo, fecha_siembra, fecha_cosecha "
-                   + "FROM cultivos WHERE id_cultivo = ?";
-
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, id);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                // Se espera como maximo una fila ya que id_cultivo es clave primaria
-                if (rs.next()) {
-                    cultivo c = new cultivo();
-                    c.setIdCultivo(rs.getInt("id_cultivo"));
-                    c.setNombreCultivo(rs.getString("nombre_cultivo"));
-                    c.setTipoCultivo(rs.getString("tipo_cultivo"));
-                    c.setFechaSiembra(rs.getDate("fecha_siembra"));
-                    c.setFechaCosecha(rs.getDate("fecha_cosecha"));
-                    return c;
-                }
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Error al buscar cultivo id=" + id + ": " + e.getMessage());
-            e.printStackTrace();
-        }
-        // Retorna null si el ID no existe; el caller debe verificarlo antes de usar el resultado
-        return null;
-    }
-}
+    // Método para buscar un cultivo específico por su ID.
+    public cultivo buscarPorId(int id) { // Inicio método buscar.
+        String sql = "SELECT id_cultivo, nombre_cultivo, tipo_cultivo, fecha_siembra, fecha_cosecha FROM cultivos WHERE id_cultivo = ?"; // SQL select filtrado.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara.
+            ps.setInt(1, id); // Setea parámetro ID.
+            try (ResultSet rs = ps.executeQuery()) { // Ejecuta query.
+                if (rs.next()) { // Verifica si hay resultado.
+                    cultivo c = new cultivo(); // Crea objeto cultivo.
+                    c.setIdCultivo(rs.getInt("id_cultivo")); // Mapea ID.
+                    c.setNombreCultivo(rs.getString("nombre_cultivo")); // Mapea nombre.
+                    c.setTipoCultivo(rs.getString("tipo_cultivo")); // Mapea tipo.
+                    c.setFechaSiembra(rs.getDate("fecha_siembra")); // Mapea siembra.
+                    c.setFechaCosecha(rs.getDate("fecha_cosecha")); // Mapea cosecha.
+                    return c; // Retorna objeto encontrado.
+                } // Fin if.
+            } // Cierre ResultSet.
+        } catch (SQLException e) { // Manejo errores.
+            System.err.println("Error al buscar cultivo id=" + id + ": " + e.getMessage()); // Error log.
+            e.printStackTrace(); // Imprime traza.
+        } // Fin catch.
+        return null; // Retorna null si no se encuentra.
+    } // Fin método buscarPorId.
+} // Fin clase CultivoDao.

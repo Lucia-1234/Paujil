@@ -1,20 +1,21 @@
-package com.paujil.modelo;
+package com.paujil.modelo; // Define el paquete del modelo.
 
-public class tipoTrabajo {
+public class tipoTrabajo { // Clase modelo para la entidad TipoTrabajo.
 
-    private int    idTipoTrabajo;
-    private String nombreTipo;
+    private int idTipoTrabajo; // Identificador único del tipo de trabajo.
+    private String nombreTipo; // Nombre descriptivo de la categoría.
 
-    public tipoTrabajo() {}
+    public tipoTrabajo() {} // Constructor vacío para instanciación.
 
-    public tipoTrabajo(int idTipoTrabajo, String nombreTipo) {
-        this.idTipoTrabajo = idTipoTrabajo;
-        this.nombreTipo    = nombreTipo;
-    }
+    // Constructor con parámetros para inicializar el objeto.
+    public tipoTrabajo(int idTipoTrabajo, String nombreTipo) { // Constructor.
+        this.idTipoTrabajo = idTipoTrabajo; // Asigna ID.
+        this.nombreTipo = nombreTipo; // Asigna nombre.
+    } // Fin constructor.
 
-    public int getIdTipoTrabajo() { return idTipoTrabajo; }
-    public void setIdTipoTrabajo(int idTipoTrabajo) { this.idTipoTrabajo = idTipoTrabajo; }
+    public int getIdTipoTrabajo() { return idTipoTrabajo; } // Getter ID.
+    public void setIdTipoTrabajo(int idTipoTrabajo) { this.idTipoTrabajo = idTipoTrabajo; } // Setter ID.
 
-    public String getNombreTipo() { return nombreTipo; }
-    public void setNombreTipo(String nombreTipo) { this.nombreTipo = nombreTipo; }
-}
+    public String getNombreTipo() { return nombreTipo; } // Getter nombre.
+    public void setNombreTipo(String nombreTipo) { this.nombreTipo = nombreTipo; } // Setter nombre.
+} // Fin clase.

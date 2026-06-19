@@ -11,164 +11,151 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/ServletUsuario")
-public class ServletUsuarios extends HttpServlet {
 
-    // ── Guarda de sesion 
+/**
+ * ServletUsuarios: Controlador encargado de la gestión administrativa de cuentas de usuario.
+ * Su rol es recibir peticiones, validar permisos y coordinar con UsuarioDao para persistir cambios.
+ */
+@WebServlet("/ServletUsuario") // Mapea este controlador a la URL "/ServletUsuario".
+public class ServletUsuarios extends HttpServlet { // Extiende HttpServlet para procesar protocolos web.
 
-    // Centraliza la verificacion de autorizacion para no repetirla en cada handler
+    // ── Guarda de sesión ──────────────────────────────────────────────────────────
+
+    /**
+     * Valida si el usuario actual tiene permisos de administrador.
+     * @return true si la sesión es válida y el usuario es administrador.
+     */
     private boolean sesionAdminValida(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-        // false evita crear sesion fantasma si el usuario no esta autenticado
-        HttpSession session = req.getSession(false);
-        // Triple condicion: sesion existente + usuario identificado + rol correcto
+        HttpSession session = req.getSession(false); // Recupera la sesión sin crear una nueva.
+        // Valida: sesión no nula, ID presente y rol específicamente "administrador".
         if (session == null
                 || session.getAttribute("idUsuario") == null
                 || !"administrador".equalsIgnoreCase((String) session.getAttribute("rolUsuario"))) {
+            // Si la validación falla, redirige al login con un error.
             res.sendRedirect(req.getContextPath() + "/templates/login.jsp?error=acceso_denegado");
-            return false;
+            return false; // Retorna falso para detener la ejecución en el método que invoca a este.
         }
-        return true;
+        return true; // Acceso autorizado.
     }
 
-    //  GET 
-    @Override
+    // ── GET: Procesamiento de lecturas y acciones mediante URL ───────────────────
+    @Override 
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
-        if (!sesionAdminValida(req, res)) return;
+        if (!sesionAdminValida(req, res)) return; // Filtro de seguridad inicial.
 
-        // El parametro "accion" discrimina la operacion; su ausencia carga la vista por defecto
-        String accion = req.getParameter("accion");
-        String idStr  = req.getParameter("id");
-        UsuarioDao dao = new UsuarioDao();
+        String accion = req.getParameter("accion"); // Obtiene el parámetro para la lógica de bifurcación.
+        String idStr  = req.getParameter("id"); // Obtiene el ID del usuario objetivo.
+        UsuarioDao dao = new UsuarioDao(); // Instancia el DAO para operaciones de BD.
 
-        if (accion != null) {
-            switch (accion) {
+        if (accion != null) { // Si hay una acción definida, entra al selector.
+            switch (accion) { // Estructura de control basada en la acción recibida.
 
-                case "activar":
-                    // Reactiva una cuenta previamente desactivada
+                case "activar": // Caso: cambia estado de usuario a 'Activo'.
                     cambiarEstado(dao, idStr, "Activo", res, req);
                     return;
 
-                case "desactivar":
-                    // Suspende la cuenta sin eliminarla; el usuario no podra iniciar sesion
+                case "desactivar": // Caso: cambia estado a 'Inactivo'.
                     cambiarEstado(dao, idStr, "Inactivo", res, req);
                     return;
 
-                case "aprobar":
-                    // Aprueba un registro pendiente; comparte logica con "activar" pero semanticamente distinto
+                case "aprobar": // Caso: aprueba registro pendiente a 'Activo'.
                     cambiarEstado(dao, idStr, "Activo", res, req);
                     return;
 
-                case "denegar":
-                    // El rechazo es definitivo: elimina el registro en lugar de cambiar su estado
+                case "denegar": // Caso: elimina registro pendiente.
                     eliminar(dao, idStr, res, req);
                     return;
 
-                case "eliminar":
-                    // Eliminacion directa de usuario activo o inactivo por el administrador
+                case "eliminar": // Caso: elimina usuario activo/inactivo.
                     eliminar(dao, idStr, res, req);
                     return;
 
-                case "pendientes":
-                    // Muestra solo usuarios en estado 'Pendiente' que esperan aprobacion del admin
-                    List<usuario> pendientes = dao.listarUsuariosPendientes();
-                    req.setAttribute("listaUsuarios", pendientes);
-                    // El atributo "vista" permite que el JSP ajuste columnas y botones segun el contexto
-                    req.setAttribute("vista", "pendientes");
+                case "pendientes": // Caso: filtra solo usuarios pendientes.
+                    List<usuario> pendientes = dao.listarUsuariosPendientes(); // Llama al DAO para obtener pendientes.
+                    req.setAttribute("listaUsuarios", pendientes); // Carga la lista en el request.
+                    req.setAttribute("vista", "pendientes"); // Define la vista para el JSP.
                     req.getRequestDispatcher("/templates/administrador/gestion_usuarios.jsp")
-                       .forward(req, res);
+                       .forward(req, res); // Envía a la vista.
                     return;
 
-                default:
-                    // Accion desconocida: cae al caso por defecto que carga todos los usuarios
-                    break;
+                default: break; // Si no coincide, continua hacia la carga por defecto.
             }
         }
 
-        // Vista por defecto: carga activos e inactivos juntos; el filtrado se delega al cliente via JS
-        List<usuario> todos = dao.listarTodosLosUsuarios();
-        req.setAttribute("listaUsuarios", todos);
-        // "todos" indica al JSP que muestre las opciones de filtrado completo
-        req.setAttribute("vista", "todos");
+        // Vista por defecto: carga la lista completa de usuarios.
+        List<usuario> todos = dao.listarTodosLosUsuarios(); // Obtiene todos los usuarios.
+        req.setAttribute("listaUsuarios", todos); // Envía los datos.
+        req.setAttribute("vista", "todos"); // Define la vista como general.
         req.getRequestDispatcher("/templates/administrador/gestion_usuarios.jsp")
-           .forward(req, res);
+           .forward(req, res); // Despacha la petición a la página JSP.
     }
 
-    // ── POST: actualizar datos del usuario 
+    // ── POST: Actualización de datos mediante formularios ───────────────────────
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
-        if (!sesionAdminValida(req, res)) return;
+        if (!sesionAdminValida(req, res)) return; // Revalida acceso para métodos de escritura.
 
-        // Fuerza UTF-8 antes de leer parametros para evitar corrupcion en nombres con caracteres especiales
-        req.setCharacterEncoding("UTF-8");
+        req.setCharacterEncoding("UTF-8"); // Define codificación para caracteres especiales.
 
-        String idStr  = req.getParameter("id");
-        // estadoUsuario permite cambiar el estado desde el formulario de edicion inline
-        String estado = req.getParameter("estadoUsuario");
+        String idStr  = req.getParameter("id"); // Obtiene el ID del usuario.
+        String estado = req.getParameter("estadoUsuario"); // Obtiene el nuevo estado.
 
-        // ID es el minimo indispensable; sin el no hay operacion posible
-        if (idStr == null || idStr.isBlank()) {
-            res.sendRedirect("ServletUsuario?status=error");
+        if (idStr == null || idStr.isBlank()) { // Validación de presencia del ID.
+            res.sendRedirect("ServletUsuario?status=error"); // Redirección por datos incompletos.
             return;
         }
 
         try {
-            int id = Integer.parseInt(idStr);
-            UsuarioDao dao = new UsuarioDao();
-            boolean ok = false;
+            int id = Integer.parseInt(idStr); // Convierte a entero.
+            UsuarioDao dao = new UsuarioDao(); // Prepara acceso a datos.
+            boolean ok = false; // Inicializa bandera de operación.
 
-            // Solo actualiza si se envio un estado valido; permite extender el POST con otros campos sin romper el flujo
-            if (estado != null && !estado.isBlank()) {
-                ok = dao.actualizarEstado(id, estado.trim());
+            if (estado != null && !estado.isBlank()) { // Valida si el estado es válido.
+                ok = dao.actualizarEstado(id, estado.trim()); // Ejecuta actualización en BD.
             }
 
-            // status en la URL permite que la vista muestre retroalimentacion tras el redirect
-            res.sendRedirect("ServletUsuario?status=" + (ok ? "success" : "error"));
-        } catch (NumberFormatException e) {
-            // ID no numerico indica manipulacion del formulario
-            res.sendRedirect("ServletUsuario?status=error");
+            res.sendRedirect("ServletUsuario?status=" + (ok ? "success" : "error")); // Retorno con estado.
+        } catch (NumberFormatException e) { // Captura error si el ID no es numérico.
+            res.sendRedirect("ServletUsuario?status=error"); // Redirección por error de formato.
         }
     }
 
-    // ── Helpers 
+    // ── Helpers: Métodos privados reutilizables ─────────────────────────────────
 
-    // Reutilizable para activar, desactivar y aprobar; el estado final lo decide el caller
+    // Centraliza la lógica de cambio de estado para evitar repetir código en cada case.
     private void cambiarEstado(UsuarioDao dao, String idStr, String nuevoEstado,
                                HttpServletResponse res, HttpServletRequest req)
             throws IOException {
-        if (idStr != null && !idStr.isBlank()) {
+        if (idStr != null && !idStr.isBlank()) { // Verifica ID.
             try {
-                dao.actualizarEstado(Integer.parseInt(idStr), nuevoEstado);
-            } catch (NumberFormatException ignored) {
-                // ID malformado; se redirige sin modificar nada
-            }
+                dao.actualizarEstado(Integer.parseInt(idStr), nuevoEstado); // Invoca DAO.
+            } catch (NumberFormatException ignored) { } // Ignora si hay error en el ID.
         }
-        // Retorna a la vista de origen para no perder el contexto de navegacion del admin
+        // Determina la redirección basándose en la vista donde estaba el admin.
         String vista = req.getParameter("vista");
         String redirect = "pendientes".equals(vista)
                 ? "ServletUsuario?accion=pendientes&status=success"
                 : "ServletUsuario?status=success";
-        res.sendRedirect(redirect);
+        res.sendRedirect(redirect); // Ejecuta la redirección.
     }
 
-    // Compartido entre "denegar" y "eliminar"; ambos resultan en la misma operacion de BD
+    // Centraliza la lógica de eliminación para asegurar consistencia en la respuesta.
     private void eliminar(UsuarioDao dao, String idStr,
                           HttpServletResponse res, HttpServletRequest req)
             throws IOException {
-        if (idStr != null && !idStr.isBlank()) {
+        if (idStr != null && !idStr.isBlank()) { // Verifica ID.
             try {
-                dao.eliminarUsuario(Integer.parseInt(idStr));
-            } catch (NumberFormatException ignored) {
-                // ID malformado; se redirige sin eliminar
-            }
+                dao.eliminarUsuario(Integer.parseInt(idStr)); // Ejecuta el borrado.
+            } catch (NumberFormatException ignored) { } // Ignora error de formato.
         }
-        // Preserva el contexto de vista para que el admin regrese a la misma seccion que estaba usando
+        // Determina la redirección según el contexto de la vista.
         String vista = req.getParameter("vista");
         String redirect = "pendientes".equals(vista)
                 ? "ServletUsuario?accion=pendientes&status=success"
                 : "ServletUsuario?status=success";
-        res.sendRedirect(redirect);
+        res.sendRedirect(redirect); // Ejecuta redirección.
     }
 }

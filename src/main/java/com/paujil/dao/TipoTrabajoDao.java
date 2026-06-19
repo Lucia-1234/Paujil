@@ -1,89 +1,84 @@
-package com.paujil.dao;
+package com.paujil.dao; // Define el paquete del DAO de tipos de trabajo.
 
-import com.paujil.modelo.tipoTrabajo;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import paujil.basedatos.clase_Conexion;
+import com.paujil.modelo.tipoTrabajo; // Importa el modelo de datos.
+import java.sql.*; // Importa la API JDBC.
+import java.util.ArrayList; // Importa la lista dinámica.
+import java.util.List; // Importa la interfaz List.
+import paujil.basedatos.clase_Conexion; // Importa el conector a la BD.
 
-public class TipoTrabajoDao {
+public class TipoTrabajoDao { // Clase DAO para gestión de tipos de trabajo.
 
-    public List<tipoTrabajo> listarTipos() {
-        List<tipoTrabajo> lista = new ArrayList<>();
-        String sql = "SELECT * FROM tipos_trabajo";
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                tipoTrabajo tipo = new tipoTrabajo();
-                tipo.setIdTipoTrabajo(rs.getInt("id_tipo_trabajo"));
-                tipo.setNombreTipo(rs.getString("nombre_tipo"));
-                lista.add(tipo);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return lista;
-    }
+    // Método para listar todos los tipos registrados.
+    public List<tipoTrabajo> listarTipos() { // Inicio método listar.
+        List<tipoTrabajo> lista = new ArrayList<>(); // Inicializa la lista.
+        String sql = "SELECT * FROM tipos_trabajo"; // Query de selección.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta a BD.
+             PreparedStatement ps = con.prepareStatement(sql); // Prepara sentencia.
+             ResultSet rs = ps.executeQuery()) { // Ejecuta consulta.
+            while (rs.next()) { // Itera filas.
+                tipoTrabajo tipo = new tipoTrabajo(); // Crea objeto.
+                tipo.setIdTipoTrabajo(rs.getInt("id_tipo_trabajo")); // Mapea ID.
+                tipo.setNombreTipo(rs.getString("nombre_tipo")); // Mapea nombre.
+                lista.add(tipo); // Agrega a lista.
+            } // Fin while.
+        } catch (SQLException e) { // Manejo de errores.
+            e.printStackTrace(); // Imprime traza error.
+        } // Fin catch.
+        return lista; // Retorna la lista resultante.
+    } // Fin método listarTipos.
 
-    public boolean registrarTipo(String nombre) {
-        String sql = "INSERT INTO tipos_trabajo (nombre_tipo) VALUES (?)";
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, nombre.trim());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
+    // Método para registrar un nuevo tipo de trabajo.
+    public boolean registrarTipo(String nombre) { // Inicio método registrar.
+        String sql = "INSERT INTO tipos_trabajo (nombre_tipo) VALUES (?)"; // Query inserción.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara.
+            ps.setString(1, nombre.trim()); // Setea nombre limpio.
+            return ps.executeUpdate() > 0; // Ejecuta e indica éxito.
+        } catch (SQLException e) { // Manejo errores.
+            e.printStackTrace(); // Imprime traza.
+            return false; // Retorna fallo.
+        } // Fin catch.
+    } // Fin método registrarTipo.
 
-    public boolean eliminarTipo(int id) {
-        String sql = "DELETE FROM tipos_trabajo WHERE id_tipo_trabajo = ?";
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
+    // Método para eliminar un tipo de trabajo por ID.
+    public boolean eliminarTipo(int id) { // Inicio método eliminar.
+        String sql = "DELETE FROM tipos_trabajo WHERE id_tipo_trabajo = ?"; // Query borrado.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara.
+            ps.setInt(1, id); // Setea ID para borrar.
+            return ps.executeUpdate() > 0; // Ejecuta e indica éxito.
+        } catch (SQLException e) { // Manejo errores.
+            e.printStackTrace(); // Imprime traza.
+            return false; // Retorna fallo.
+        } // Fin catch.
+    } // Fin método eliminarTipo.
 
-    /**
-     * Actualiza el nombre de un tipo de trabajo existente.
-     * (Método nuevo — antes no existía, por eso "editar" no funcionaba).
-     * El UNIQUE de nombre_tipo en BD evita duplicados a nivel de motor;
-     * aquí capturamos la excepción si ocurre.
-     */
-    public boolean editarTipo(int id, String nuevoNombre) {
-        String sql = "UPDATE tipos_trabajo SET nombre_tipo = ? WHERE id_tipo_trabajo = ?";
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, nuevoNombre.trim());
-            ps.setInt(2, id);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
+    // Método para editar el nombre de un tipo existente.
+    public boolean editarTipo(int id, String nuevoNombre) { // Inicio método editar.
+        String sql = "UPDATE tipos_trabajo SET nombre_tipo = ? WHERE id_tipo_trabajo = ?"; // Query update.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara.
+            ps.setString(1, nuevoNombre.trim()); // Setea nuevo nombre.
+            ps.setInt(2, id); // Setea ID para filtrar.
+            return ps.executeUpdate() > 0; // Ejecuta e indica éxito.
+        } catch (SQLException e) { // Manejo errores.
+            e.printStackTrace(); // Imprime traza.
+            return false; // Retorna fallo.
+        } // Fin catch.
+    } // Fin método editarTipo.
 
-    /**
-     * Cuenta cuántos trabajos usan un tipo determinado.
-     * Útil para advertir antes de eliminar (no bloquea, solo informa).
-     */
-    public int contarTrabajosPorTipo(int idTipoTrabajo) {
-        String sql = "SELECT COUNT(*) FROM trabajos WHERE id_tipo_trabajo = ?";
-        try (Connection con = clase_Conexion.MetodoConectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, idTipoTrabajo);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-}
+    // Método para contar trabajos asociados a un tipo, útil para validaciones.
+    public int contarTrabajosPorTipo(int idTipoTrabajo) { // Inicio método contar.
+        String sql = "SELECT COUNT(*) FROM trabajos WHERE id_tipo_trabajo = ?"; // Query conteo.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara.
+            ps.setInt(1, idTipoTrabajo); // Setea ID para filtrar.
+            try (ResultSet rs = ps.executeQuery()) { // Ejecuta.
+                if (rs.next()) return rs.getInt(1); // Retorna contador.
+            } // Fin try-with-resources rs.
+        } catch (SQLException e) { // Manejo errores.
+            e.printStackTrace(); // Imprime traza.
+        } // Fin catch.
+        return 0; // Retorna 0 por defecto.
+    } // Fin método contarTrabajosPorTipo.
+} // Fin clase TipoTrabajoDao.

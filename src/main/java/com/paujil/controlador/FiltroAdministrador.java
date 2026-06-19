@@ -1,43 +1,38 @@
-package com.paujil.controlador;
+package com.paujil.controlador; // Define el paquete del controlador.
 
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import jakarta.servlet.annotation.WebFilter;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
+import jakarta.servlet.Filter; // Interfaz para filtros.
+import jakarta.servlet.FilterChain; // Cadena de ejecución.
+import jakarta.servlet.ServletException; // Excepción de servlet.
+import jakarta.servlet.ServletRequest; // Solicitud genérica.
+import jakarta.servlet.ServletResponse; // Respuesta genérica.
+import jakarta.servlet.annotation.WebFilter; // Anotación para mapeo.
+import jakarta.servlet.http.HttpServletRequest; // Solicitud HTTP específica.
+import jakarta.servlet.http.HttpServletResponse; // Respuesta HTTP específica.
+import jakarta.servlet.http.HttpSession; // Gestión de sesión.
+import java.io.IOException; // Manejo de E/S.
 
-// Intercepta todas las rutas de administrador antes de que el servlet las procese
-@WebFilter({"/templates/administrador/*", "/GestionarRoles"})
-public class FiltroAdministrador implements Filter {
+// Filtro que intercepta rutas administrativas y gestores de roles.
+@WebFilter({"/templates/administrador/*", "/GestionarRoles"}) 
+public class FiltroAdministrador implements Filter { // Implementa interfaz Filter.
 
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+    @Override // Sobrescribe doFilter.
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        
+        // Conversión a tipos HTTP para acceder a la sesión.
+        HttpServletRequest req = (HttpServletRequest) request; 
+        HttpServletResponse res = (HttpServletResponse) response; 
 
-        // Downcast necesario para acceder a metodos HTTP especificos como getSession() y getContextPath()
-        HttpServletRequest req = (HttpServletRequest) request;
-        HttpServletResponse res = (HttpServletResponse) response;
+        // Obtiene sesión existente (sin crear una nueva).
+        HttpSession session = req.getSession(false); 
 
-        // false evita crear una sesion nueva si no existe, una sesion ausente implica usuario no autenticado
-        HttpSession session = req.getSession(false);
+        // Verifica si la sesión no es nula y el rol corresponde a 'administrador'.
+        boolean esAdmin = (session != null && "administrador".equalsIgnoreCase((String) session.getAttribute("rolUsuario"))); 
 
-        // Valida simultaneamente que haya sesion activa y que el rol almacenado sea "administrador"
-        // equalsIgnoreCase protege contra variaciones de capitalizacion en el valor del atributo
-        boolean esAdmin = (session != null
-                && "administrador".equalsIgnoreCase((String) session.getAttribute("rolUsuario")));
-
-        if (esAdmin) {
-            // El usuario tiene privilegios suficientes, pasa el control al siguiente filtro o servlet destino
-            chain.doFilter(request, response);
-        } else {
-            // Redirige al login con un parametro de error que la vista puede usar para mostrar un mensaje contextual
-            // getContextPath() garantiza que la ruta sea correcta independientemente del contexto de despliegue
-            res.sendRedirect(req.getContextPath() + "/templates/login.jsp?error=acceso_denegado");
-        }
-    }
-}
+        if (esAdmin) { // Si el acceso es válido.
+            chain.doFilter(request, response); // Permite continuar la petición.
+        } else { // Si el acceso es denegado.
+            // Redirige al login.
+            res.sendRedirect(req.getContextPath() + "/templates/login.jsp?error=acceso_denegado"); 
+        } // Fin if-else.
+    } // Fin doFilter.
+} // Fin clase.

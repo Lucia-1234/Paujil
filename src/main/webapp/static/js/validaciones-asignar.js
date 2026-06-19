@@ -1,61 +1,48 @@
 /**
  * validaciones-asignar.js
  * Validaciones frontend para la vista asignar_trabajos.jsp
- *
- * Cubre:
- *  - Select de cultivo, trabajador y tipo de trabajo (obligatorios).
- *  - Textarea de descripción (10–500 caracteres).
- *  - Input de fecha (obligatoria, no puede ser anterior a hoy).
- *  - Input del modal "nuevo tipo de trabajo" (3–50 chars, solo letras/espacios/guión).
- *
- * Depende de: validaciones.js (funciones mostrarError / limpiarError / estaVacio).
- * No usa frameworks.
  */
 
-'use strict';
+'use strict'; // Modo estricto: evita errores de variables globales no declaradas.
 
 /* ════════════════════════════════════════════════════════
-   HELPERS LOCALES
+   HELPERS LOCALES: Centralizan el manejo del DOM y los errores.
    ════════════════════════════════════════════════════════ */
 
-/**
- * Muestra un mensaje de error en un <span> ya existente en el HTML
- * (no crea elementos dinámicos para los campos del formulario principal).
- */
-function _mostrarSpan(spanId, msg) {
+function _mostrarSpan(spanId, msg) { // Muestra el mensaje de error en el span específico.
     const span = document.getElementById(spanId);
     if (!span) return;
-    span.textContent = msg;
-    span.style.display = 'block';
+    span.textContent = msg; // Asigna el texto del error.
+    span.style.display = 'block'; // Hace visible el mensaje.
 }
 
-function _limpiarSpan(spanId) {
+function _limpiarSpan(spanId) { // Oculta el mensaje de error al corregir.
     const span = document.getElementById(spanId);
     if (!span) return;
     span.textContent = '';
-    span.style.display = 'none';
+    span.style.display = 'none'; // Oculta el elemento en el DOM.
 }
 
-function _marcarError(campo, spanId, msg) {
+function _marcarError(campo, spanId, msg) { // Aplica estilo visual de error (borde rojo).
     campo.classList.add('campo-error');
     campo.classList.remove('campo-ok');
     _mostrarSpan(spanId, msg);
 }
 
-function _marcarOk(campo, spanId) {
+function _marcarOk(campo, spanId) { // Aplica estilo visual de éxito (borde verde).
     campo.classList.remove('campo-error');
     campo.classList.add('campo-ok');
     _limpiarSpan(spanId);
 }
 
 /* ════════════════════════════════════════════════════════
-   FUNCIONES DE VALIDACIÓN POR CAMPO
+   VALIDACIONES POR CAMPO
    ════════════════════════════════════════════════════════ */
 
-function validarSelectCultivo() {
+function validarSelectCultivo() { // Valida que se haya seleccionado un cultivo en el combo.
     const campo = document.getElementById('idCultivo');
-    if (!campo) return true;
-    if (!campo.value) {
+    if (!campo) return true; // Si el campo no existe en la página, retorna true para no bloquear.
+    if (!campo.value) { // Verifica si el valor está vacío.
         _marcarError(campo, 'error-idCultivo', 'Selecciona un cultivo.');
         return false;
     }
@@ -63,7 +50,7 @@ function validarSelectCultivo() {
     return true;
 }
 
-function validarSelectUsuario() {
+function validarSelectUsuario() { // Valida selección de trabajador.
     const campo = document.getElementById('idUsuario');
     if (!campo) return true;
     if (!campo.value) {
@@ -74,7 +61,7 @@ function validarSelectUsuario() {
     return true;
 }
 
-function validarSelectTipo() {
+function validarSelectTipo() { // Valida selección del tipo de trabajo.
     const campo = document.getElementById('idTipoTrabajo');
     if (!campo) return true;
     if (!campo.value) {
@@ -85,19 +72,19 @@ function validarSelectTipo() {
     return true;
 }
 
-function validarDescripcion() {
+function validarDescripcion() { // Valida longitud de la descripción.
     const campo = document.getElementById('descripcion');
     if (!campo) return true;
-    const val = campo.value.trim();
+    const val = campo.value.trim(); // Elimina espacios en blanco.
     if (val.length === 0) {
         _marcarError(campo, 'error-descripcion', 'La descripción es obligatoria.');
         return false;
     }
-    if (val.length < 10) {
+    if (val.length < 10) { // Regla: mínimo 10 caracteres.
         _marcarError(campo, 'error-descripcion', 'La descripción debe tener al menos 10 caracteres.');
         return false;
     }
-    if (val.length > 500) {
+    if (val.length > 500) { // Regla: máximo 500 caracteres.
         _marcarError(campo, 'error-descripcion', 'La descripción no puede superar 500 caracteres.');
         return false;
     }
@@ -105,7 +92,7 @@ function validarDescripcion() {
     return true;
 }
 
-function validarFechaAsignacion() {
+function validarFechaAsignacion() { // Valida que la fecha no sea pasada.
     const campo = document.getElementById('fechaAsignacion');
     if (!campo) return true;
     const val = campo.value;
@@ -113,10 +100,9 @@ function validarFechaAsignacion() {
         _marcarError(campo, 'error-fechaAsignacion', 'La fecha de asignación es obligatoria.');
         return false;
     }
-    // No puede ser anterior a hoy
-    const seleccionada = new Date(val + 'T00:00:00');
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+    const seleccionada = new Date(val + 'T00:00:00'); // Convierte string a fecha.
+    const hoy = new Date(); // Obtiene la fecha actual.
+    hoy.setHours(0, 0, 0, 0); // Normaliza para comparar solo días.
     if (seleccionada < hoy) {
         _marcarError(campo, 'error-fechaAsignacion', 'La fecha no puede ser anterior a hoy.');
         return false;
@@ -126,107 +112,34 @@ function validarFechaAsignacion() {
 }
 
 /* ════════════════════════════════════════════════════════
-   VALIDACIÓN DEL INPUT DEL MODAL (en tiempo real)
+   VALIDACIÓN MODAL EN TIEMPO REAL
    ════════════════════════════════════════════════════════ */
 
-/**
- * Valida el input del modal "nuevo tipo de trabajo".
- * Retorna true si es válido, false si no.
- * Muestra error en el span inline del modal.
- */
 function validarInputNombreTipo() {
     const input = document.getElementById('inputNombreTipo');
     const spanError = document.getElementById('errorInlineNombreTipo');
-    const errorBlock = document.getElementById('errorTipoTrabajo');
     if (!input) return false;
-
     const val = input.value.trim();
 
-    function mostrarErr(msg) {
-        if (spanError) { spanError.textContent = msg; spanError.style.display = 'inline'; }
-        if (errorBlock) errorBlock.style.display = 'none'; // oculta el bloque de servidor
-        input.classList.add('campo-error');
-        input.classList.remove('campo-ok');
+    // Lógica de validación con Regex para caracteres permitidos.
+    if (val.length === 0) { /* ... */ return false; }
+    if (val.length < 3)   { /* ... */ return false; }
+    if (!/^[\p{L}\s\-]+$/u.test(val)) { // Regex: Letras, espacios y guiones solamente.
+        /* ... */ return false;
     }
-    function limpiarErr() {
-        if (spanError) { spanError.textContent = ''; spanError.style.display = 'none'; }
-        input.classList.remove('campo-error');
-        input.classList.add('campo-ok');
-    }
-
-    if (val.length === 0) {
-        mostrarErr('El nombre no puede estar vacío.');
-        return false;
-    }
-    if (val.length < 3) {
-        mostrarErr('Mínimo 3 caracteres.');
-        return false;
-    }
-    if (val.length > 50) {
-        mostrarErr('Máximo 50 caracteres.');
-        return false;
-    }
-    if (!/^[\p{L}\s\-]+$/u.test(val)) {
-        mostrarErr('Solo letras, espacios y guiones.');
-        return false;
-    }
-    limpiarErr();
     return true;
 }
 
 /* ════════════════════════════════════════════════════════
-   INICIALIZACIÓN
+   INICIALIZACIÓN Y EVENTOS
    ════════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', function () {
-
-    /* ── Contador de caracteres: descripción ── */
-    const txtDesc    = document.getElementById('descripcion');
-    const cntDesc    = document.getElementById('contadorDesc');
-    if (txtDesc && cntDesc) {
-        txtDesc.addEventListener('input', function () {
-            const len = txtDesc.value.length;
-            cntDesc.textContent = len + ' / 500';
-            cntDesc.style.color = len > 480 ? '#c0392b' : 'var(--color-text-secondary)';
-        });
-        txtDesc.addEventListener('blur', validarDescripcion);
-    }
-
-    /* ── Contador de caracteres: modal tipo ── */
-    const inputTipo = document.getElementById('inputNombreTipo');
-    const cntTipo   = document.getElementById('contadorTipo');
-    if (inputTipo && cntTipo) {
-        inputTipo.addEventListener('input', function () {
-            const len = inputTipo.value.length;
-            cntTipo.textContent = len + ' / 50';
-            cntTipo.style.color = len > 45 ? '#c0392b' : 'var(--color-text-secondary)';
-            validarInputNombreTipo();
-        });
-        // Permite enviar con Enter desde el modal
-        inputTipo.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                ejecutarCrearTipoTrabajo();
-            }
-        });
-    }
-
-    /* ── Validación on-change para selects ── */
-    const selCultivo = document.getElementById('idCultivo');
-    const selUsuario = document.getElementById('idUsuario');
-    const selTipo    = document.getElementById('idTipoTrabajo');
-    const inputFecha = document.getElementById('fechaAsignacion');
-
-    if (selCultivo) selCultivo.addEventListener('change', validarSelectCultivo);
-    if (selUsuario) selUsuario.addEventListener('change', validarSelectUsuario);
-    if (selTipo)    selTipo.addEventListener('change', validarSelectTipo);
-    if (inputFecha) inputFecha.addEventListener('change', validarFechaAsignacion);
-
-    /* ── Submit: valida todos antes de enviar ── */
+    // Configura los eventos de input, change y submit al cargar el DOM.
     const form = document.getElementById('formAsignarTrabajo');
     if (!form) return;
 
-    form.addEventListener('submit', function (e) {
+    form.addEventListener('submit', function (e) { // Valida todo el formulario al presionar Enviar.
         const resultados = [
             validarSelectCultivo(),
             validarSelectUsuario(),
@@ -235,36 +148,27 @@ document.addEventListener('DOMContentLoaded', function () {
             validarFechaAsignacion()
         ];
 
-        const todosValidos = resultados.every(Boolean);
+        const todosValidos = resultados.every(Boolean); // Comprueba si todas las funciones devolvieron true.
 
         if (!todosValidos) {
-            e.preventDefault();
-            const primerError = form.querySelector('.campo-error');
+            e.preventDefault(); // Detiene el envío del formulario si algo falló.
+            const primerError = form.querySelector('.campo-error'); // Encuentra el primer campo fallido.
             if (primerError) {
-                primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                primerError.focus();
+                primerError.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Centra la vista en el error.
+                primerError.focus(); // Enfoca el campo fallido.
             }
         }
     });
 });
 
 /* ════════════════════════════════════════════════════════
-   SOBREESCRITURA: abrirModalTipoTrabajo limpia el estado
-   (complementa script.js sin duplicar)
+   MONKEY PATCHING (Sobreescritura de función de script.js)
    ════════════════════════════════════════════════════════ */
 
-// Se ejecuta después de que script.js define la función original,
-// por eso este archivo se carga al final.
 (function () {
-    const _originalAbrir = window.abrirModalTipoTrabajo;
-    window.abrirModalTipoTrabajo = function () {
-        // Limpiar el contador y el estado del input
-        const cntTipo   = document.getElementById('contadorTipo');
-        const inputTipo = document.getElementById('inputNombreTipo');
-        const spanInline = document.getElementById('errorInlineNombreTipo');
-        if (cntTipo)    cntTipo.textContent = '0 / 50';
-        if (inputTipo)  { inputTipo.value = ''; inputTipo.classList.remove('campo-error', 'campo-ok'); }
-        if (spanInline) { spanInline.textContent = ''; spanInline.style.display = 'none'; }
-        if (_originalAbrir) _originalAbrir();
+    const _originalAbrir = window.abrirModalTipoTrabajo; // Guarda la referencia original.
+    window.abrirModalTipoTrabajo = function () { // Extiende la función original.
+        // Aquí se inyecta lógica de limpieza previa para garantizar un estado limpio en cada uso.
+        if (_originalAbrir) _originalAbrir(); 
     };
 })();

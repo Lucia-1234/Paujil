@@ -1,98 +1,71 @@
-package com.paujil.controlador;
+package com.paujil.controlador; // Define el paquete del controlador.
 
-import com.paujil.dao.UsuarioDao;
-import com.paujil.modelo.usuario;
-import java.io.IOException;
-import java.util.List;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import com.paujil.dao.UsuarioDao; // Importa el DAO de usuario.
+import com.paujil.modelo.usuario; // Importa el modelo de usuario.
+import java.io.IOException; // Manejo de entrada/salida.
+import java.util.List; // Importa List.
+import jakarta.servlet.ServletException; // Excepción de servlet.
+import jakarta.servlet.annotation.WebServlet; // Anotación para mapeo.
+import jakarta.servlet.http.HttpServlet; // Clase base del servlet.
+import jakarta.servlet.http.HttpServletRequest; // Solicitud HTTP.
+import jakarta.servlet.http.HttpServletResponse; // Respuesta HTTP.
+import jakarta.servlet.http.HttpSession; // Gestión de sesión.
 
-@WebServlet("/GestionarRoles")
-public class GestionarRoles extends HttpServlet {
+@WebServlet("/GestionarRoles") // Mapeo de la URL.
+public class GestionarRoles extends HttpServlet { // Servlet para gestión de roles.
 
-    // Centraliza la logica de autorizacion para no repetirla en cada handler HTTP
-    private boolean sesionAdminValida(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        // false evita crear sesion fantasma si el usuario no esta autenticado
-        HttpSession session = request.getSession(false);
-        // Triple condicion: sesion existente + usuario identificado + rol correcto
-        if (session == null
-                || session.getAttribute("idUsuario") == null
-                || !"administrador".equalsIgnoreCase((String) session.getAttribute("rolUsuario"))) {
-            response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=acceso_denegado");
-            return false;
-        }
-        return true;
-    }
+    // Método privado para validar que el usuario es administrador.
+    private boolean sesionAdminValida(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpSession session = request.getSession(false); // Obtiene sesión existente.
+        // Valida si existe sesión, ID y rol administrativo.
+        if (session == null || session.getAttribute("idUsuario") == null 
+            || !"administrador".equalsIgnoreCase((String) session.getAttribute("rolUsuario"))) {
+            response.sendRedirect(request.getContextPath() + "/templates/login.jsp?error=acceso_denegado"); // Redirige si falla.
+            return false; // Retorna acceso denegado.
+        } // Fin if.
+        return true; // Retorna acceso permitido.
+    } // Fin método validación.
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        // Cortocircuita la ejecucion si el solicitante no tiene privilegios de administrador
-        if (!sesionAdminValida(request, response)) return;
+    @Override // Sobrescribe método GET.
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        if (!sesionAdminValida(request, response)) return; // Valida sesión.
+        UsuarioDao dao = new UsuarioDao(); // Instancia DAO.
+        List<usuario> pendientes = dao.listarUsuariosPendientes(); // Obtiene pendientes.
+        request.setAttribute("usuariosPendientes", pendientes); // Pasa a la vista.
+        request.getRequestDispatcher("/templates/administrador/asignar_rol.jsp").forward(request, response); // Renderiza vista.
+    } // Fin doGet.
 
-        UsuarioDao dao = new UsuarioDao();
-        // Consulta solo usuarios en estado pendiente; los activos e inactivos se gestionan en otro servlet
-        List<usuario> pendientes = dao.listarUsuariosPendientes();
-        // Expone la lista al scope de request para que la JSP la consuma via EL o JSTL
-        request.setAttribute("usuariosPendientes", pendientes);
-        // Forward preserva la URL original en el navegador, a diferencia de sendRedirect
-        request.getRequestDispatcher("/templates/administrador/asignar_rol.jsp")
-               .forward(request, response);
-    }
+    @Override // Sobrescribe método POST.
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        if (!sesionAdminValida(request, response)) return; // Valida sesión.
+        String accion = request.getParameter("accion"); // Obtiene acción.
+        String idStr = request.getParameter("id_usuario"); // Obtiene ID.
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        if (!sesionAdminValida(request, response)) return;
-
-        String accion = request.getParameter("accion");
-        String idStr  = request.getParameter("id_usuario");
-
-        // Validacion temprana: aborta antes de tocar la BD si faltan los parametros minimos
-        if (idStr == null || idStr.trim().isEmpty()
-                || accion == null || accion.trim().isEmpty()) {
-            response.sendRedirect(request.getContextPath()
-                    + "/GestionarRoles?error=parametros_invalidos");
-            return;
-        }
+        // Valida parámetros nulos o vacíos.
+        if (idStr == null || idStr.trim().isEmpty() || accion == null || accion.trim().isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/GestionarRoles?error=parametros_invalidos"); return;
+        } // Fin validación.
 
         int idUsuario;
-        try {
-            // trim() previene que espacios en blanco rompan el parseo del entero
-            idUsuario = Integer.parseInt(idStr.trim());
-        } catch (NumberFormatException e) {
-            // Valor no numerico indica manipulacion del formulario o error del cliente
-            response.sendRedirect(request.getContextPath()
-                    + "/GestionarRoles?error=id_invalido");
-            return;
-        }
+        try { idUsuario = Integer.parseInt(idStr.trim()); } // Parsea ID.
+        catch (NumberFormatException e) { // Manejo formato erróneo.
+            response.sendRedirect(request.getContextPath() + "/GestionarRoles?error=id_invalido"); return;
+        } // Fin catch.
 
-        UsuarioDao dao = new UsuarioDao();
-        boolean ok;
+        UsuarioDao dao = new UsuarioDao(); // Instancia DAO.
+        boolean ok; // Resultado de operación.
 
-        // toLowerCase() hace la comparacion robusta frente a variaciones de capitalizacion del formulario
-        switch (accion.trim().toLowerCase()) {
-            case "aceptar":
-                // Activa la cuenta sin eliminarla; el usuario podra iniciar sesion tras esta operacion
-                ok = dao.actualizarEstado(idUsuario, "Activo");
-                response.sendRedirect(request.getContextPath()
-                        + "/GestionarRoles?status=" + (ok ? "aceptado" : "error"));
+        switch (accion.trim().toLowerCase()) { // Lógica según acción.
+            case "aceptar": // Caso aceptar.
+                ok = dao.actualizarEstado(idUsuario, "Activo"); // Cambia a Activo.
+                response.sendRedirect(request.getContextPath() + "/GestionarRoles?status=" + (ok ? "aceptado" : "error"));
                 break;
-            case "denegar":
-                // Elimina el registro por completo; el rechazo es definitivo, no un simple cambio de estado
-                ok = dao.eliminarUsuario(idUsuario);
-                response.sendRedirect(request.getContextPath()
-                        + "/GestionarRoles?status=" + (ok ? "denegado" : "error"));
+            case "denegar": // Caso denegar.
+                ok = dao.eliminarUsuario(idUsuario); // Elimina usuario.
+                response.sendRedirect(request.getContextPath() + "/GestionarRoles?status=" + (ok ? "denegado" : "error"));
                 break;
-            default:
-                // Protege contra valores de accion arbitrarios enviados fuera del formulario
-                response.sendRedirect(request.getContextPath()
-                        + "/GestionarRoles?error=accion_invalida");
-        }
-    }
-}
+            default: // Caso error.
+                response.sendRedirect(request.getContextPath() + "/GestionarRoles?error=accion_invalida");
+        } // Fin switch.
+    } // Fin doPost.
+} // Fin clase.

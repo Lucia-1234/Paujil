@@ -1,35 +1,32 @@
-package com.paujil.modelo;
+package com.paujil.modelo; // Define el paquete del modelo.
 
-public enum Rol {
+public enum Rol { // Definición del tipo enumerado para roles de usuario.
 
-    // idBd debe coincidir exactamente con los valores de la tabla 'roles' en BD
-    TRABAJADOR(1, "trabajador"),
-    ADMINISTRADOR(2, "administrador");
+    TRABAJADOR(1, "trabajador"), // Constante TRABAJADOR con ID 1 y nombre técnico.
+    ADMINISTRADOR(2, "administrador"); // Constante ADMINISTRADOR con ID 2 y nombre técnico.
 
-    // idBd es la clave foranea que se inserta en usuario_rol al registrar un usuario
-    private final int idBd;
-    // nombre es el string que llega del formulario de registro y se compara en desde()
-    private final String nombre;
+    private final int idBd; // Campo privado para el ID en base de datos.
+    private final String nombre; // Campo privado para el nombre del rol.
 
-    // Constructor vincula cada constante con su ID de BD y su representacion textual
-    Rol(int idBd, String nombre) {
-        this.idBd   = idBd;
-        this.nombre = nombre;
-    }
+    // Constructor que vincula los atributos al enum.
+    Rol(int idBd, String nombre) { // Inicio constructor.
+        this.idBd = idBd; // Asignación de ID.
+        this.nombre = nombre; // Asignación de nombre.
+    } // Fin constructor.
 
-    // Usado por el DAO para insertar la clave foranea sin hardcodear el entero en el servlet
-    public int getIdBd()      { return idBd; }
+    // Método para obtener el ID de la base de datos.
+    public int getIdBd() { return idBd; } // Retorna el entero de ID.
 
-    // Permite mostrar el nombre del rol en la vista sin exponer la constante del enum directamente
-    public String getNombre() { return nombre; }
+    // Método para obtener el nombre del rol.
+    public String getNombre() { return nombre; } // Retorna el nombre string.
 
-    // Convierte el string del formulario al enum; centraliza el parseo para no repetirlo en cada servlet
-    public static Rol desde(String nombre) {
-        for (Rol r : values()) {
-            // equalsIgnoreCase tolera variaciones de capitalizacion enviadas desde el formulario
-            if (r.nombre.equalsIgnoreCase(nombre)) return r;
-        }
-        // Excepcion explicita obliga al caller a manejar roles desconocidos en lugar de recibir null
-        throw new IllegalArgumentException("Rol invalido: " + nombre);
-    }
-}
+    // Método estático para convertir un string al enum correspondiente.
+    public static Rol desde(String nombre) { // Inicio método parseo.
+        for (Rol r : values()) { // Itera sobre los roles registrados.
+            // Compara ignorando mayúsculas/minúsculas.
+            if (r.nombre.equalsIgnoreCase(nombre)) return r; // Si coincide, retorna rol.
+        } // Fin for.
+        // Lanza excepción si el rol no es válido.
+        throw new IllegalArgumentException("Rol invalido: " + nombre); // Error de argumento.
+    } // Fin método desde.
+} // Fin clase.

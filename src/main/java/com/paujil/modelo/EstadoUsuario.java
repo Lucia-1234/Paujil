@@ -1,27 +1,26 @@
-package com.paujil.modelo;
+package com.paujil.modelo; // Define el paquete del modelo.
 
-public enum EstadoUsuario {
+public enum EstadoUsuario { // Definición del tipo enumerado para estados.
 
-    // Cada constante encapsula el string exacto que se almacena en la columna estado_usuario de BD
-    ACTIVO("Activo"),
-    INACTIVO("Inactivo"),
-    PENDIENTE("Pendiente");
+    ACTIVO("Activo"), // Constante para estado Activo con valor string.
+    INACTIVO("Inactivo"), // Constante para estado Inactivo con valor string.
+    PENDIENTE("Pendiente"); // Constante para estado Pendiente con valor string.
 
-    private final String valor;
+    private final String valor; // Atributo privado para el valor de BD.
 
-    // Constructor asocia cada constante del enum con su representacion en BD
-    EstadoUsuario(String valor) { this.valor = valor; }
+    // Constructor que asocia el valor de BD al enum.
+    EstadoUsuario(String valor) { this.valor = valor; } // Asignación de valor.
 
-    // Expone el string de BD para usarlo en consultas SQL y comparaciones sin hardcodear literales
-    public String getValor() { return valor; }
+    // Método para obtener el valor string del enum.
+    public String getValor() { return valor; } // Retorna el valor string.
 
-    // Convierte un string arbitrario al enum correspondiente; centraliza el parseo para evitar repetirlo
-    public static EstadoUsuario desde(String valor) {
-        for (EstadoUsuario e : values()) {
-            // equalsIgnoreCase tolera variaciones de capitalizacion en el valor recibido del formulario o BD
-            if (e.valor.equalsIgnoreCase(valor)) return e;
-        }
-        // Excepcion explicita en lugar de retornar null; obliga al caller a manejar valores invalidos
-        throw new IllegalArgumentException("Estado invalido: " + valor);
-    }
-}
+    // Método estático para convertir un string al enum correspondiente.
+    public static EstadoUsuario desde(String valor) { // Inicio método parseo.
+        for (EstadoUsuario e : values()) { // Itera sobre los valores del enum.
+            // Compara ignorando mayúsculas/minúsculas.
+            if (e.valor.equalsIgnoreCase(valor)) return e; // Si coincide, retorna el enum.
+        } // Fin for.
+        // Lanza excepción si el valor no existe en el enum.
+        throw new IllegalArgumentException("Estado invalido: " + valor); // Error de argumento.
+    } // Fin método desde.
+} // Fin clase.

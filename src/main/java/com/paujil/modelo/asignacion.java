@@ -1,75 +1,70 @@
-package com.paujil.modelo;
+package com.paujil.modelo; // Define el paquete del modelo.
 
-import java.sql.Date;
+import java.sql.Date; // Importa clase Date para fechas SQL.
 
-public class asignacion {
+public class asignacion { // Clase modelo para la entidad Asignación.
 
-    private int    id;
-    private int    idTrabajo;
-    private int    idCultivo;
-    private int    idUsuario;
-    private Date   fechaAsignacion;
-    private Date   fechaInicio;
-    private Date   fechaFinalizacion;
-    private String estadoTrabajo;
-    private String observaciones;
+    private int id; // ID único de la asignación.
+    private int idTrabajo; // Clave foránea hacia Trabajos.
+    private int idCultivo; // Clave foránea hacia Cultivos.
+    private int idUsuario; // Clave foránea hacia Usuarios.
+    private Date fechaAsignacion; // Fecha en que se asignó.
+    private Date fechaInicio; // Fecha real de inicio.
+    private Date fechaFinalizacion; // Fecha de finalización.
+    private String estadoTrabajo; // Estado actual (Pendiente, etc).
+    private String observaciones; // Notas adicionales.
 
-    // Campos de solo lectura, llenados por JOIN
-    // nombreTrabajo eliminado: la columna nombre_trabajo ya no existe en BD.
-    // El identificador visible del trabajo ahora es nombreTipoTrabajo
-    // (y, si se necesita más detalle, descripcionTrabajo).
-    private String descripcionTrabajo;
-    private String nombreCultivo;
-    private String nombreUsuario;
-    private String nombreTipoTrabajo;
+    private String descripcionTrabajo; // Campo leído vía JOIN.
+    private String nombreCultivo; // Campo leído vía JOIN.
+    private String nombreUsuario; // Campo leído vía JOIN.
+    private String nombreTipoTrabajo; // Campo leído vía JOIN.
 
-    public asignacion() {}
+    public asignacion() {} // Constructor vacío para instanciación.
 
-    // Constructor para crear una asignación nueva (estado por defecto: Pendiente)
-    public asignacion(int idTrabajo, int idCultivo, int idUsuario, Date fechaAsignacion) {
-        this.idTrabajo       = idTrabajo;
-        this.idCultivo       = idCultivo;
-        this.idUsuario       = idUsuario;
-        this.fechaAsignacion = fechaAsignacion;
-    }
+    // Constructor para inicializar una nueva asignación.
+    public asignacion(int idTrabajo, int idCultivo, int idUsuario, Date fechaAsignacion) { // Constructor parámetros.
+        this.idTrabajo = idTrabajo; // Asigna idTrabajo.
+        this.idCultivo = idCultivo; // Asigna idCultivo.
+        this.idUsuario = idUsuario; // Asigna idUsuario.
+        this.fechaAsignacion = fechaAsignacion; // Asigna fecha.
+    } // Fin constructor.
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public int getId() { return id; } // Getter ID.
+    public void setId(int id) { this.id = id; } // Setter ID.
 
-    public int getIdTrabajo() { return idTrabajo; }
-    public void setIdTrabajo(int idTrabajo) { this.idTrabajo = idTrabajo; }
+    public int getIdTrabajo() { return idTrabajo; } // Getter idTrabajo.
+    public void setIdTrabajo(int idTrabajo) { this.idTrabajo = idTrabajo; } // Setter idTrabajo.
 
-    public int getIdCultivo() { return idCultivo; }
-    public void setIdCultivo(int idCultivo) { this.idCultivo = idCultivo; }
+    public int getIdCultivo() { return idCultivo; } // Getter idCultivo.
+    public void setIdCultivo(int idCultivo) { this.idCultivo = idCultivo; } // Setter idCultivo.
 
-    public int getIdUsuario() { return idUsuario; }
-    public void setIdUsuario(int idUsuario) { this.idUsuario = idUsuario; }
+    public int getIdUsuario() { return idUsuario; } // Getter idUsuario.
+    public void setIdUsuario(int idUsuario) { this.idUsuario = idUsuario; } // Setter idUsuario.
 
-    public Date getFechaAsignacion() { return fechaAsignacion; }
-    public void setFechaAsignacion(Date fechaAsignacion) { this.fechaAsignacion = fechaAsignacion; }
+    public Date getFechaAsignacion() { return fechaAsignacion; } // Getter fechaAsignacion.
+    public void setFechaAsignacion(Date fechaAsignacion) { this.fechaAsignacion = fechaAsignacion; } // Setter.
 
-    public Date getFechaInicio() { return fechaInicio; }
-    public void setFechaInicio(Date fechaInicio) { this.fechaInicio = fechaInicio; }
+    public Date getFechaInicio() { return fechaInicio; } // Getter fechaInicio.
+    public void setFechaInicio(Date fechaInicio) { this.fechaInicio = fechaInicio; } // Setter.
 
-    public Date getFechaFinalizacion() { return fechaFinalizacion; }
-    public void setFechaFinalizacion(Date fechaFinalizacion) { this.fechaFinalizacion = fechaFinalizacion; }
+    public Date getFechaFinalizacion() { return fechaFinalizacion; } // Getter fechaFinalizacion.
+    public void setFechaFinalizacion(Date fechaFinalizacion) { this.fechaFinalizacion = fechaFinalizacion; } // Setter.
 
-    public String getEstadoTrabajo() { return estadoTrabajo; }
-    public void setEstadoTrabajo(String estadoTrabajo) { this.estadoTrabajo = estadoTrabajo; }
+    public String getEstadoTrabajo() { return estadoTrabajo; } // Getter estado.
+    public void setEstadoTrabajo(String estadoTrabajo) { this.estadoTrabajo = estadoTrabajo; } // Setter.
 
-    public String getObservaciones() { return observaciones; }
-    public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+    public String getObservaciones() { return observaciones; } // Getter obs.
+    public void setObservaciones(String observaciones) { this.observaciones = observaciones; } // Setter.
 
-    // Solo lectura (JOINs)
-    public String getDescripcionTrabajo() { return descripcionTrabajo; }
-    public void setDescripcionTrabajo(String descripcionTrabajo) { this.descripcionTrabajo = descripcionTrabajo; }
+    public String getDescripcionTrabajo() { return descripcionTrabajo; } // Getter descTrabajo.
+    public void setDescripcionTrabajo(String descripcionTrabajo) { this.descripcionTrabajo = descripcionTrabajo; } // Setter.
 
-    public String getNombreCultivo() { return nombreCultivo; }
-    public void setNombreCultivo(String nombreCultivo) { this.nombreCultivo = nombreCultivo; }
+    public String getNombreCultivo() { return nombreCultivo; } // Getter nombreCultivo.
+    public void setNombreCultivo(String nombreCultivo) { this.nombreCultivo = nombreCultivo; } // Setter.
 
-    public String getNombreUsuario() { return nombreUsuario; }
-    public void setNombreUsuario(String nombreUsuario) { this.nombreUsuario = nombreUsuario; }
+    public String getNombreUsuario() { return nombreUsuario; } // Getter nombreUsuario.
+    public void setNombreUsuario(String nombreUsuario) { this.nombreUsuario = nombreUsuario; } // Setter.
 
-    public String getNombreTipoTrabajo() { return nombreTipoTrabajo; }
-    public void setNombreTipoTrabajo(String nombreTipoTrabajo) { this.nombreTipoTrabajo = nombreTipoTrabajo; }
-}
+    public String getNombreTipoTrabajo() { return nombreTipoTrabajo; } // Getter nombreTipo.
+    public void setNombreTipoTrabajo(String nombreTipoTrabajo) { this.nombreTipoTrabajo = nombreTipoTrabajo; } // Setter.
+} // Fin clase.
