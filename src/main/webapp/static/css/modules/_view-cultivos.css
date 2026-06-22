@@ -35,111 +35,86 @@
 
 
 /* ==========================================================================
-   HISTORIAL DE CULTIVOS — panel expandible y tabla interna
+   LOTES — etiquetas en la tarjeta de cultivo y checkboxes en el formulario
    ========================================================================== */
 
-.history-panel {
+/* Línea de etiquetas de lotes dentro de cada crop-card */
+.crop-card__lots {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Etiqueta individual de lote (pill) */
+.lot-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
     background: var(--color-light-green-bg);
     border: 1px solid #b2ddc0;
-    border-radius: var(--radius-card);
-    margin: -4px 0 var(--spacing-md) 0;
-    overflow: hidden;
-    animation: slideDown var(--transition-base);
-}
-
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-6px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.history-content {
-    padding: var(--spacing-md);
-}
-
-/* Tabla interna */
-.history-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: var(--font-size-sm);
-    font-family: var(--font-base);
-}
-
-.history-table thead tr {
-    border-bottom: 2px solid #b2ddc0;
-}
-
-.history-table th {
-    text-align: left;
-    padding: 8px 12px;
-    font-weight: 600;
     color: var(--color-dark-green);
-    white-space: nowrap;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: 1.6;
 }
 
-.history-table td {
-    padding: 8px 12px;
-    color: var(--color-text-primary);
-    vertical-align: top;
-    border-bottom: 1px solid var(--color-border-light);
+/* Variante cuando el cultivo no tiene ningún lote asignado */
+.lot-tag--empty {
+    background: transparent;
+    border: 1px dashed var(--color-border-light);
+    color: var(--color-text-secondary);
+    font-weight: 400;
 }
 
-.history-table tbody tr:last-child td {
-    border-bottom: none;
+/* Contenedor de checkboxes de lote dentro del modal de agregar/editar cultivo */
+.lot-checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
 }
 
-.history-table tbody tr:hover {
-    background: rgba(27, 158, 73, 0.06);
+/* Cada checkbox individual de lote, dentro del grupo */
+.lot-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+    color: var(--color-white);
+    margin: 0;
+    cursor: pointer;
 }
 
-/* ── Botón historial ─────────────────────────────────────────────────────── */
+.lot-checkbox input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    accent-color: var(--color-brand-green);
+}
 
-.btn--history {
+.btn--lotes {
     display: inline-flex;
     align-items: center;
-    gap: var(--spacing-xs);
-    padding: 6px 14px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-brand-green);
-    background: transparent;
-    color: var(--color-brand-green);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-base);
-    cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.btn--history:hover {
-    background: var(--color-brand-green);
-    color: var(--color-white);
-}
-
-.btn--history--active {
-    background: var(--color-brand-green);
-    color: var(--color-white);
-}
-
-.btn--history--active:hover {
-    background: var(--color-dark-green);
-    border-color: var(--color-dark-green);
-}
-
-/* ── Modal de registro histórico ─────────────────────────────────────────── */
-
-#modalRegistro label {
-    display: block;
-    font-size: var(--font-size-sm);
+    gap: 6px;
+    padding: 8px 16px;
+    background-color: var(--color-brand-green);
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.9rem;
     font-weight: 600;
-    color: var(--color-white);
-    margin-bottom: 4px;
-    margin-top: var(--spacing-sm);
+    transition: opacity 0.2s;
 }
 
-#modalRegistro textarea,
-#modalRegistro input[type="date"] {
-    width: 100%;
-    padding: 8px 10px;
-    border: none;
-    border-radius: var(--radius-sm);
+.btn--lotes:hover {
+    opacity: 0.85;
 }
-
-

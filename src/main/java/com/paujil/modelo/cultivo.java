@@ -1,37 +1,44 @@
-package com.paujil.modelo; // Define el paquete del modelo.
+package com.paujil.modelo;
 
-import java.sql.Date; // Importa clase Date para fechas SQL.
+import java.sql.Date;
 
-public class cultivo { // Clase modelo para la entidad Cultivo.
+public class cultivo {
 
-    private int idCultivo; // ID primario del cultivo.
-    private String nombreCultivo; // Nombre descriptivo del cultivo.
-    private String tipoCultivo; // Clasificación del cultivo.
-    private Date fechaSiembra; // Fecha de inicio del ciclo.
-    private Date fechaCosecha; // Fecha de fin del ciclo.
+    private int idCultivo;
+    private String nombreCultivo;
+    private String tipoCultivo;
+    private Date fechaSiembra;
+    private Date fechaCosecha;
+    private int idLote; // NUEVO: Campo para establecer la relación 1:N
 
-    public cultivo() {} // Constructor vacío para instanciación.
+    public cultivo() {}
 
-    // Constructor con campos esenciales para creación.
-    public cultivo(String nombreCultivo, String tipoCultivo, Date fechaSiembra, Date fechaCosecha) { // Constructor.
-        this.nombreCultivo = nombreCultivo; // Asigna nombre.
-        this.tipoCultivo = tipoCultivo; // Asigna tipo.
-        this.fechaSiembra = fechaSiembra; // Asigna siembra.
-        this.fechaCosecha = fechaCosecha; // Asigna cosecha.
-    } // Fin constructor.
+    // Constructor actualizado que incluye idLote
+    public cultivo(String nombreCultivo, String tipoCultivo, Date fechaSiembra, Date fechaCosecha, int idLote) {
+        this.nombreCultivo = nombreCultivo;
+        this.tipoCultivo = tipoCultivo;
+        this.fechaSiembra = fechaSiembra;
+        this.fechaCosecha = fechaCosecha;
+        this.idLote = idLote;
+    }
 
-    public int getIdCultivo() { return idCultivo; } // Getter idCultivo.
-    public void setIdCultivo(int idCultivo) { this.idCultivo = idCultivo; } // Setter idCultivo.
+    // Getters y Setters
+    public int getIdCultivo() { return idCultivo; }
+    public void setIdCultivo(int idCultivo) { this.idCultivo = idCultivo; }
 
-    public String getNombreCultivo() { return nombreCultivo; } // Getter nombre.
-    public void setNombreCultivo(String nombreCultivo) { this.nombreCultivo = nombreCultivo; } // Setter nombre.
+    public String getNombreCultivo() { return nombreCultivo; }
+    public void setNombreCultivo(String nombreCultivo) { this.nombreCultivo = nombreCultivo; }
 
-    public String getTipoCultivo() { return tipoCultivo; } // Getter tipo.
-    public void setTipoCultivo(String tipoCultivo) { this.tipoCultivo = tipoCultivo; } // Setter tipo.
+    public String getTipoCultivo() { return tipoCultivo; }
+    public void setTipoCultivo(String tipoCultivo) { this.tipoCultivo = tipoCultivo; }
 
-    public Date getFechaSiembra() { return fechaSiembra; } // Getter fechaSiembra.
-    public void setFechaSiembra(Date fechaSiembra) { this.fechaSiembra = fechaSiembra; } // Setter siembra.
+    public Date getFechaSiembra() { return fechaSiembra; }
+    public void setFechaSiembra(Date fechaSiembra) { this.fechaSiembra = fechaSiembra; }
 
-    public Date getFechaCosecha() { return fechaCosecha; } // Getter fechaCosecha.
-    public void setFechaCosecha(Date fechaCosecha) { this.fechaCosecha = fechaCosecha; } // Setter cosecha.
-} // Fin clase.
+    public Date getFechaCosecha() { return fechaCosecha; }
+    public void setFechaCosecha(Date fechaCosecha) { this.fechaCosecha = fechaCosecha; }
+
+    // NUEVO: Métodos para manejar el idLote
+    public int getIdLote() { return idLote; }
+    public void setIdLote(int idLote) { this.idLote = idLote; }
+}

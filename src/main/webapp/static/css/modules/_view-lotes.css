@@ -1,0 +1,99 @@
+/* ==========================================================================
+   MÓDULO DE VISTA: _view-lotes.css
+   Vista: lotes.jsp
+   Extiende _cards.css y _layout.css con estilos específicos de la vista
+   de lotes. Sigue el mismo patrón que _view-cultivos.css.
+   ========================================================================== */
+
+/* ==========================================================================
+   LISTADO DE LOTES
+   ========================================================================== */
+
+/* Contenedor principal de la lista de lotes, mismo rol que .crop-list */
+.lot-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+}
+
+/* Pie del listado: contiene el botón "Agregar lote" */
+.lot-list__footer {
+    display: flex;
+    justify-content: center;
+    padding-top: var(--spacing-sm);
+}
+
+/* ==========================================================================
+   TARJETA DE LOTE
+   ========================================================================== */
+
+.lot-card {
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-card);
+    padding: var(--spacing-md);
+    transition: box-shadow var(--transition-fast);
+}
+
+.lot-card:hover {
+    box-shadow: var(--shadow-card-hover);
+}
+
+/* Fila interna: ícono | nombre | acciones */
+.lot-card__content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+/* Ícono decorativo de mapa/lote */
+.lot-card__icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--color-light-green-bg);
+    color: var(--color-brand-green);
+    font-size: 1.1rem;
+}
+
+/* Bloque de texto (nombre del lote) — crece para ocupar el espacio disponible */
+.lot-card__info {
+    flex: 1;
+    min-width: 0; /* Evita desbordamiento en textos largos */
+}
+
+.lot-card__title {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Grupo de botones Editar / Eliminar */
+.lot-card__actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   MODAL DE LOTE — overrides puntuales sobre los estilos base de modal
+   ========================================================================== */
+
+/* Subtexto de advertencia dentro del modal de confirmación de eliminación */
+.confirm-modal__subtext {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin-top: -8px;
+    margin-bottom: var(--spacing-sm);
+    padding: 0 var(--spacing-md);
+}

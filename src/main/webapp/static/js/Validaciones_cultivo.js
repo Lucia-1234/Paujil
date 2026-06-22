@@ -249,13 +249,15 @@ function enfocarPrimerError(form) {
 }
 
 function limpiarEstadosForm(form) {
-    form.querySelectorAll('.campo-error, .campo-ok').forEach(el => { // Itera sobre inputs marcados.
-        el.classList.remove('campo-error', 'campo-ok'); // Quita clases.
-        el.removeAttribute('aria-invalid'); // Quita estado.
+    form.querySelectorAll('.campo-error, .campo-ok').forEach(el => {
+        el.classList.remove('campo-error', 'campo-ok');
+        el.removeAttribute('aria-invalid');
     });
-    form.querySelectorAll('.mensaje-error, .error-fecha').forEach(span => { // Itera sobre mensajes error.
-        span.textContent = ''; // Limpia texto.
-        span.style.display = 'none'; // Oculta span.
+
+    // AÑADE 'feedback-message' a la lista de exclusión (el :not)
+    form.querySelectorAll('.mensaje-error:not(.feedback-message), .error-fecha:not(.feedback-message)').forEach(span => {
+        span.textContent = '';
+        span.style.display = 'none';
     });
 }
 

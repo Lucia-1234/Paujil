@@ -39,63 +39,73 @@ document.addEventListener('keydown', function (e) { // Listener para la tecla ES
    2. MÓDULO: CULTIVOS — modal editar, agregar, eliminar
    ══════════════════════════════════════════════════════════════════════ */
 
-window.abrirModalAgregar = function () {
-    _setVal('editId',       ''); // Limpia el ID oculto del formulario.
-    _setVal('editNombre',   ''); // Limpia el campo nombre.
-    _setVal('editTipo',     ''); // Limpia el campo tipo.
-    _setVal('editSiembra',  ''); // Limpia fecha siembra.
-    _setVal('editCosecha',  ''); // Limpia fecha cosecha.
-    _setText('modalTitulo', 'Agregar Cultivo'); // Cambia el encabezado del modal.
+// Marca/desmarca los checkboxes de lotes dentro del fieldset "editLotes".
+// idsLotes puede venir como "1,3,5" (string del data-attribute) o como array vacío para limpiar todo.
+// Ahora gestiona un <select> en lugar de checkboxes
+function _setLoteSeleccionado(idLote) {
+    const select = document.getElementById('editLote'); // Asegúrate que tu <select> en el JSP tenga este id
+    if (!select) return;
 
-    const formCultivo = document.getElementById('formCultivo'); // Referencia al formulario.
-    if (formCultivo && typeof limpiarEstadosForm === 'function') { // Verifica existencia del form y la función global.
-        limpiarEstadosForm(formCultivo); // Limpia clases de error/éxito visuales.
+    if (idLote) {
+        select.value = idLote; // Selecciona el ID del lote recibido
+    } else {
+        select.selectedIndex = 0; // Selecciona la opción por defecto ("-- Seleccione --")
+    }
+}
+
+window.abrirModalAgregar = function () {
+    _setVal('editId',       ''); 
+    _setVal('editNombre',   ''); 
+    _setVal('editTipo',     ''); 
+    _setVal('editSiembra',  ''); 
+    _setVal('editCosecha',  ''); 
+    
+    // --- CAMBIO AQUÍ: Limpiamos el select del lote ---
+    const selectLote = document.getElementById('editLote');
+    if (selectLote) {
+        selectLote.value = ""; // Vuelve a la opción "-- Seleccione un lote --"
     }
 
-    abrirModal('modalEditar'); // Abre el modal de edición/creación.
+    _setText('modalTitulo', 'Agregar Cultivo'); 
+    
+    const formCultivo = document.getElementById('formCultivo'); 
+    if (formCultivo && typeof limpiarEstadosForm === 'function') { 
+        limpiarEstadosForm(formCultivo); 
+    }
+    abrirModal('modalEditar'); 
 };
 
-window.abrirModalEditar = function (id, nombre, tipo, siembra, cosecha) {
-    _setVal('editId',       id); // Carga ID para identificar el recurso en el servidor.
-    _setVal('editNombre',   nombre); // Carga nombre actual.
-    _setVal('editTipo',     tipo); // Carga tipo actual.
-    _setVal('editSiembra',  siembra); // Carga fecha siembra.
-    _setVal('editCosecha',  cosecha); // Carga fecha cosecha.
-    _setText('modalTitulo', 'Editar Cultivo'); // Actualiza encabezado.
-
-    const formCultivo = document.getElementById('formCultivo'); // Referencia al formulario.
-    if (formCultivo && typeof limpiarEstadosForm === 'function') { // Llama limpieza visual si existe la función.
+window.abrirModalEditar = function (id, nombre, tipo, siembra, cosecha, idLote) {
+    _setVal('editId',       id); 
+    _setVal('editNombre',   nombre); 
+    _setVal('editTipo',     tipo); 
+    _setVal('editSiembra',  siembra); 
+    _setVal('editCosecha',  cosecha); 
+    
+    // --- CAMBIO AQUÍ: Asignamos el valor directamente al select ---
+    // Asegúrate de que el id del select en tu JSP sea 'editLote'
+    _setVal('editLote', idLote); 
+    
+    _setText('modalTitulo', 'Editar Cultivo'); 
+    
+    const formCultivo = document.getElementById('formCultivo'); 
+    if (formCultivo && typeof limpiarEstadosForm === 'function') { 
         limpiarEstadosForm(formCultivo);
     }
-
-    abrirModal('modalEditar'); // Abre el modal.
+    abrirModal('modalEditar'); 
 };
 
 let _idCultivoEliminar = null; // Variable privada para almacenar el ID del cultivo a borrar.
-
 window.abrirModalEliminar = function (id) {
     _idCultivoEliminar = id; // Asigna el ID capturado.
     abrirModal('modalConfirmacion'); // Abre modal de advertencia.
 };
-
 window.ejecutarEliminacion = function () {
     if (_idCultivoEliminar) { // Verifica si hay un ID válido.
         window.location.href = (window._ctxPath || '') // Construye la URL base usando el contexto.
             + '/ServletCultivo?accion=eliminar&id=' + _idCultivoEliminar; // Redirige al Servlet.
     }
 };
-
-window.abrirModalRegistro = function (idCultivo) {
-    _setVal('regIdCultivo', idCultivo); // Establece el ID del cultivo en el formulario de labor.
-
-    const formLabor = document.getElementById('formLabor'); // Referencia al form.
-    if (formLabor && typeof limpiarEstadosForm === 'function') { // Limpia validaciones previas.
-        limpiarEstadosForm(formLabor);
-    }
-
-    abrirModal('modalRegistro'); // Abre el modal de registro.
-};
-
 
 /* ══════════════════════════════════════════════════════════════════════════
    3. MÓDULO: BIOPREPARADOS

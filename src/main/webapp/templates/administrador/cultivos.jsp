@@ -1,5 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@page import="com.paujil.modelo.cultivo, java.util.List, java.util.Map"%>
+<%@page import="com.paujil.modelo.cultivo, com.paujil.modelo.lote, java.util.List, java.util.Map"%>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -16,12 +16,10 @@
 
     <%-- Mensajes de estado del backend (operaciones completadas o errores de BD) --%>
     <% String status = request.getParameter("status"); %>
-    <% if ("success".equals(status) || "eliminado".equals(status) || "registroEliminado".equals(status)) { %>
+    <% if ("success".equals(status) || "eliminado".equals(status)) { %>
         <div class="feedback-message feedback-message--ok" role="status">
             <i class="fa-solid fa-circle-check"></i>
-            <%= "eliminado".equals(status)        ? "Cultivo eliminado correctamente."
-              : "registroEliminado".equals(status) ? "Registro eliminado correctamente."
-              :                                       "Operación realizada correctamente." %>
+            <%= "eliminado".equals(status) ? "Cultivo eliminado correctamente." : "Operación realizada correctamente." %>
         </div>
     <% } else if ("error".equals(status)) { %>
         <div class="feedback-message feedback-message--error" role="alert">
@@ -32,7 +30,7 @@
     <%-- Mensaje de error del backend (validación de seguridad que pasó el servlet) --%>
     <% String mensajeError = (String) request.getAttribute("mensajeError");
        if (mensajeError != null) { %>
-        <div class="feedback-message feedback-message--error" role="alert">
+        <div class="feedback-message feedback-message--error alerta-servidor" role="alert">
             <i class="fa-solid fa-circle-exclamation"></i> <%= mensajeError %>
         </div>
     <% } %>
@@ -43,13 +41,17 @@
             <i class="fa-solid fa-arrow-left-long"></i>
         </a>
         <h1 class="list-header__title">Gestión de Cultivos</h1>
+        <a href="${pageContext.request.contextPath}/ServletLote"
+           class="btn btn--lotes" aria-label="Ir a gestión de lotes">
+            <i class="fa-solid fa-map-location-dot"></i> Gestionar Lotes
+        </a>
     </header>
 
     <div class="panel">
         <section class="crop-list">
 <%
     List<cultivo> lista = (List<cultivo>) request.getAttribute("listaCultivos");
-    Map<Integer, Integer> contadores = (Map<Integer, Integer>) request.getAttribute("contadoresHistorial");
+    Map<Integer, List<lote>> lotesPorCultivo = (Map<Integer, List<lote>>) request.getAttribute("lotesPorCultivo");
     if (lista == null) lista = new java.util.ArrayList<>();
     if (lista.isEmpty()) {
 %>
@@ -60,10 +62,20 @@
 <%
     } else {
         for (cultivo c : lista) {
-            Integer conteo = (contadores != null) ? contadores.get(c.getIdCultivo()) : 0;
             String nomEsc  = c.getNombreCultivo().replace("'", "\\'");
             String tipoEsc = c.getTipoCultivo() != null ? c.getTipoCultivo().replace("'", "\\'") : "";
             String cosecha = c.getFechaCosecha() != null ? c.getFechaCosecha().toString() : "";
+            List<lote> lotesCultivo = (lotesPorCultivo != null) ? lotesPorCultivo.get(c.getIdCultivo()) : null;
+
+            // Construye el atributo data-lotes con los IDs separados por coma, para que el
+            // formulario de edición sepa qué checkboxes premarcar (ej: data-lotes="1,3,5").
+            StringBuilder idsLotesAttr = new StringBuilder();
+            if (lotesCultivo != null) {
+                for (int i = 0; i < lotesCultivo.size(); i++) {
+                    if (i > 0) idsLotesAttr.append(",");
+                    idsLotesAttr.append(lotesCultivo.get(i).getIdLote());
+                }
+            }
 %>
             <article class="crop-card">
                 <div class="crop-card__content">
@@ -78,44 +90,53 @@
                         <i class="fa-solid fa-basket-shopping" style="color:var(--color-brand-green);"></i>
                         Cosecha: <strong><%= !cosecha.isEmpty() ? cosecha : "Por definir" %></strong>
                     </p>
+
+                    <%-- Etiquetas de lotes asignados a este cultivo --%>
+                    <p class="crop-card__lots">
+                        <i class="fa-solid fa-map-location-dot" style="color:var(--color-brand-green);"></i>
+                        Lote: 
+                        <%
+                            // Buscamos el nombre del lote en la lista completa que pasaste desde el Servlet
+                            String nombreLote = "No asignado";
+                            List<lote> todosLosLotes = (List<lote>) request.getAttribute("catalogoLotes");
+
+                            if (todosLosLotes != null) {
+                                for (lote l : todosLosLotes) {
+                                    if (l.getIdLote() == c.getIdLote()) {
+                                        nombreLote = l.getNombreLote();
+                                        break;
+                                    }
+                                }
+                            }
+                        %>
+                        <span class="lot-tag"><%= nombreLote %></span>
+                    </p>
+
                     <div class="crop-card__actions">
-                        <button class="btn btn--history"
-                                onclick="toggleHistorial(this, '<%= c.getIdCultivo() %>')">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                            Historial (<%= conteo != null ? conteo : 0 %>)
-                        </button>
                         <button class="btn btn--edit"
-                                data-id="<%= c.getIdCultivo() %>"
-                                data-nombre="<%= nomEsc %>"
-                                data-tipo="<%= tipoEsc %>"
-                                data-siembra="<%= c.getFechaSiembra() %>"
-                                data-cosecha="<%= cosecha %>"
-                                onclick="abrirModalEditar(
-                                    this.dataset.id,
-                                    this.dataset.nombre,
-                                    this.dataset.tipo,
-                                    this.dataset.siembra,
-                                    this.dataset.cosecha)">
-                            <i class="fa-solid fa-pen"></i> Editar
-                        </button>
+                            data-id="<%= c.getIdCultivo() %>"
+                            data-nombre="<%= nomEsc %>"
+                            data-tipo="<%= tipoEsc %>"
+                            data-siembra="<%= c.getFechaSiembra() %>"
+                            data-cosecha="<%= cosecha %>"
+                            data-id-lote="<%= c.getIdLote() %>" 
+                            onclick="abrirModalEditar(
+                                this.dataset.id,
+                                this.dataset.nombre,
+                                this.dataset.tipo,
+                                this.dataset.siembra,
+                                this.dataset.cosecha,
+                                this.dataset.idLote)">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
                         <button class="btn btn--delete"
                                 data-id="<%= c.getIdCultivo() %>"
                                 onclick="abrirModalEliminar(this.dataset.id)">
                             <i class="fa-solid fa-trash"></i> Eliminar
                         </button>
-                        <button class="btn btn--add"
-                                onclick="abrirModalRegistro('<%= c.getIdCultivo() %>')">
-                            <i class="fa-solid fa-plus"></i> Agregar registro
-                        </button>
                     </div>
                 </div>
             </article>
-
-            <div id="historial-<%= c.getIdCultivo() %>" class="history-panel" style="display:none;">
-                <div id="history-content-<%= c.getIdCultivo() %>" class="history-content">
-                    <p class="no-data">Cargando...</p>
-                </div>
-            </div>
 <%
         }
     }
@@ -158,7 +179,7 @@
                    name="nombreCultivo"
                    maxlength="80"
                    aria-required="true">
-            <span id="error-editNombre" class="error-fecha" role="alert" style="display:none;"></span>  <%-- antes: comentario --%>
+            <span id="error-editNombre" class="error-fecha" role="alert" style="display:none;"></span>
 
             <label for="editTipo">Tipo</label>
             <input type="text"
@@ -172,12 +193,6 @@
                    id="editSiembra"
                    name="fechaSiembra"
                    aria-required="true">
-            <%--
-                Span de error para fecha de siembra.
-                ID = "error-editSiembra" (convención: "error-" + id del campo).
-                validaciones-cultivos.js lo busca por este ID y lo crea si no existe,
-                pero declararlo aquí evita el flash de inserción en el DOM.
-            --%>
             <span id="error-editSiembra" class="error-fecha" role="alert" style="display:none;"></span>
 
             <label for="editCosecha">Fecha de cosecha</label>
@@ -185,6 +200,22 @@
                    id="editCosecha"
                    name="fechaCosecha">
             <span id="error-editCosecha" class="error-fecha" role="alert" style="display:none;"></span>
+
+            <%-- Selección de lotes: relación muchos-a-muchos vía checkboxes con el mismo "name" --%>
+            <label for="editLote">Lote asignado *</label>
+            <select id="editLote" name="idLote" class="form-control" required>
+                <option value="">-- Seleccione un lote --</option>
+            <%
+                List<lote> catalogoLotes = (List<lote>) request.getAttribute("catalogoLotes");
+                if (catalogoLotes != null) {
+                    for (lote l : catalogoLotes) {
+            %>
+                        <option value="<%= l.getIdLote() %>"><%= l.getNombreLote() %></option>
+            <%
+                    }
+                }
+            %>
+            </select>
 
             <button type="submit" class="btn--save-form">
                 <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
@@ -208,79 +239,13 @@
     </div>
 </div>
 
-<%-- ── Modal Agregar Registro de Labor ── --%>
-<div id="modalRegistro" class="modal-overlay" style="display:none;"
-     role="dialog" aria-modal="true">
-    <div class="modal-content">
-        <button type="button" class="modal-close"
-                onclick="cerrarModal('modalRegistro')" aria-label="Cerrar">&times;</button>
-        <h2>Agregar registro de labor</h2>
-
-        <form id="formLabor"
-              action="${pageContext.request.contextPath}/ServletLabor"
-              method="POST"
-              novalidate>
-
-            <input type="hidden" id="regIdCultivo" name="idCultivo">
-
-            <label for="laborDesc" >Labor realizada *</label>
-            <textarea id="laborDesc"
-                      name="descripcionTrabajo"
-                      maxlength="1000"
-                      rows="3"
-                      aria-required="true"></textarea>
-
-            <label for="laborInicio">Fecha de inicio *</label>
-            <input type="date"
-                   id="laborInicio"
-                   name="fechaInicio"
-                   aria-required="true">
-            <%-- Span de error: id = "error-laborInicio" --%>
-            <span id="error-laborInicio" class="error-fecha" role="alert" style="display:none;"></span>
-
-            <label for="laborFin">Fecha de finalización *</label>
-            <input type="date"
-                   id="laborFin"
-                   name="fechaFinalizo"
-                   aria-required="true">
-            <%-- Span de error: id = "error-laborFin" --%>
-            <span id="error-laborFin" class="error-fecha" role="alert" style="display:none;"></span>
-
-            <label for="laborObs">Observaciones</label>
-            <textarea id="laborObs"
-                      name="observaciones"
-                      rows="2"
-                      maxlength="500"></textarea>
-
-            <button type="submit" class="btn--save-form">
-                <i class="fa-solid fa-floppy-disk"></i> Guardar registro
-            </button>
-        </form>
-    </div>
-</div>
-
-<%-- ── Modal Confirmación Eliminación Registro ── --%>
-<div id="modalConfirmacionRegistro" class="modal-overlay" style="display:none;"
-     role="dialog" aria-modal="true">
-    <div class="confirm-modal">
-        <div class="confirm-modal__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <p class="confirm-modal__text">¿Seguro que deseas<br>eliminar este registro?</p>
-        <div class="confirm-modal__actions">
-            <button type="button" class="btn btn--cancel"
-                    onclick="cerrarModal('modalConfirmacionRegistro')">Cancelar</button>
-            <button type="button" class="btn--confirm-delete"
-                    onclick="ejecutarEliminacionRegistro()">Eliminar</button>
-        </div>
-    </div>
-</div>
-
 <script>window._ctxPath = '${pageContext.request.contextPath}';</script>
 
 <%--
     Orden de carga obligatorio:
     1. validaciones.js          → funciones puras y helpers UI (base compartida)
-    2. validaciones-cultivos.js → validación de fechas y textos para cultivos/labor
-    3. script.js                → modales, historial, toggles
+    2. validaciones-cultivos.js → validación de fechas y textos para cultivos
+    3. script.js                → modales, toggles
 --%>
 <script src="${pageContext.request.contextPath}/static/js/validaciones.js"></script>
 <script src="${pageContext.request.contextPath}/static/js/Validaciones_cultivo.js"></script>
