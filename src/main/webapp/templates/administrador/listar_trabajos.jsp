@@ -138,6 +138,11 @@
                         String nombreTipoEsc = a.getNombreTipoTrabajo() != null
                                                ? a.getNombreTipoTrabajo().replace("\"", "&quot;")
                                                : "";
+                        // Construye etiqueta "Cultivo — Lote" para mostrar junto al nombre del cultivo.
+                        String etiquetaCultivo = a.getNombreCultivo() != null ? a.getNombreCultivo() : "";
+                        if (a.getNombreLote() != null && !a.getNombreLote().isEmpty()) {
+                            etiquetaCultivo += " &mdash; " + a.getNombreLote();
+                        }
             %>
                 <article class="job-card"
                          data-estado="<%= a.getEstadoTrabajo() %>"
@@ -156,7 +161,7 @@
 
                     <div class="job-card__info" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                         <p><strong><i class="fa-solid fa-user"></i> Encargado:</strong> <%= a.getNombreUsuario() %></p>
-                        <p><strong><i class="fa-solid fa-seedling"></i> Cultivo:</strong> <%= a.getNombreCultivo() %></p>
+                        <p><strong><i class="fa-solid fa-seedling"></i> Cultivo:</strong> <%= etiquetaCultivo %></p>
                         <p><strong><i class="fa-solid fa-calendar"></i> Asignado:</strong> <%= a.getFechaAsignacion() %></p>
                         <% if (a.getFechaInicio() != null) { %>
                             <p><strong><i class="fa-solid fa-play"></i> Iniciado:</strong> <%= a.getFechaInicio() %></p>

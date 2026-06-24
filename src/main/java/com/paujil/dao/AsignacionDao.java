@@ -15,11 +15,13 @@ public class AsignacionDao { // Define la clase AsignacionDao.
         "       a.estado_trabajo, a.observaciones, " + // Select estado y obs.
         "       t.descripcion_trabajo, " + // Select descripción trabajo.
         "       c.nombre_cultivo, " + // Select nombre cultivo.
+        "       l.nombre_lote, " + // Select nombre lote via JOIN con lotes.
         "       u.nombre_usuario, " + // Select nombre usuario.
         "       tp.nombre_tipo  AS nombre_tipo_trabajo " + // Select tipo trabajo alias.
         "FROM   asignaciones  a " + // From tabla asignaciones.
         "JOIN   trabajos      t  ON t.id_trabajo       = a.id_trabajo " + // Join tabla trabajos.
         "JOIN   cultivos      c  ON c.id_cultivo       = a.id_cultivo " + // Join tabla cultivos.
+        "LEFT JOIN lotes      l  ON l.id_lote          = c.id_lote " + // Left join lotes (por si el cultivo no tiene lote).
         "JOIN   usuarios      u  ON u.id_usuario       = a.id_usuario " + // Join tabla usuarios.
         "JOIN   tipos_trabajo tp ON tp.id_tipo_trabajo = t.id_tipo_trabajo "; // Join tabla tipos.
 
@@ -181,6 +183,7 @@ public class AsignacionDao { // Define la clase AsignacionDao.
         a.setObservaciones(rs.getString("observaciones")); // Setea observaciones.
         a.setDescripcionTrabajo(rs.getString("descripcion_trabajo")); // Setea descripcion.
         a.setNombreCultivo(rs.getString("nombre_cultivo")); // Setea nombreCultivo.
+        a.setNombreLote(rs.getString("nombre_lote")); // Setea nombreLote desde JOIN con lotes.
         a.setNombreUsuario(rs.getString("nombre_usuario")); // Setea nombreUsuario.
         a.setNombreTipoTrabajo(rs.getString("nombre_tipo_trabajo")); // Setea nombreTipo.
         return a; // Retorna objeto.
