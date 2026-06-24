@@ -34,7 +34,17 @@ public class ServletLote extends HttpServlet {
             String idStr = request.getParameter("id"); // Captura el ID a eliminar
             if (!estaVacio(idStr)) { // Valida si el ID no es nulo
                 try { // Intenta borrar
-                    dao.eliminarLote(Integer.parseInt(idStr)); // Ejecuta operación en el DAO (limpia relaciones primero)
+                    int id = Integer.parseInt(idStr); // Convierte el ID.
+                    boolean eliminado = dao.eliminarLote(id); // Ejecuta operación en el DAO.
+                    if (!eliminado) { // Si no se pudo eliminar (tiene cultivos asociados).
+                        request.setAttribute("mensajeError",
+                            "No se puede eliminar el lote porque tiene cultivos asignados. " +
+                            "Primero reasigne o elimine esos cultivos."); // Mensaje descriptivo.
+                        request.setAttribute("listaLotes", dao.listarLotes()); // Refresca lista.
+                        request.getRequestDispatcher("/templates/administrador/lotes.jsp")
+                               .forward(request, response); // Muestra el error en la vista.
+                        return; // Termina sin redirigir.
+                    } // Fin if.
                 } catch (NumberFormatException ignored) {} // Ignora error si el ID está corrupto
             }
             response.sendRedirect(request.getContextPath() + "/ServletLote?status=eliminado"); // Redirección PRG
@@ -59,6 +69,12 @@ public class ServletLote extends HttpServlet {
         if (estaVacio(nombre) || excedeLongitud(nombre, MAX_NOMBRE)) {
             reenviarAdminConError("Solicitud inválida.", request, response); // Rechaza con mensaje genérico
             return; // Aborta
+        }
+
+        // Validación: el nombre del lote no puede estar compuesto únicamente por dígitos.
+        if (nombre.matches("\\d+")) { // Verifica si el nombre es solo números.
+            reenviarAdminConError("El nombre del lote no puede contener solo números. Incluya al menos una letra.", request, response); // Rechaza.
+            return; // Aborta.
         }
 
         LoteDao dao = new LoteDao(); // Prepara el acceso a datos

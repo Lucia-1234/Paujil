@@ -1,6 +1,7 @@
 package com.paujil.controlador;
 
 import com.paujil.dao.CultivoDao;
+import com.paujil.dao.LoteDao;
 import com.paujil.dao.TipoTrabajoDao;
 import com.paujil.dao.UsuarioDao;
 import com.paujil.modelo.tipoTrabajo;
@@ -59,6 +60,7 @@ public class ServletTrabajo extends HttpServlet { // Define la clase como un com
             case "prepararCreacion": // Caso administrativo: prepara el formulario de alta de trabajos.
                 if (!verificarSesionAdmin(request, response)) return; // Guardia de acceso.
                 request.setAttribute("listaCultivos", new CultivoDao().listarCultivos()); // Carga cultivos para el selector.
+                request.setAttribute("catalogoLotes", new LoteDao().listarLotes()); // Carga lotes para mostrar nombre junto al cultivo.
                 request.setAttribute("listaUsuarios", new UsuarioDao().listarUsuariosActivos()); // Carga trabajadores para asignación.
                 request.setAttribute("listaTiposTrabajo", new TipoTrabajoDao().listarTipos()); // Carga tipos disponibles.
                 request.getRequestDispatcher("/templates/administrador/asignar_trabajos.jsp").forward(request, response); // Muestra formulario.
@@ -178,6 +180,7 @@ public class ServletTrabajo extends HttpServlet { // Define la clase como un com
     private void enviarError(String mensaje, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setAttribute("mensajeError", mensaje); // Envía mensaje de error.
         request.setAttribute("listaCultivos", new CultivoDao().listarCultivos()); // Repuebla lista.
+        request.setAttribute("catalogoLotes", new LoteDao().listarLotes()); // Repuebla lotes para mantener nombres en el selector.
         request.setAttribute("listaUsuarios", new UsuarioDao().listarUsuariosActivos()); // Repuebla lista.
         request.setAttribute("listaTiposTrabajo", new TipoTrabajoDao().listarTipos()); // Repuebla lista.
         request.getRequestDispatcher("/templates/administrador/asignar_trabajos.jsp").forward(request, response); // Vuelve al formulario.

@@ -1,5 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@page import="com.paujil.modelo.cultivo, java.util.List"%>
+<%@page import="com.paujil.modelo.cultivo, com.paujil.modelo.lote, java.util.List, java.util.Map, java.util.stream.Collectors"%>
 <%
     if (session.getAttribute("idUsuario") == null) {
         response.sendRedirect(request.getContextPath() + "/templates/login.jsp");
@@ -9,6 +9,14 @@
     if (lista == null) {
         response.sendRedirect(request.getContextPath() + "/ServletCultivo?accion=verTrabajador");
         return;
+    }
+    List<lote> catalogoLotes = (List<lote>) request.getAttribute("catalogoLotes");
+    // Construye un mapa idLote -> nombreLote para búsqueda eficiente en la vista.
+    Map<Integer, String> nombresPorLote = new java.util.HashMap<>();
+    if (catalogoLotes != null) {
+        for (lote l : catalogoLotes) {
+            nombresPorLote.put(l.getIdLote(), l.getNombreLote());
+        }
     }
 %>
 <!DOCTYPE html>
@@ -59,6 +67,11 @@
                             <strong>
                                 <%= c.getFechaCosecha() != null ? c.getFechaCosecha() : "No definida" %>
                             </strong>
+                        </p>
+                        <p class="crop-card__description">
+                            <i class="fa-solid fa-map-location-dot" style="color:var(--color-brand-green);"></i>
+                            <strong>Lote:</strong>
+                            <%= nombresPorLote.getOrDefault(c.getIdLote(), "Sin asignar") %>
                         </p>
                     </div>
                 </article>

@@ -30,7 +30,8 @@ public class ServletCultivo extends HttpServlet {
 
         if ("verTrabajador".equals(accion)) { // Vista para trabajadores
             if (!verificarSesionUsuario(request, response)) return; // Guardia de autenticación
-            request.setAttribute("listaCultivos", dao.listarCultivos());
+            request.setAttribute("listaCultivos", dao.listarCultivos()); // Carga cultivos.
+            request.setAttribute("catalogoLotes", new LoteDao().listarLotes()); // Carga lotes para mostrar el nombre en la vista.
             request.getRequestDispatcher("/templates/trabajador/cultivos_trabajador.jsp").forward(request, response);
             return;
         }
@@ -74,11 +75,28 @@ public class ServletCultivo extends HttpServlet {
             return;
         }
 
+        // Validación: el nombre del cultivo no puede estar compuesto únicamente por dígitos.
+        if (nombre.matches("\\d+")) { // Verifica si el nombre es solo números.
+            reenviarAdminConError("El nombre del cultivo no puede contener solo números. Incluya al menos una letra.", request, response); // Rechaza.
+            return; // Aborta.
+        }
+
+        // Validación: el tipo del cultivo, si se ingresa, no puede estar compuesto únicamente por dígitos.
+        if (tipo != null && !tipo.isEmpty() && tipo.matches("\\d+")) { // Solo valida si tipo fue ingresado.
+            reenviarAdminConError("El tipo de cultivo no puede contener solo números. Incluya al menos una letra.", request, response); // Rechaza.
+            return; // Aborta.
+        }
+
         try { 
             // 1. Parseo y validación de fechas
             Date fSiembra = Date.valueOf(fSiembraStr);
             Date fCosecha = estaVacio(fCosechaStr) ? null : Date.valueOf(fCosechaStr);
             int idLote = Integer.parseInt(idLoteStr);
+
+            if (fSiembra.toLocalDate().isAfter(java.time.LocalDate.now())) { // La siembra no puede ser posterior a hoy.
+                reenviarAdminConError("La fecha de siembra no puede ser posterior a hoy.", request, response);
+                return;
+            }
 
             if (fCosecha != null && fCosecha.toLocalDate().isBefore(fSiembra.toLocalDate())) {
                 reenviarAdminConError("La cosecha no puede ser anterior a la siembra.", request, response);

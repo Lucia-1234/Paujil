@@ -96,6 +96,10 @@ function validarNombreCultivo(cNombre) {
         mostrarErrorFecha(cNombre, 'El nombre debe tener entre 2 y 80 caracteres.');
         return false;
     }
+    if (/^\d+$/.test(valor)) { // Valida que no sea solo números.
+        mostrarErrorFecha(cNombre, 'El nombre del cultivo no puede contener solo números. Incluya al menos una letra.');
+        return false;
+    }
     limpiarErrorFecha(cNombre); // Limpia el error si es válido.
     return true; // Retorna éxito.
 }
@@ -109,17 +113,21 @@ function validarTipoCultivo(cTipo) {
         mostrarErrorFecha(cTipo, 'El tipo debe tener entre 2 y 60 caracteres.');
         return false;
     }
+    if (/^\d+$/.test(cTipo.value.trim())) { // Valida que no sea solo números.
+        mostrarErrorFecha(cTipo, 'El tipo de cultivo no puede contener solo números. Incluya al menos una letra.');
+        return false;
+    }
     limpiarErrorFecha(cTipo); // Limpia el error si es válido.
     return true;
 }
 
-function validarSiembra(cSiembra, esEdicion) {
+function validarSiembra(cSiembra) {
     if (estaVacio(cSiembra.value)) { // Verifica obligatoriedad.
         mostrarErrorFecha(cSiembra, 'La fecha de siembra es obligatoria.');
         return false;
     }
-    if (!esEdicion && !fechaNoEsAnteriorAHoy(cSiembra.value)) { // Si es nuevo registro, valida fecha actual.
-        mostrarErrorFecha(cSiembra, 'La fecha de siembra no puede ser anterior a hoy.');
+    if (cSiembra.value > hoyISO()) { // La siembra no puede ser una fecha futura.
+        mostrarErrorFecha(cSiembra, 'La fecha de siembra no puede ser posterior a hoy.');
         return false;
     }
     const anio = new Date(cSiembra.value).getFullYear(); // Extrae año de la fecha.
@@ -155,7 +163,7 @@ function validarFormCultivo() {
     let valido = true; // Flag de estado.
     if (!validarNombreCultivo(cNombre)) valido = false; // Valida y actualiza estado.
     if (!validarTipoCultivo(cTipo)) valido = false; // Valida y actualiza estado.
-    if (!validarSiembra(cSiembra, esEdicion)) valido = false; // Valida y actualiza estado.
+    if (!validarSiembra(cSiembra)) valido = false; // Valida y actualiza estado.
     if (!validarCosecha(cCosecha, cSiembra)) valido = false; // Valida y actualiza estado.
 
     if (!valido) enfocarPrimerError(form); // Si es inválido, enfoca el primer error encontrado.
@@ -273,8 +281,7 @@ document.addEventListener('DOMContentLoaded', function () { // Listener carga in
         if (cTipo) ['input', 'blur'].forEach(ev => cTipo.addEventListener(ev, () => validarTipoCultivo(cTipo)));
         
         if (cSiembra) ['change', 'input'].forEach(ev => cSiembra.addEventListener(ev, () => {
-            const esEdicion = !estaVacio(document.getElementById('editId').value); // Detecta modo.
-            validarSiembra(cSiembra, esEdicion); // Valida siembra.
+            validarSiembra(cSiembra); // Valida siembra.
             if (cCosecha && !estaVacio(cCosecha.value)) validarCosecha(cCosecha, cSiembra); // Valida cosecha.
         }));
 

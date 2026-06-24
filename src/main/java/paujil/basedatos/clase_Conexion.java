@@ -26,7 +26,7 @@ public class clase_Conexion {
             //se define el url de conexion y las credenciales que java usara para conectarse a mysql 
             String url      = "jdbc:mysql://localhost:3306/finca_pajuil";
             String usuario  = "root";
-            String password = "#Aprendiz2024"; 
+            String password = "#root2026"; 
             
             //se abre la conexion de la base de datos que se asigna a la variable con (de tipo Connection)
             //@DriverManager.getConnection:es el método que pide al DriverManager que use el driver JDBC de MySQL para conectarse.

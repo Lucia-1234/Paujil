@@ -1,6 +1,17 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="com.paujil.modelo.cultivo, com.paujil.modelo.usuario,
-                com.paujil.modelo.tipoTrabajo, java.util.List"%>
+                com.paujil.modelo.tipoTrabajo, com.paujil.modelo.lote,
+                java.util.List, java.util.Map, java.util.HashMap"%>
+<%
+    // Construye mapa idLote -> nombreLote para mostrar el lote junto al cultivo.
+    List<lote> catalogoLotes = (List<lote>) request.getAttribute("catalogoLotes");
+    Map<Integer, String> nombresPorLote = new HashMap<>();
+    if (catalogoLotes != null) {
+        for (lote l : catalogoLotes) {
+            nombresPorLote.put(l.getIdLote(), l.getNombreLote());
+        }
+    }
+%>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -46,8 +57,12 @@
                         List<cultivo> cultivos = (List<cultivo>) request.getAttribute("listaCultivos");
                         if (cultivos != null) {
                             for (cultivo c : cultivos) {
+                                String nombreLote = nombresPorLote.get(c.getIdLote());
+                                String etiqueta = nombreLote != null
+                                    ? c.getNombreCultivo() + " — " + nombreLote
+                                    : c.getNombreCultivo();
                     %>
-                        <option value="<%= c.getIdCultivo() %>"><%= c.getNombreCultivo() %></option>
+                        <option value="<%= c.getIdCultivo() %>"><%= etiqueta %></option>
                     <%      }
                         }
                     %>

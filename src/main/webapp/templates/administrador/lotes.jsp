@@ -36,8 +36,8 @@
     <% } %>
 
     <header class="list-header">
-        <a href="${pageContext.request.contextPath}/templates/administrador/menu_administrador.jsp"
-           class="list-header__back" aria-label="Volver al menú">
+        <a href="${pageContext.request.contextPath}/ServletCultivo"
+           class="list-header__back" aria-label="Volver a cultivos">
             <i class="fa-solid fa-arrow-left-long"></i>
         </a>
         <h1 class="list-header__title">Gestión de Lotes</h1>

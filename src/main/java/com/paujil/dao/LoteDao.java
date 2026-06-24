@@ -78,23 +78,34 @@ public class LoteDao { // Clase DAO para operaciones CRUD de lotes y su relació
         } // Fin catch.
     } // Fin método actualizarLote.
 
-    // Método para eliminar un lote por su ID. Primero limpia sus relaciones para respetar la FK.
+    // Verifica si un lote tiene cultivos asignados (FK id_lote en tabla cultivos).
+    // Retorna true si existe al menos un cultivo que apunta a este lote.
+    public boolean tieneCultivosAsignados(int idLote) { // Inicio método.
+        String sql = "SELECT COUNT(*) FROM cultivos WHERE id_lote = ?"; // Cuenta cultivos que usan este lote.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara.
+            ps.setInt(1, idLote); // Setea ID del lote a verificar.
+            try (ResultSet rs = ps.executeQuery()) { // Ejecuta.
+                return rs.next() && rs.getInt(1) > 0; // true si hay al menos un cultivo relacionado.
+            } // Cierra ResultSet.
+        } catch (SQLException e) { // Manejo errores.
+            System.err.println("Error al verificar cultivos del lote id=" + idLote + ": " + e.getMessage()); // Log.
+            e.printStackTrace(); // Traza.
+            return true; // Ante duda, bloquea el borrado para proteger integridad.
+        } // Fin catch.
+    } // Fin método tieneCultivosAsignados.
+
+    // Elimina un lote solo si NO tiene cultivos relacionados.
+    // Retorna true si se eliminó, false si tiene cultivos asignados o si ocurrió un error.
     public boolean eliminarLote(int id) { // Inicio método eliminar.
-        String sqlRelacion = "DELETE FROM cultivo_lote WHERE id_lote = ?"; // Limpia relaciones previas.
-        String sqlLote = "DELETE FROM lotes WHERE id_lote = ?"; // SQL delete del lote.
-        try (Connection con = clase_Conexion.MetodoConectar()) { // Conecta.
-            con.setAutoCommit(false); // Inicia transacción manual para garantizar consistencia.
-            try (PreparedStatement psRel = con.prepareStatement(sqlRelacion)) { // Prepara borrado de relaciones.
-                psRel.setInt(1, id); // Setea ID del lote.
-                psRel.executeUpdate(); // Ejecuta borrado de relaciones asociadas.
-            } // Cierra statement de relación.
-            boolean exito; // Variable de resultado.
-            try (PreparedStatement psLote = con.prepareStatement(sqlLote)) { // Prepara borrado del lote.
-                psLote.setInt(1, id); // Setea ID a eliminar.
-                exito = psLote.executeUpdate() > 0; // Ejecuta e indica éxito.
-            } // Cierra statement de lote.
-            con.commit(); // Confirma la transacción.
-            return exito; // Retorna resultado.
+        if (tieneCultivosAsignados(id)) { // Verifica integridad antes de borrar.
+            return false; // Bloquea: el lote tiene cultivos asociados, no se puede eliminar.
+        } // Fin if.
+        String sql = "DELETE FROM lotes WHERE id_lote = ?"; // SQL delete del lote.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara statement.
+            ps.setInt(1, id); // Setea ID a eliminar.
+            return ps.executeUpdate() > 0; // Ejecuta y retorna true si se borró.
         } catch (SQLException e) { // Manejo errores.
             System.err.println("Error al eliminar lote id=" + id + ": " + e.getMessage()); // Error log.
             e.printStackTrace(); // Imprime traza.
