@@ -143,15 +143,23 @@ public class ServletUsuarios extends HttpServlet { // Extiende HttpServlet para 
     }
 
     // Centraliza la lógica de eliminación para asegurar consistencia en la respuesta.
+    //Recibe el objeto dao (para interactuar con la base de datos), el idStr (el ID del usuario a eliminar como cadena), 
+    //y los objetos res y req (necesarios para redirigir al usuario tras la operación).
     private void eliminar(UsuarioDao dao, String idStr,
                         HttpServletResponse res, HttpServletRequest req)
           throws IOException {
+     //Verifica que el ID recibido no sea nulo ni esté vacío (o contenga solo espacios) para evitar errores.
       if (idStr != null && !idStr.isBlank()) {
           try {
+              //Convierte el texto recibido a un número entero. Si la conversión falla 
+              //(por ejemplo, si el ID no es un número), el código salta al bloque catch
               int id = Integer.parseInt(idStr);
 
               // Bloquea si el trabajador tiene asignaciones activas.
+              //Consulta a la base de datos si el usuario tiene trabajo pendiente.
               if (dao.tieneAsignacionesActivas(id)) {
+                  //Si tiene asignaciones, el código decide a dónde redirigir al usuario. Usa un operador ternario (? :) 
+                  //para verificar si el usuario venía desde la vista "pendientes".
                   String vista = req.getParameter("vista");
                   String redirect = "pendientes".equals(vista)
                       ? "ServletUsuario?accion=pendientes&status=error&motivo=asignaciones_activas"
@@ -159,10 +167,13 @@ public class ServletUsuarios extends HttpServlet { // Extiende HttpServlet para 
                   res.sendRedirect(redirect);
                   return; // Detiene la ejecución, no elimina.
               }
-
+              //Solo se llega a este punto si el usuario no tiene asignaciones activas.
               dao.eliminarUsuario(id); // Solo llega aquí si no tiene asignaciones activas.
+              //Si el ID no era un número válido, el código simplemente ignora el error y salta al final.
           } catch (NumberFormatException ignored) {}
       }
+      //el código redirige al usuario a la página de origen, pasando un parámetro status=success 
+      //para que el usuario reciba una confirmación visual de que la eliminación fue exitosa.
       String vista = req.getParameter("vista");
       String redirect = "pendientes".equals(vista)
               ? "ServletUsuario?accion=pendientes&status=success"
