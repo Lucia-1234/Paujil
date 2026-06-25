@@ -37,6 +37,10 @@
         <div class="feedback-message feedback-message--ok">
             <i class="fa-solid fa-circle-check"></i> Trabajo marcado como finalizado.
         </div>
+    <% } else if ("en_revisión".equals(status) || "en_revisión".equals(status)) { %>
+        <div class="feedback-message feedback-message--ok">
+            <i class="fa-solid fa-magnifying-glass"></i> Trabajo enviado a revisión. El administrador lo revisará pronto.
+        </div>
     <% } else if ("en_proceso".equals(status)) { %>
         <div class="feedback-message feedback-message--ok">
             <i class="fa-solid fa-circle-check"></i> Trabajo iniciado.
@@ -49,6 +53,10 @@
         <div class="feedback-message feedback-message--error">
             <i class="fa-solid fa-circle-exclamation"></i> Ocurrió un error. Intenta de nuevo.
         </div>
+    <% } else if ("tiempo_insuficiente".equals(status)) { %>
+        <div class="feedback-message feedback-message--error">
+            <i class="fa-solid fa-clock"></i> No puedes finalizar este trabajo aún. Deben pasar al menos 2 horas desde que fue iniciado.
+        </div>
     <% } %>
 
     <%-- Filtro por ESTADO --%>
@@ -57,6 +65,7 @@
         <button class="filtro-btn filtro-estado-btn seleccionado" data-filtro="todos">Todos</button>
         <button class="filtro-btn filtro-estado-btn" data-filtro="Pendiente">Pendientes</button>
         <button class="filtro-btn filtro-estado-btn" data-filtro="En proceso">En proceso</button>
+        <button class="filtro-btn filtro-estado-btn" data-filtro="En revisión">En revisión</button>
         <button class="filtro-btn filtro-estado-btn" data-filtro="Finalizado">Finalizados</button>
     </div>
 
@@ -71,6 +80,7 @@
                 for (asignacion a : lista) {
                     boolean finalizado = "Finalizado".equals(a.getEstadoTrabajo());
                     boolean enProceso  = "En proceso".equals(a.getEstadoTrabajo());
+                    boolean enRevision = "En revisión".equals(a.getEstadoTrabajo());
                     String tipoEsc = a.getNombreTipoTrabajo() != null
                                      ? a.getNombreTipoTrabajo().replace("\"", "&quot;")
                                      : "";
@@ -83,7 +93,7 @@
                             <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
                             <%= a.getNombreTipoTrabajo() %>
                         </h2>
-                        <span class="job-status <%= finalizado ? "job-status--done" : enProceso ? "job-status--inprogress" : "job-status--pending" %>">
+                        <span class="job-status <%= finalizado ? "job-status--done" : enRevision ? "job-status--review" : enProceso ? "job-status--inprogress" : "job-status--pending" %>">
                             <%= a.getEstadoTrabajo() %>
                         </span>
                     </div>
@@ -92,6 +102,9 @@
                         <div class="job-card__meta">
                             <i class="fa-solid fa-seedling" style="color:var(--color-brand-green);margin-right:4px;"></i>
                             <%= a.getNombreCultivo() != null ? a.getNombreCultivo() : "N/A" %>
+                            <% if (a.getNombreLote() != null && !a.getNombreLote().isEmpty()) { %>
+                                &mdash; <%= a.getNombreLote() %>
+                            <% } %>
                         </div>
                         <div class="job-card__meta">
                             <i class="fa-solid fa-calendar" style="color:var(--color-brand-green);margin-right:4px;"></i>
@@ -115,7 +128,12 @@
                         <%= a.getDescripcionTrabajo() %>
                     </p>
 
-                    <% if (finalizado) { %>
+                    <% if (finalizado || enRevision) { %>
+                        <% if (enRevision) { %>
+                            <p class="job-card__desc" style="margin-top:var(--spacing-sm); font-style:italic; color:#888;">
+                                <i class="fa-solid fa-clock"></i> Este trabajo está pendiente de revisión por el administrador.
+                            </p>
+                        <% } %>
                         <% if (a.getObservaciones() != null && !a.getObservaciones().isEmpty()) { %>
                             <div class="obs-container" style="margin-top:var(--spacing-sm); padding:10px;
                                  background:#f9f9f9; border-left:4px solid var(--color-brand-green); border-radius:4px;">

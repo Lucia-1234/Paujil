@@ -15,17 +15,24 @@
 <main class="page-wrapper">
 
     <%-- Mensajes de estado del backend (operaciones completadas o errores de BD) --%>
-    <% String status = request.getParameter("status"); %>
-    <% if ("success".equals(status) || "eliminado".equals(status)) { %>
-        <div class="feedback-message feedback-message--ok" role="status">
-            <i class="fa-solid fa-circle-check"></i>
-            <%= "eliminado".equals(status) ? "Cultivo eliminado correctamente." : "Operación realizada correctamente." %>
-        </div>
-    <% } else if ("error".equals(status)) { %>
-        <div class="feedback-message feedback-message--error" role="alert">
-            <i class="fa-solid fa-circle-exclamation"></i> Ocurrió un error. Intente nuevamente.
-        </div>
-    <% } %>
+    <% String status = request.getParameter("status");
+        String motivo = request.getParameter("motivo"); %>
+     <% if ("success".equals(status) || "eliminado".equals(status)) { %>
+         <div class="feedback-message feedback-message--ok" role="status">
+             <i class="fa-solid fa-circle-check"></i>
+             <%= "eliminado".equals(status) ? "Cultivo eliminado correctamente." : "Operación realizada correctamente." %>
+         </div>
+     <% } else if ("error".equals(status)) { %>
+         <div class="feedback-message feedback-message--error" role="alert">
+             <i class="fa-solid fa-circle-exclamation"></i>
+             <% if ("asignaciones_activas".equals(motivo)) { %>
+                 No se puede eliminar este cultivo porque tiene trabajos activos
+                 (Pendiente, En proceso o En revisión). Finaliza esos trabajos primero.
+             <% } else { %>
+                 Ocurrió un error. Intente nuevamente.
+             <% } %>
+         </div>
+     <% } %>
 
     <%-- Mensaje de error del backend (validación de seguridad que pasó el servlet) --%>
     <% String mensajeError = (String) request.getAttribute("mensajeError");

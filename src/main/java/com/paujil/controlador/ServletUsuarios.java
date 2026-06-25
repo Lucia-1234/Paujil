@@ -144,18 +144,29 @@ public class ServletUsuarios extends HttpServlet { // Extiende HttpServlet para 
 
     // Centraliza la lógica de eliminación para asegurar consistencia en la respuesta.
     private void eliminar(UsuarioDao dao, String idStr,
-                          HttpServletResponse res, HttpServletRequest req)
-            throws IOException {
-        if (idStr != null && !idStr.isBlank()) { // Verifica ID.
-            try {
-                dao.eliminarUsuario(Integer.parseInt(idStr)); // Ejecuta el borrado.
-            } catch (NumberFormatException ignored) { } // Ignora error de formato.
-        }
-        // Determina la redirección según el contexto de la vista.
-        String vista = req.getParameter("vista");
-        String redirect = "pendientes".equals(vista)
-                ? "ServletUsuario?accion=pendientes&status=success"
-                : "ServletUsuario?status=success";
-        res.sendRedirect(redirect); // Ejecuta redirección.
-    }
+                        HttpServletResponse res, HttpServletRequest req)
+          throws IOException {
+      if (idStr != null && !idStr.isBlank()) {
+          try {
+              int id = Integer.parseInt(idStr);
+
+              // Bloquea si el trabajador tiene asignaciones activas.
+              if (dao.tieneAsignacionesActivas(id)) {
+                  String vista = req.getParameter("vista");
+                  String redirect = "pendientes".equals(vista)
+                      ? "ServletUsuario?accion=pendientes&status=error&motivo=asignaciones_activas"
+                      : "ServletUsuario?status=error&motivo=asignaciones_activas";
+                  res.sendRedirect(redirect);
+                  return; // Detiene la ejecución, no elimina.
+              }
+
+              dao.eliminarUsuario(id); // Solo llega aquí si no tiene asignaciones activas.
+          } catch (NumberFormatException ignored) {}
+      }
+      String vista = req.getParameter("vista");
+      String redirect = "pendientes".equals(vista)
+              ? "ServletUsuario?accion=pendientes&status=success"
+              : "ServletUsuario?status=success";
+      res.sendRedirect(redirect);
+  }
 }

@@ -1,5 +1,6 @@
 package com.paujil.controlador;
 
+import com.paujil.dao.AsignacionDao;
 import com.paujil.dao.CultivoDao;
 import com.paujil.dao.LoteDao;
 import com.paujil.modelo.cultivo;
@@ -36,13 +37,20 @@ public class ServletCultivo extends HttpServlet {
             return;
         }
 
-        if (!verificarSesionAdmin(request, response)) return; // Filtro de seguridad administrativo
-
         if ("eliminar".equals(accion)) { // Lógica para remover un cultivo
-            String idStr = request.getParameter("id"); 
-            if (!estaVacio(idStr)) { 
+            String idStr = request.getParameter("id");
+            if (!estaVacio(idStr)) {
                 try {
-                    dao.eliminarCultivo(Integer.parseInt(idStr)); // Ejecuta borrado en BD
+                    int id = Integer.parseInt(idStr);
+
+                    // Bloquea si el cultivo tiene asignaciones activas.
+                    if (new AsignacionDao().tieneAsignacionesActivasPorCultivo(id)) {
+                        response.sendRedirect(request.getContextPath() +
+                            "/ServletCultivo?status=error&motivo=asignaciones_activas");
+                        return;
+                    }
+
+                    dao.eliminarCultivo(id); // Solo llega aquí si no tiene asignaciones activas.
                 } catch (NumberFormatException ignored) {}
             }
             response.sendRedirect(request.getContextPath() + "/ServletCultivo?status=eliminado");

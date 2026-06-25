@@ -18,6 +18,7 @@
 
     <%
         String status = request.getParameter("status");
+        String motivo = request.getParameter("motivo");
         if ("success".equals(status)) {
     %>
         <div class="feedback-message feedback-message--ok">
@@ -25,7 +26,13 @@
         </div>
     <% } else if ("error".equals(status)) { %>
         <div class="feedback-message feedback-message--error">
-            <i class="fa-solid fa-circle-exclamation"></i> Ocurrió un error. Intente nuevamente.
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <% if ("asignaciones_activas".equals(motivo)) { %>
+                No se puede eliminar este trabajador porque tiene trabajos activos
+                (Pendiente, En proceso o En revisión). Finaliza o reasigna sus trabajos primero.
+            <% } else { %>
+                Ocurrió un error. Intente nuevamente.
+            <% } %>
         </div>
     <% } %>
 

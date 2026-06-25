@@ -195,7 +195,7 @@ window.abrirModalEliminarUsuario = function (id, nombre) {
 };
 
 window.abrirModalDenegar = function (id, nombre) {
-    _abrirModalUsuario('modalDenegar', 'textoDenegar', 'Se rechazará a "' + nombre + '".', 'ServletUsuario?accion=denegar&id=' + id + '&vista=pendientes');
+    _abrirModalUsuario('modalDenegar', 'textoDenegar', 'Se rechazará a "' + nombre + '".', (window._ctxPath || '') + '/GestionarRoles?accion=denegar&id_usuario=' + id);
 };
 
 window.ejecutarAccionUsuario = function () {

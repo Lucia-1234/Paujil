@@ -39,6 +39,14 @@
         <div class="feedback-message feedback-message--error">
             <i class="fa-solid fa-circle-exclamation"></i> Ocurrió un error. Intenta de nuevo.
         </div>
+    <% } else if ("aprobado".equals(status)) { %>
+        <div class="feedback-message feedback-message--ok">
+            <i class="fa-solid fa-circle-check"></i> Trabajo aprobado y marcado como finalizado.
+        </div>
+    <% } else if ("devuelto".equals(status)) { %>
+        <div class="feedback-message feedback-message--ok">
+            <i class="fa-solid fa-rotate-left"></i> Trabajo devuelto al trabajador con observaciones.
+        </div>
     <% } %>
 
     <%--
@@ -111,6 +119,7 @@
         <button class="filtro-btn filtro-estado-btn seleccionado" data-filtro="todos">Todos</button>
         <button class="filtro-btn filtro-estado-btn" data-filtro="Pendiente">Pendientes</button>
         <button class="filtro-btn filtro-estado-btn" data-filtro="En proceso">En proceso</button>
+        <button class="filtro-btn filtro-estado-btn" data-filtro="En revisión">En revisión</button>
         <button class="filtro-btn filtro-estado-btn" data-filtro="Finalizado">Finalizados</button>
     </div>
 
@@ -143,6 +152,7 @@
                         if (a.getNombreLote() != null && !a.getNombreLote().isEmpty()) {
                             etiquetaCultivo += " &mdash; " + a.getNombreLote();
                         }
+                        boolean enRevision = "En revisión".equals(a.getEstadoTrabajo());
             %>
                 <article class="job-card"
                          data-estado="<%= a.getEstadoTrabajo() %>"
@@ -154,6 +164,7 @@
                         <span class="badge
                             <%= "Finalizado".equals(a.getEstadoTrabajo()) ? "badge--activo"
                               : "En proceso".equals(a.getEstadoTrabajo()) ? "badge--enproceso"
+                              : "En revisión".equals(a.getEstadoTrabajo()) ? "badge--revision"
                               : "badge--pendiente" %>">
                             <%= a.getEstadoTrabajo() %>
                         </span>
@@ -179,6 +190,37 @@
                     <div class="obs-container" style="margin-top:10px; padding:10px; background:#f9f9f9; border-left:4px solid var(--color-brand-green); border-radius:4px;">
                         <strong><i class="fa-solid fa-pen-to-square"></i> Observaciones:</strong>
                         <p style="margin:5px 0 0 0; color:#555;"><%= a.getObservaciones() %></p>
+                    </div>
+                    <% } %>
+
+                    <% if (enRevision) { %>
+                    <%-- Panel de revisión: visible solo para trabajos En revisión --%>
+                    <div style="margin-top:10px; padding:12px; background:#fff8e1; border-left:4px solid #f39c12; border-radius:4px;">
+                        <strong><i class="fa-solid fa-magnifying-glass"></i> Pendiente de revisión</strong>
+                        <form action="${pageContext.request.contextPath}/ServletTrabajo" method="POST"
+                              style="margin-top:10px;">
+                            <input type="hidden" name="accion" value="revisar">
+                            <input type="hidden" name="idAsignacion" value="<%= a.getId() %>">
+                            <div style="margin-bottom:8px;">
+                                <label style="font-size:var(--font-size-sm); font-weight:600;">
+                                    Observaciones para el trabajador (opcional):
+                                </label>
+                                <textarea name="observacionesAdmin" class="job-form__textarea" rows="2"
+                                          placeholder="Ej: Faltó completar la sección norte..." style="margin-top:4px;"></textarea>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button type="submit" name="accionRevision" value="aprobar"
+                                        class="btn btn--accept"
+                                        onclick="return confirm('¿Aprobar y marcar como Finalizado?')">
+                                    <i class="fa-solid fa-circle-check"></i> Aprobar
+                                </button>
+                                <button type="submit" name="accionRevision" value="devolver"
+                                        class="btn btn--edit"
+                                        onclick="return confirm('¿Devolver al trabajador como Pendiente?')">
+                                    <i class="fa-solid fa-rotate-left"></i> Devolver
+                                </button>
+                            </div>
+                        </form>
                     </div>
                     <% } %>
 

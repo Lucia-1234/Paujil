@@ -3,6 +3,7 @@ package com.paujil.dao;
 import com.paujil.modelo.asignacion;
 import com.paujil.modelo.trabajo; 
 import java.sql.*; 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List; 
 import paujil.basedatos.clase_Conexion; 
@@ -77,11 +78,23 @@ public class AsignacionDao { // Define la clase AsignacionDao.
     } // Fin método listarPorUsuario.
 
     public boolean actualizarEstadoAsignacion(int idAsignacion, String observaciones, String nuevoEstado) { // Método actualizar.
+
+        // Validación de tiempo mínimo: si se intenta enviar a revisión, verifica que hayan pasado al menos 2 horas desde el inicio.
+        if ("En revisión".equals(nuevoEstado)) { // Solo aplica al enviar a revisión.
+            Timestamp fechaInicio = obtenerFechaInicio(idAsignacion); // Consulta la hora exacta de inicio.
+            if (fechaInicio == null) return false; // Si no hay fecha de inicio, no se puede enviar a revisión.
+            long millisTranscurridos = System.currentTimeMillis() - fechaInicio.getTime(); // Diferencia en milisegundos.
+           // long horasTranscurridas = millisTranscurridos / (1000 * 60 * 60); // Convierte a horas.
+           // if (horasTranscurridas < 2) return false; // Bloquea si no han pasado 2 horas.
+            long minutosTranscurridos = millisTranscurridos / (1000 * 60);
+            if (minutosTranscurridos < 2) return false; // Temporal: bloquea si no han pasado 2 minutos.
+        } // Fin validación.
+
         StringBuilder sql = new StringBuilder("UPDATE asignaciones SET observaciones = ? "); // Crea builder SQL.
         if ("En proceso".equals(nuevoEstado)) { // Verifica nuevo estado.
-            sql.append(", estado_trabajo = 'En proceso', fecha_inicio = CURDATE() "); // Agrega campos proceso.
-        } else if ("Finalizado".equals(nuevoEstado)) { // Verifica nuevo estado.
-            sql.append(", estado_trabajo = 'Finalizado', fecha_finalizacion = CURDATE() "); // Agrega campos finalizado.
+            sql.append(", estado_trabajo = 'En proceso', fecha_inicio = NOW() "); // NOW() guarda fecha y hora exacta de inicio.
+        } else if ("En revisión".equals(nuevoEstado)) { // El trabajador envía a revisión, no finaliza directamente.
+            sql.append(", estado_trabajo = 'En revisión', fecha_finalizacion = NOW() "); // Registra cuándo se envió a revisión.
         } // Fin if/else.
         sql.append("WHERE id_asignacion = ?"); // Agrega where.
         try (Connection con = clase_Conexion.MetodoConectar(); PreparedStatement ps = con.prepareStatement(sql.toString())) { // Prepara update.
@@ -93,6 +106,42 @@ public class AsignacionDao { // Define la clase AsignacionDao.
             return false; // Retorna false.
         } // Fin try-catch.
     } // Fin método actualizar.
+
+    // Permite al administrador aprobar (Finalizado) o devolver (Pendiente) una asignación en revisión.
+    // observacionesAdmin se guarda en el campo observaciones para notificar al trabajador.
+    public boolean revisarAsignacion(int idAsignacion, String observacionesAdmin, boolean aprobado) { // Inicio método.
+        String nuevoEstado = aprobado ? "Finalizado" : "Pendiente"; // Define estado según decisión del admin.
+        String sql = aprobado
+            ? "UPDATE asignaciones SET estado_trabajo = 'Finalizado', observaciones = ? WHERE id_asignacion = ? AND estado_trabajo = 'En revisión'" // Aprueba solo si está en revisión.
+            : "UPDATE asignaciones SET estado_trabajo = 'Pendiente', fecha_inicio = NULL, fecha_finalizacion = NULL, observaciones = ? WHERE id_asignacion = ? AND estado_trabajo = 'En revisión'"; // Devuelve a pendiente y limpia fechas.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara.
+            ps.setString(1, observacionesAdmin != null ? observacionesAdmin.trim() : ""); // Setea observación del admin.
+            ps.setInt(2, idAsignacion); // Setea ID.
+            return ps.executeUpdate() > 0; // Retorna true si afectó al menos una fila.
+        } catch (SQLException e) { // Catch error.
+            System.err.println("Error al revisar asignacion id=" + idAsignacion + ": " + e.getMessage()); // Log.
+            e.printStackTrace(); // Traza.
+            return false; // Retorna false.
+        } // Fin catch.
+    } // Fin método revisarAsignacion.
+
+    // Obtiene el Timestamp de inicio de una asignación para validar el tiempo mínimo antes de finalizar.
+    // Retorna null si la asignación no existe o aún no fue iniciada.
+    public Timestamp obtenerFechaInicio(int idAsignacion) { // Inicio método.
+        String sql = "SELECT fecha_inicio FROM asignaciones WHERE id_asignacion = ?"; // SQL select.
+        try (Connection con = clase_Conexion.MetodoConectar(); // Conecta.
+             PreparedStatement ps = con.prepareStatement(sql)) { // Prepara.
+            ps.setInt(1, idAsignacion); // Setea ID.
+            try (ResultSet rs = ps.executeQuery()) { // Ejecuta.
+                if (rs.next()) return rs.getTimestamp("fecha_inicio"); // Retorna timestamp si existe.
+            } // Cierra rs.
+        } catch (SQLException e) { // Catch error.
+            System.err.println("Error al obtener fecha_inicio id=" + idAsignacion + ": " + e.getMessage()); // Log.
+            e.printStackTrace(); // Traza.
+        } // Fin catch.
+        return null; // Retorna null si no encontró o falló.
+    } // Fin método obtenerFechaInicio.
 
     public boolean eliminarTrabajo(int idTrabajo) { // Método eliminar.
         String sqlAsig = "DELETE FROM asignaciones WHERE id_trabajo = ?"; // SQL eliminar asignación.
@@ -140,6 +189,24 @@ public class AsignacionDao { // Define la clase AsignacionDao.
         } // Fin catch.
         return 0; // Retorna 0 si falla.
     } // Fin método contar.
+    
+    // Verifica si el cultivo tiene asignaciones en estado activo (no finalizadas).
+    // Se usa antes de eliminar para evitar borrar cultivos con trabajos en curso.
+    public boolean tieneAsignacionesActivasPorCultivo(int idCultivo) {
+        String sql = "SELECT COUNT(*) FROM asignaciones " +
+                     "WHERE id_cultivo = ? " +
+                     "AND estado_trabajo IN ('Pendiente', 'En proceso', 'En revisión')";
+        try (Connection con = clase_Conexion.MetodoConectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idCultivo);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al verificar asignaciones activas por cultivo: " + e.getMessage());
+        }
+        return false;
+    }
 
     public boolean eliminarAsignacion(int idAsignacion) { // Método eliminar asig.
         String sql = "DELETE FROM asignaciones WHERE id_asignacion = ?"; // SQL delete.

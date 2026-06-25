@@ -43,12 +43,7 @@
                 for (asignacion a : lista) { %>
                 <article class="job-card">
 
-                    <%-- Cabecera: nombre (tipo) + badge --%>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--spacing-sm);">
-                        <%--
-                            CORRECCIÓN 8: getNombreTrabajo() eliminado — columna inexistente en BD.
-                            Se usa getNombreTipoTrabajo() como identificador del trabajo.
-                        --%>
                         <h2 class="job-card__title" style="margin-bottom:0;">
                             <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
                             <%= a.getNombreTipoTrabajo() %>
@@ -58,11 +53,13 @@
                         </span>
                     </div>
 
-                    <%-- Meta --%>
                     <div class="job-card__info">
                         <div class="job-card__meta">
                             <i class="fa-solid fa-seedling" style="color:var(--color-brand-green);margin-right:4px;"></i>
                             <%= a.getNombreCultivo() != null ? a.getNombreCultivo() : "N/A" %>
+                            <% if (a.getNombreLote() != null && !a.getNombreLote().isEmpty()) { %>
+                                &mdash; <%= a.getNombreLote() %>
+                            <% } %>
                         </div>
                         <div class="job-card__meta">
                             <i class="fa-solid fa-calendar" style="color:var(--color-brand-green);margin-right:4px;"></i>
@@ -82,12 +79,10 @@
                         <% } %>
                     </div>
 
-                    <%-- Descripción --%>
                     <p class="job-card__desc" style="margin-top:var(--spacing-sm);">
                         <%= a.getDescripcionTrabajo() %>
                     </p>
 
-                    <%-- Observaciones --%>
                     <% if (a.getObservaciones() != null && !a.getObservaciones().isEmpty()) { %>
                         <div class="obs-container" style="margin-top:var(--spacing-sm); padding:10px;
                              background:#f9f9f9; border-left:4px solid var(--color-brand-green); border-radius:4px;">

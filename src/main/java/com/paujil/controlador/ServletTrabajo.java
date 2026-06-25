@@ -108,6 +108,10 @@ public class ServletTrabajo extends HttpServlet { // Define la clase como un com
                 if (!verificarSesionUsuario(request, response)) return; // Control de acceso general.
                 actualizarEstado(request, response); // Delega a método privado de estado.
                 break;
+            case "revisar": // Ejecuta aprobación o devolución de una labor en revisión (solo admin).
+                if (!verificarSesionAdmin(request, response)) return; // Solo administradores pueden revisar.
+                revisarTrabajo(request, response); // Delega a método privado de revisión.
+                break;
             case "crearTipo": // Ejecuta creación de tipos (AJAX).
                 if (!verificarSesionAdmin(request, response)) return;
                 crearTipo(request, response); // Delega a método JSON de creación.
@@ -169,9 +173,14 @@ public class ServletTrabajo extends HttpServlet { // Define la clase como un com
 
         try {
             int idAsignacion = Integer.parseInt(idAsignacionStr); // Parsea ID de la labor.
-            String nuevoEstado = "iniciar".equals(btnAccion) ? "En proceso" : "finalizar".equals(btnAccion) ? "Finalizado" : null;
+            String nuevoEstado = "iniciar".equals(btnAccion) ? "En proceso" : "finalizar".equals(btnAccion) ? "En revisión" : null; // El trabajador envía a revisión, no finaliza directamente.
             boolean ok = servicio.actualizarEstado(idAsignacion, observaciones, nuevoEstado); // Actualiza estado en BD.
-            String status = ok ? (nuevoEstado != null ? nuevoEstado.toLowerCase().replace(" ", "_") : "guardado") : "error";
+            String status;
+            if (!ok && "En revisión".equals(nuevoEstado)) { // Si falló al enviar a revisión, puede ser por las 2 horas.
+                status = "tiempo_insuficiente"; // Status específico para mostrar mensaje claro al trabajador.
+            } else {
+                status = ok ? (nuevoEstado != null ? nuevoEstado.toLowerCase().replace(" ", "_") : "guardado") : "error";
+            }
             response.sendRedirect("ServletTrabajo?accion=misTrabajos&status=" + status); // Redirige con estado.
         } catch (NumberFormatException e) { response.sendRedirect("ServletTrabajo?accion=misTrabajos&status=error"); }
     }
@@ -225,6 +234,27 @@ public class ServletTrabajo extends HttpServlet { // Define la clase como un com
             else response.getWriter().write(construirJsonTipos(dao.listarTipos())); // Devuelve lista actualizada.
         } catch (Exception e) { response.getWriter().write("{\"ok\":false,\"mensaje\":\"Error técnico.\"}"); }
     }
+
+    // Helper: Revisar Trabajo. Permite al admin aprobar o devolver una asignación en revisión.
+    private void revisarTrabajo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String idAsignacionStr = request.getParameter("idAsignacion"); // Obtiene ID de la asignación.
+        String observacionesAdmin = request.getParameter("observacionesAdmin"); // Observación del administrador.
+        String accionRevision = request.getParameter("accionRevision"); // "aprobar" o "devolver".
+
+        if (estaVacio(idAsignacionStr) || estaVacio(accionRevision)) { // Valida parámetros obligatorios.
+            response.sendRedirect("ServletTrabajo?accion=listar&status=error"); // Redirige con error.
+            return; // Aborta.
+        }
+        try {
+            int idAsignacion = Integer.parseInt(idAsignacionStr); // Parsea ID.
+            boolean aprobado = "aprobar".equals(accionRevision); // true = aprobar, false = devolver.
+            boolean ok = servicio.revisarAsignacion(idAsignacion, observacionesAdmin, aprobado); // Ejecuta revisión.
+            String status = ok ? (aprobado ? "aprobado" : "devuelto") : "error"; // Define status de feedback.
+            response.sendRedirect("ServletTrabajo?accion=listar&status=" + status); // Redirige con feedback.
+        } catch (NumberFormatException e) { // Captura ID malformado.
+            response.sendRedirect("ServletTrabajo?accion=listar&status=error"); // Redirige con error.
+        }
+    } // Fin método revisarTrabajo.
 
     // Helper: Construye el objeto JSON.
     private String construirJsonTipos(List<tipoTrabajo> tipos) {
