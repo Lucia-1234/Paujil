@@ -121,30 +121,49 @@ public class LoteDao {
     // VALIDACIONES
     // ─────────────────────────────────────────────────────────────
 
-    /**
-     * Verifica si ya existe un lote con el mismo nombre.
-     *
-     * @param nombre     Nombre a verificar.
-     * @param idExcluir  ID del lote a excluir de la búsqueda (pasar 0 al crear).
-     */
+    // Verifica si ya existe un lote con el mismo nombre en la base de datos.
+    // Si se pasa idExcluir > 0, excluye ese registro (sirve para edición: un lote no se bloquea a sí mismo).
+    // Si idExcluir = 0, busca en todos los registros (sirve para creación).
     public boolean existeNombreLote(String nombre, int idExcluir) {
+
+        // Construye la consulta SQL según si se excluye un id o no.
+        // LOWER() en ambos lados hace la comparación insensible a mayúsculas ("Lote A" == "lote a").
         String sql = idExcluir > 0
             ? "SELECT COUNT(*) FROM lotes WHERE LOWER(nombre_lote) = LOWER(?) AND id_lote <> ?"
             : "SELECT COUNT(*) FROM lotes WHERE LOWER(nombre_lote) = LOWER(?)";
 
+        // try-with-resources: Connection y PreparedStatement se cierran automáticamente
+        // al salir del bloque, sin importar si hay excepción o no.
         try (Connection con = clase_Conexion.MetodoConectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
+            // Asigna el nombre al primer parámetro (?) de la consulta.
             ps.setString(1, nombre);
+
+            // Solo asigna el segundo parámetro si realmente hay un id a excluir.
+            // Si la consulta no tiene segundo ?, llamar setInt(2,...) lanzaría una excepción.
             if (idExcluir > 0) ps.setInt(2, idExcluir);
 
+            // Ejecuta la consulta y abre el ResultSet también con try-with-resources.
             try (ResultSet rs = ps.executeQuery()) {
+
+                // COUNT(*) siempre retorna exactamente una fila, así que rs.next() casi siempre es true.
+                // rs.getInt(1) lee el valor de la primera (y única) columna de esa fila.
+                // Si el conteo es > 0, el nombre ya existe → retorna true.
                 return rs.next() && rs.getInt(1) > 0;
             }
+
         } catch (SQLException e) {
+
+            // Registra el error en consola para que aparezca en los logs del servidor.
             System.err.println("Error al verificar nombre de lote: " + e.getMessage());
+
+            // Imprime el stack trace completo para facilitar el diagnóstico en desarrollo.
             e.printStackTrace();
-            // Ante duda no bloquea; el constraint UNIQUE de la BD es la última red de seguridad.
+
+            // Ante una falla de BD, retorna false (no bloquea la operación).
+            // El constraint UNIQUE definido en la tabla lotes actúa como red de seguridad final:
+            // si duplicado llega a la BD de todas formas, MySQL lanza su propio error.
             return false;
         }
     }
