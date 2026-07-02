@@ -128,12 +128,12 @@
                         <% if (esPendientes) { %>
                             <a href="${pageContext.request.contextPath}/ServletUsuario?accion=aprobar&id=<%= u.getIdUsuario() %>&vista=pendientes"
                                class="btn btn--edit btn--sm">
-                                <i class="fa-solid fa-user-check"></i> Aprobar
+                                <i class="fa-solid fa-check"></i> Aceptar
                             </a>
                             <button class="btn btn--delete btn--sm"
                                     data-id="<%= u.getIdUsuario() %>" data-nombre="<%= nomEsc %>"
                                     onclick="abrirModalDenegar(this.dataset.id, this.dataset.nombre)">
-                                <i class="fa-solid fa-user-xmark"></i> Denegar
+                                <i class="fa-solid fa-xmark"></i> Negar
                             </button>
                         <% } else { %>
                             <% if ("Inactivo".equals(estadoU)) { %>
@@ -188,7 +188,7 @@
         <p class="confirm-modal__text" id="textoEliminarUsuario"></p>
         <div class="confirm-modal__actions">
             <button class="btn btn--cancel" onclick="cerrarModal('modalEliminarUsuario')">Cancelar</button>
-            <button class="btn--confirm-delete" onclick="ejecutarAccionUsuario()">Eliminar definitivamente</button>
+            <button class="btn--confirm-delete" onclick="ejecutarAccionUsuario()">Eliminar</button>
         </div>
     </div>
 </div>
